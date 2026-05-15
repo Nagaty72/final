@@ -5,30 +5,14 @@ import { useAuth } from '@/context/AuthContext';
 import { authService } from '@/services/auth.service';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from 'next-themes';
-<<<<<<< HEAD
-=======
 import { getPreferences, updatePreferences } from '@/services/preferences.service';
 import { supabase } from '@/lib/supabase';
->>>>>>> david2
 
 export default function SettingsPage() {
   const { user, updateUser } = useAuth();
   const { t, i18n } = useTranslation();
-<<<<<<< HEAD
-  const { theme, setTheme, resolvedTheme } = useTheme();
-  
-  // Tabs: profile, security, notifications, appearance
-  const [activeTab, setActiveTab] = useState('profile');
-  
-  const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    password: '',
-  });
-  
-=======
   const { theme, setTheme } = useTheme();
-  
+
   // State
   const [activeTab, setActiveTab] = useState('profile');
   const [formData, setFormData] = useState({ full_name: '', email: '' });
@@ -42,23 +26,16 @@ export default function SettingsPage() {
     new: false,
     confirm: false
   });
->>>>>>> david2
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [mounted, setMounted] = useState(false);
-<<<<<<< HEAD
-
-  // Mock preferences
-  const [prefs, setPrefs] = useState({
-=======
   const [renderError, setRenderError] = useState(null);
 
   // Preferences
   const [prefs, setPrefs] = useState({
     preferred_theme: 'dark',
     preferred_language: 'en',
->>>>>>> david2
     emailAlerts: true,
     weeklyReports: false,
     twoFactor: false
@@ -66,15 +43,6 @@ export default function SettingsPage() {
 
   useEffect(() => {
     setMounted(true);
-<<<<<<< HEAD
-    if (user) {
-      setFormData((prev) => ({
-        ...prev,
-        full_name: user.name || user.full_name || '',
-        email: user.email || '',
-      }));
-    }
-=======
     console.log('[DEBUG] SettingsPage Mount - user:', !!user);
     if (user) {
       setFormData(prev => ({
@@ -83,7 +51,7 @@ export default function SettingsPage() {
         email: user.email || ''
       }));
     }
-    
+
     const fetchPrefs = async () => {
       try {
         const data = await getPreferences();
@@ -93,21 +61,16 @@ export default function SettingsPage() {
       }
     };
     fetchPrefs();
->>>>>>> david2
   }, [user]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-<<<<<<< HEAD
-  const handlePrefToggle = (key) => {
-    setPrefs(p => ({ ...p, [key]: !p[key] }));
-=======
   const handlePrefToggle = async (key) => {
     const newVal = !prefs[key];
     setPrefs(p => ({ ...p, [key]: newVal }));
-    
+
     // If it's theme or language, update it via the theme/i18n hooks too
     if (key === 'preferred_theme') {
       const themeVal = newVal === true ? 'dark' : (newVal === false ? 'light' : newVal);
@@ -116,10 +79,6 @@ export default function SettingsPage() {
       const langVal = newVal === true ? 'ar' : (newVal === false ? 'en' : newVal);
       i18n.changeLanguage(langVal);
     }
-    
-    // In a real app, you might want to call updatePreferences here for toggles too
-    // But for now we just handle it locally or via the specific toggles below
->>>>>>> david2
   };
 
   const handleSubmit = async (e) => {
@@ -133,7 +92,7 @@ export default function SettingsPage() {
       if (formData.password) {
         payload.password = formData.password;
       }
-      
+
       const res = await authService.updateMe(payload);
       if (res?.success) {
         setMessage(t('settings.success_saved'));
@@ -150,8 +109,6 @@ export default function SettingsPage() {
     }
   };
 
-<<<<<<< HEAD
-=======
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -193,7 +150,7 @@ export default function SettingsPage() {
 
       setMessage(t('settings.password_update_success'));
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      
+
     } catch (err) {
       console.error('[DEBUG] Password Update Error:', err);
       setError(t('settings.password_update_error'));
@@ -202,7 +159,6 @@ export default function SettingsPage() {
     }
   };
 
->>>>>>> david2
   const tabs = [
     { key: 'profile', label: t('settings.profile') },
     { key: 'security', label: t('settings.security') },
@@ -210,9 +166,6 @@ export default function SettingsPage() {
     { key: 'appearance', label: t('settings.appearance') },
   ];
 
-<<<<<<< HEAD
-  const isRTL = i18n.language === 'ar';
-=======
   console.log('[DEBUG] Render - activeTab:', activeTab, 'mounted:', mounted);
   const isRTL = i18n?.language === 'ar';
 
@@ -225,7 +178,6 @@ export default function SettingsPage() {
       </div>
     );
   }
->>>>>>> david2
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto' }}>
@@ -241,7 +193,7 @@ export default function SettingsPage() {
             <button
               key={tab.key}
               onClick={() => { setActiveTab(tab.key); setMessage(''); setError(''); }}
-              style={{ 
+              style={{
                 textAlign: isRTL ? 'right' : 'left', padding: '12px 16px', borderRadius: 8, cursor: 'pointer', border: 'none',
                 background: activeTab === tab.key ? 'var(--purple-light)' : 'transparent',
                 color: activeTab === tab.key ? 'var(--purple)' : 'var(--text-secondary)',
@@ -273,7 +225,7 @@ export default function SettingsPage() {
           {activeTab === 'profile' && (
             <div>
               <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24, borderBottom: '1px solid var(--border)', paddingBottom: 12 }}>{t('settings.profile_info')}</h2>
-              
+
               <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 32, padding: 20, background: 'var(--bg-primary)', borderRadius: 16, border: '1px solid var(--border)' }}>
                 <div style={{ width: 64, height: 64, borderRadius: 16, background: 'var(--purple-light)', border: '1px solid var(--purple)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--purple)', fontSize: 24, fontWeight: 700, flexShrink: 0 }}>
                   {formData?.full_name ? String(formData.full_name).charAt(0) : (user?.email?.charAt(0)?.toUpperCase() || 'U')}
@@ -332,12 +284,12 @@ export default function SettingsPage() {
             <div>
               {console.log('[DEBUG] Rendering Security Tab')}
               <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24, borderBottom: '1px solid var(--border)', paddingBottom: 12 }}>{t('settings.security')}</h2>
-              
+
               <form onSubmit={handlePasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                 <div>
                   <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{t('settings.change_password')}</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 20, maxWidth: 450 }}>
-                    
+
                     {/* Current Password */}
                     <div>
                       <label style={{ display: 'block', marginBottom: 8, fontSize: 14, fontWeight: 500, color: 'var(--text-secondary)' }}>{t('settings.current_password')}</label>
@@ -350,7 +302,7 @@ export default function SettingsPage() {
                           className="form-input"
                           style={{ width: '100%', padding: '12px 14px', paddingRight: 44, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
                         />
-                        <button 
+                        <button
                           type="button"
                           onClick={() => setShowPasswords(p => ({ ...p, current: !p.current }))}
                           style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
@@ -376,7 +328,7 @@ export default function SettingsPage() {
                           className="form-input"
                           style={{ width: '100%', padding: '12px 14px', paddingRight: 44, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
                         />
-                        <button 
+                        <button
                           type="button"
                           onClick={() => setShowPasswords(p => ({ ...p, new: !p.new }))}
                           style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
@@ -403,7 +355,7 @@ export default function SettingsPage() {
                           className="form-input"
                           style={{ width: '100%', padding: '12px 14px', paddingRight: 44, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
                         />
-                        <button 
+                        <button
                           type="button"
                           onClick={() => setShowPasswords(p => ({ ...p, confirm: !p.confirm }))}
                           style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
@@ -435,15 +387,15 @@ export default function SettingsPage() {
             <div>
               {console.log('[DEBUG] Rendering Notifications Tab')}
               <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24, borderBottom: '1px solid var(--border)', paddingBottom: 12 }}>{t('settings.notifications')}</h2>
-              
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                
+
                 <div style={{ padding: 20, border: '1px solid var(--border)', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <h4 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 4px' }}>{t('settings.system_alerts')}</h4>
                     <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>{t('settings.system_alerts_desc')}</p>
                   </div>
-                  <div 
+                  <div
                     onClick={() => handlePrefToggle('emailAlerts')}
                     style={{ width: 44, height: 24, background: prefs?.emailAlerts ? 'var(--accent)' : 'var(--bg-primary)', borderRadius: 24, border: `1px solid ${prefs?.emailAlerts ? 'var(--accent)' : 'var(--border)'}`, position: 'relative', cursor: 'pointer', transition: '0.3s', flexShrink: 0 }}>
                     <div style={{ width: 18, height: 18, background: '#fff', borderRadius: '50%', position: 'absolute', top: 2, left: prefs?.emailAlerts ? 22 : 2, transition: '0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
@@ -455,7 +407,7 @@ export default function SettingsPage() {
                     <h4 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 4px' }}>{t('settings.weekly_reports')}</h4>
                     <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>{t('settings.weekly_reports_desc')}</p>
                   </div>
-                  <div 
+                  <div
                     onClick={() => handlePrefToggle('weeklyReports')}
                     style={{ width: 44, height: 24, background: prefs?.weeklyReports ? 'var(--accent)' : 'var(--bg-primary)', borderRadius: 24, border: `1px solid ${prefs?.weeklyReports ? 'var(--accent)' : 'var(--border)'}`, position: 'relative', cursor: 'pointer', transition: '0.3s', flexShrink: 0 }}>
                     <div style={{ width: 18, height: 18, background: '#fff', borderRadius: '50%', position: 'absolute', top: 2, left: prefs?.weeklyReports ? 22 : 2, transition: '0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
@@ -471,7 +423,7 @@ export default function SettingsPage() {
             <div>
               {console.log('[DEBUG] Rendering Appearance Tab, mounted:', mounted)}
               <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 24, borderBottom: '1px solid var(--border)', paddingBottom: 12 }}>{t('settings.appearance')}</h2>
-              
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                 {/* Theme Selector */}
                 <div>

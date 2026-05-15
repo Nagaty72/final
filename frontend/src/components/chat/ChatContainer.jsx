@@ -75,7 +75,7 @@ export default function ChatContainer() {
   const handleNewChat = async () => {
     try {
       const newConv = await chatService.createConversation();
-      setConversations([newConv, ...conversations]);
+      setConversations(prev => [newConv, ...prev]);
       setActiveConversationId(newConv.id);
     } catch (err) {
       setError('Failed to create new conversation.');
@@ -85,7 +85,7 @@ export default function ChatContainer() {
   const handleDeleteChat = async (id) => {
     try {
       await chatService.deleteConversation(id);
-      setConversations(conversations.filter(c => c.id !== id));
+      setConversations(prev => prev.filter(c => c.id !== id));
       if (activeConversationId === id) {
         setActiveConversationId(null);
       }
@@ -108,27 +108,49 @@ export default function ChatContainer() {
   }, [messages, isLoading, scrollToBottom]);
 
   const handleSend = async (text) => {
-    if (!activeConversationId) {
-      // Auto-create conversation if none active
-      const newConv = await chatService.createConversation(text.substring(0, 30) + '...');
-      setActiveConversationId(newConv.id);
-      setConversations([newConv, ...conversations]);
-      // The useEffect will trigger loadMessages but we need to proceed with send
-    }
+    if (!text.trim()) return;
 
-    const currentConvId = activeConversationId;
+    let currentId = activeConversationId;
     setError(null);
     setIsLoading(true);
 
-    // Optimistic update
-    const userMsg = { role: 'user', content: text, created_at: new Date().toISOString() };
+    // 1. Handle new conversation creation if none exists
+    if (!currentId) {
+      try {
+        const newConv = await chatService.createConversation(text.substring(0, 30) + '...');
+        currentId = newConv.id;
+        setActiveConversationId(currentId);
+        setConversations(prev => [newConv, ...prev]);
+      } catch (err) {
+        setError('Failed to start new conversation.');
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    // 2. Optimistic update (User message)
+    const userMsg = { 
+      role: 'user', 
+      content: text, 
+      created_at: new Date().toISOString(),
+      id: Date.now() // temporary ID
+    };
     setMessages(prev => [...prev, userMsg]);
 
     try {
-      const response = await chatService.sendMessage(currentConvId || activeConversationId, text);
-      setMessages(prev => [...prev, response]);
+      // 3. Send message to backend
+      const response = await chatService.sendMessage(currentId, text);
+      
+      // 4. Update messages with actual server data
+      // Replace optimistic message with the one from server (has real ID/timestamp)
+      // and append the assistant message
+      setMessages(prev => {
+        const filtered = prev.filter(m => m.id !== userMsg.id);
+        return [...filtered, response.userMessage, response.assistantMessage];
+      });
     } catch (err) {
       setError(err.message || 'Failed to get AI response.');
+      // Keep user message but show error
     } finally {
       setIsLoading(false);
     }

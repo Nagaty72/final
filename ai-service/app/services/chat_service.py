@@ -1,15 +1,18 @@
 """
-Healthcare AI Chat Service
-===========================
-Provides AI-powered healthcare analytics chat using Google Gemini API.
-Supports bilingual responses (Arabic & English) with professional
-healthcare domain expertise. Includes robust error handling and retries.
+Healthcare AI Runtime Engine (Intent Optimized)
+==============================================
+Intelligent orchestration with priority-based intent classification.
+Ensures analytics intent is never shadowed by educational keywords.
 """
 
 import os
 import re
+import json
 import logging
+import time
+from datetime import datetime, timedelta
 from pathlib import Path
+from typing import Tuple, Optional, Dict, Any
 
 from google import genai
 from google.genai import types
@@ -17,255 +20,183 @@ from google.genai.errors import APIError
 from dotenv import load_dotenv
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-from app.services import analytics_service
-from google.genai.errors import APIError
-from dotenv import load_dotenv
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from app.services import analytics_service, knowledge_base
 
-# Configure logging
+# --- LOGGING ---
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Load environment variables from the backend .env (single source of truth)
-# ---------------------------------------------------------------------------
 _backend_env = Path(__file__).resolve().parents[3] / "backend" / ".env"
 load_dotenv(dotenv_path=_backend_env)
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    logger.error("GEMINI_API_KEY is not set in backend/.env")
-    raise RuntimeError(
-        "GEMINI_API_KEY is not set. "
-        "Please add it to backend/.env"
-    )
-
-# ---------------------------------------------------------------------------
-# Gemini Client & Model Configuration
-# ---------------------------------------------------------------------------
 client = genai.Client(api_key=GEMINI_API_KEY)
-
-# Downgraded to gemini-1.5-flash for better free-tier availability and stability
 MODEL_NAME = "gemini-flash-latest"
 
-GENERATION_CONFIG = types.GenerateContentConfig(
-    temperature=0.7,
-    top_p=0.92,
-    top_k=40,
-    max_output_tokens=4096,
-    safety_settings=[
-        types.SafetySetting(
-            category="HARM_CATEGORY_HARASSMENT",
-            threshold="BLOCK_NONE",
-        ),
-        types.SafetySetting(
-            category="HARM_CATEGORY_HATE_SPEECH",
-            threshold="BLOCK_NONE",
-        ),
-        types.SafetySetting(
-            category="HARM_CATEGORY_SEXUALLY_EXPLICIT",
-            threshold="BLOCK_NONE",
-        ),
-        types.SafetySetting(
-            category="HARM_CATEGORY_DANGEROUS_CONTENT",
-            threshold="BLOCK_NONE",
-        ),
-    ],
-    system_instruction="""You are **HealthBot AI** — an elite, advanced healthcare analytics assistant built for the *Health Analytics Platform*.
+class QuotaManager:
+    def __init__(self):
+        self.is_low_quota = False
+        self.last_429_time = 0
+        self.recovery_window = 300
 
-### Your Identity & Role
-- You are an expert data scientist and epidemiologist specializing in **public health surveillance, disease analytics, and healthcare management** in Egypt and the MENA region.
-- You assist healthcare decision-makers (physicians, hospital administrators, public health officials, and government analysts).
+    def mark_exhausted(self):
+        self.is_low_quota = True
+        self.last_429_time = time.time()
 
-### Core Capabilities
-1. **Data-Driven Analysis** — Analyze and interpret the real-time context data provided to you from the database.
-2. **Geospatial Comparisons** — Compare healthcare metrics across Egyptian governorates (e.g., Cairo, Alexandria, Luxor) identifying hotspots and disparities.
-3. **Actionable Healthcare Insights** — Generate high-value insights from health data, identifying trends, anomalies, and forecasting potential outbreaks.
-4. **Strategic Decision Support** — Provide evidence-based, actionable recommendations for resource allocation, emergency preparedness, and intervention strategies.
+    def check_status(self):
+        if self.is_low_quota and (time.time() - self.last_429_time > self.recovery_window):
+            self.is_low_quota = False
+        return self.is_low_quota
 
-### Rules for Processing Context Data
-- If context data from the database is provided in the prompt, you **MUST base your answer on that data**.
-- Extract precise numbers, governorates, disease names, and capacities from the provided context.
-- If the context data says "No data available" or is empty, clearly state that there is no real-time data available for this query, but provide general epidemiological principles or hypothetical analysis if asked.
-- Do NOT fabricate real-world current statistics. Use the provided context data.
+quota_manager = QuotaManager()
 
-### Language & Localization Rules
-- **Detect the user's language automatically.**
-- If the user writes in **Arabic**, respond fully in professional Arabic (فصحى) with proper formatting and medical terminology transliterated when helpful.
-- If the user writes in **English**, respond in formal, professional English.
+SYSTEM_COMPRESSED = """HealthBot Agent. 
+Rule: Prioritize Analytics (stats/trends/cases) over Knowledge (definitions).
+Rule: If data is 'relaxed', explain you widened the search.
+Grounded. Markdown."""
 
-### Response Style & Formatting
-- **Analytical & Precise:** Always base your answers on logical reasoning.
-- **Structured:** Use markdown extensively. Use headers (`###`), bullet points (`-`), bold text (`**`), and tables to present data cleanly.
-- **Action-Oriented:** Conclude analyses with strategic recommendations.
+# --- INTENT SIGNALS ---
+ANALYTICS_SIGNALS = [
+    r"top", r"common", r"أهم", r"منتشرة", r"increase", r"زيادة", 
+    r"trend", r"اتجاه", r"compare", r"مقارنة", r"statistics", r"إحصائيات",
+    r"cases", r"حالات", r"hospitals", r"مستشفيات", r"districts", r"مناطق",
+    r"recently", r"حاليًا", r"month", r"year", r"today"
+]
 
-### Guardrails
-- **NO Medical Diagnoses:** Never provide personal medical diagnoses or treatment prescriptions. Always advise consulting a licensed healthcare professional for clinical issues.
-- **Scope Focus:** Strictly refuse queries unrelated to healthcare, analytics, or public health.
-""",
-)
+EDUCATIONAL_SIGNALS = [
+    r"what is", r"ما هو", r"ماهو", r"explain", r"اشرح", r"تعريف", 
+    r"symptoms", r"أعراض", r"causes", r"أسباب", r"treatment", r"علاج",
+    r"prevention", r"وقاية", r"how does", r"كيف"
+]
 
-# ---------------------------------------------------------------------------
-# Fallback Messages
-# ---------------------------------------------------------------------------
-FALLBACK_MESSAGE = (
-    "⚠️ **Service Temporarily Unavailable**\n\n"
-    "The AI analytics service is currently experiencing high demand or network issues. "
-    "Please try your request again in a few moments.\n\n"
-    "---\n\n"
-    "⚠️ **الخدمة غير متاحة مؤقتاً**\n\n"
-    "تواجه خدمة التحليلات الذكية ضغطاً عالياً أو مشكلة في الشبكة حالياً. "
-    "يرجى إعادة المحاولة بعد قليل."
-)
-
-def log_retry_attempt(retry_state):
-    """Log when a retry happens."""
-    logger.warning(f"Retrying Gemini API call... Attempt {retry_state.attempt_number}/3. Error: {retry_state.outcome.exception()}")
+def _get_routing_tier(message: str) -> str:
+    """
+    [ROUTER] Weighted intent classification.
+    Analytics intent ALWAYS overrides educational keywords.
+    """
+    msg = message.lower().strip()
+    
+    # 1. ANALYTICS CHECK (Highest Priority)
+    is_analytics = any(re.search(pattern, msg) for pattern in ANALYTICS_SIGNALS)
+    if is_analytics:
+        if re.search(r"(top|common|أهم|منتشرة) (diseases|illness|الأمراض)", msg):
+            return "tier1_top_diseases"
+        if re.search(r"(hospital|load|مستشفى|سعة)", msg):
+            return "tier1_hospital_load"
+        logger.info("[ROUTER] Signal: ANALYTICS detected. Forcing Tier 3.")
+        return "tier3_full_analytics"
+    
+    # 2. EDUCATIONAL CHECK (Medium Priority)
+    is_educational = any(re.search(pattern, msg) for pattern in EDUCATIONAL_SIGNALS)
+    if is_educational:
+        logger.info("[ROUTER] Signal: EDUCATIONAL detected. Checking Local KB.")
+        return "tier1_local_kb"
+        
+    # 3. DEFAULT
+    return "tier3_full"
 
 @retry(
-    stop=stop_after_attempt(3),
+    stop=stop_after_attempt(2),
     wait=wait_exponential(multiplier=1, min=2, max=10),
-    retry=retry_if_exception_type((APIError, ConnectionError, TimeoutError)),
-    before_sleep=log_retry_attempt,
+    retry=retry_if_exception_type((ConnectionError, TimeoutError)),
     reraise=True
 )
-async def _call_gemini_api(message: str, history: list = []) -> str:
-    """
-    Make the actual API call to Gemini with retry logic and conversation history.
-    """
-    # Format history for Google GenAI SDK (types.Content)
-    contents = []
-    
-    # Add historical messages (limit to last 10 to prevent token overflow)
-    for msg in history[-10:]:
-        role = "user" if msg.get("role") == "user" else "model"
-        contents.append(types.Content(
-            role=role,
-            parts=[types.Part(text=msg.get("content"))]
-        ))
-    
-    # Add current message
-    contents.append(types.Content(
-        role="user",
-        parts=[types.Part(text=message)]
-    ))
-
-    response = await client.aio.models.generate_content(
-        model=MODEL_NAME,
-        contents=contents,
-        config=GENERATION_CONFIG,
-    )
-    return response.text
-
-async def _detect_intent(message: str) -> str:
-    """Lightweight call to detect user intent."""
-    prompt = f"""Analyze the following user message regarding healthcare in Egypt.
-Determine the primary intent from this list:
-- top_diseases
-- chronic_analysis
-- compare_governorates
-- hospital_load
-- emergency_analysis
-- gender_analysis
-- age_analysis
-- disease_trends
-- outbreak_predictions
-- general_chat
-
-Respond ONLY with the exact intent name from the list above. No other text.
-User Message: {message}"""
-
+async def _safe_call_gemini(contents: list, temperature=0.2) -> str:
     try:
         response = await client.aio.models.generate_content(
             model=MODEL_NAME,
-            contents=prompt,
-            config=types.GenerateContentConfig(temperature=0.0)
+            contents=contents,
+            config=types.GenerateContentConfig(
+                temperature=temperature,
+                system_instruction=SYSTEM_COMPRESSED,
+                max_output_tokens=1024
+            ),
         )
-        intent = response.text.strip().lower()
-        intent = re.sub(r'[^a-z_]', '', intent)
-        valid_intents = [
-            "top_diseases", "chronic_analysis", "compare_governorates", 
-            "hospital_load", "emergency_analysis", "gender_analysis", 
-            "age_analysis", "disease_trends", "outbreak_predictions", "general_chat"
-        ]
-        return intent if intent in valid_intents else "general_chat"
-    except Exception as e:
-        logger.error(f"Intent detection failed: {e}")
-        return "general_chat"
+        return response.text
+    except APIError as e:
+        if "429" in str(e): quota_manager.mark_exhausted()
+        raise
 
 async def generate_chat_response(message: str, history: list = []) -> str:
-    """
-    Generate a healthcare-focused AI response using Gemini.
-    Includes exponential backoff retries and fallback responses.
-
-    Parameters
-    ----------
-    message : str
-        The user's chat message (Arabic or English).
-
-    Returns
-    -------
-    str
-        The AI-generated response text or a formatted fallback message.
-    """
-    if not message or not message.strip():
-        return "Please provide a message to get started. | يرجى إدخال رسالة للبدء."
+    if not message or not message.strip(): return "How can I help?"
 
     try:
-        logger.info(f"Generating chat response for message length: {len(message)}")
+        tier = _get_routing_tier(message)
+        is_low_quota = quota_manager.check_status()
         
-        # 1. Detect Intent
-        intent = await _detect_intent(message)
-        logger.info(f"Detected intent: {intent}")
-        
-        # 2. Fetch Relevant Analytics Data
-        context_data = ""
-        if intent == "top_diseases":
-            context_data = await analytics_service.get_top_diseases()
-        elif intent == "chronic_analysis":
-            context_data = await analytics_service.get_chronic_diseases_analysis()
-        elif intent == "compare_governorates":
-            context_data = await analytics_service.compare_governorates()
-        elif intent == "hospital_load":
-            context_data = await analytics_service.get_hospital_load_analysis()
-        elif intent == "emergency_analysis":
-            context_data = await analytics_service.get_emergency_analysis()
-        elif intent == "gender_analysis":
-            context_data = await analytics_service.get_gender_analysis()
-        elif intent == "age_analysis":
-            context_data = await analytics_service.get_age_group_analysis()
-        elif intent == "disease_trends":
-            context_data = await analytics_service.get_disease_trends()
-        elif intent == "outbreak_predictions":
-            context_data = await analytics_service.get_outbreak_predictions()
-            
-        # 3. Build Augmented Prompt
-        augmented_prompt = message
-        if context_data and context_data != "No data available.":
-            augmented_prompt = f"""
-User Message: {message}
+        # --- PHASE 0: STRATEGIC ROUTING ---
+        # Note: Local KB check only triggers for EXPLICIT educational intents now.
+        if tier == "tier1_local_kb":
+            local_info = knowledge_base.get_local_knowledge(message)
+            if local_info:
+                logger.info("[KB] Served definitional medical info.")
+                return local_info
+            # Fallback to AI if KB doesn't have it
+            tier = "tier3_full"
 
-=== DATABASE CONTEXT (Real Healthcare Analytics Data) ===
-Intent Detected: {intent}
-Data fetched from Supabase:
-{context_data}
-=========================================================
+        logger.info(f"[ROUTER] Final Path: {tier} (Low Quota: {is_low_quota})")
+        
+        context_data = None
+        plan = None
 
-Instructions: 
-1. Answer the user's message using the REAL database context provided above. 
-2. You MUST base all numerical claims and statistics EXCLUSIVELY on this context. 
-3. Do NOT generate generic or fabricated numbers. 
-4. Analyze the real data and present insights clearly using tables and markdown.
-"""
+        # --- PHASE 1: EXECUTION ---
+        if tier.startswith("tier1") and tier != "tier1_local_kb":
+            tool = tier.replace("tier1_", "")
+            params = {"start_date": (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d')}
+            context_data = await analytics_service.execute_analytics_tool(tool, params)
+        else:
+            # Reasoning Path
+            prompt = f"Plan JSON for: {message}. Priority: ANALYTICS. Today: {datetime.now().strftime('%Y-%m-%d')}"
+            try:
+                plan_text = await _safe_call_gemini([prompt], temperature=0.0)
+                plan = json.loads(re.search(r'\{.*\}', plan_text, re.DOTALL).group())
+                
+                # Double check KB with normalized disease if AI thinks it's knowledge
+                if plan.get("mode") == "knowledge":
+                    local_info = knowledge_base.get_local_knowledge(plan.get("disease", ""))
+                    if local_info: return local_info
+                
+                if plan.get("requires_db"):
+                    context_data = await analytics_service.execute_analytics_tool(
+                        plan.get("tool", "top_diseases"), plan.get("params", {}), full_plan=plan
+                    )
+            except Exception:
+                if is_low_quota: return "I'm currently in power-saving mode. Analytics are available for simple requests."
+
+        # --- PHASE 2: SYNTHESIS ---
+        if is_low_quota and context_data:
+            return analytics_service.format_data_nicely(context_data)
+
+        if not context_data and not plan:
+            return "I'm sorry, I couldn't find a direct answer. Could you rephrase your question?"
+
+        # Synth prompt logic
+        is_relaxed = False
+        try:
+            if context_data:
+                meta = json.loads(context_data).get("m", {})
+                is_relaxed = meta.get("relaxed", False)
+        except: pass
+
+        synth_prompt = f"Message: {message}\nContext: {context_data}\n"
+        if is_relaxed:
+            synth_prompt += "Instruction: Explain that you widened the search."
+        if plan and plan.get("mode") == "knowledge":
+            synth_prompt = f"Provide medical education for: {message}. Disclaimer included."
+
+        final_history = []
+        for msg in history[-3:]:
+            role = "user" if msg.get("role") == "user" else "model"
+            final_history.append(types.Content(role=role, parts=[types.Part(text=msg.get("content"))]))
         
-        response_text = await _call_gemini_api(augmented_prompt, history)
-        logger.info("Successfully generated AI response.")
-        return response_text
+        final_history.append(types.Content(role="user", parts=[types.Part(text=synth_prompt)]))
         
+        try:
+            return await _safe_call_gemini(final_history)
+        except Exception:
+            if context_data: return analytics_service.format_data_nicely(context_data)
+            return "The AI service is currently at capacity. Please try again in a few minutes."
+
     except Exception as exc:
-        error_msg = str(exc)
-        logger.error(f"Gemini API generation failed after retries: {error_msg}")
-        
-        # Return a professional fallback response instead of crashing the endpoint
-        return FALLBACK_MESSAGE
-
+        logger.error(f"[RUNTIME ERROR] {exc}")
+        return "I encountered an error. Please try again with a simple question."
