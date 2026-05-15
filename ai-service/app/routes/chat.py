@@ -7,7 +7,6 @@ healthcare analytics response via Google Gemini.
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-
 from app.services.chat_service import generate_chat_response
 
 router = APIRouter()

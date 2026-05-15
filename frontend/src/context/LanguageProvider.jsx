@@ -25,19 +25,19 @@ function PreferenceSyncer() {
         if (prefs) {
           // Initialize tracking ref with backend values
           lastState.current = { 
-            theme: prefs.theme || null, 
-            language: prefs.language || null 
+            theme: prefs.preferred_theme || null, 
+            language: prefs.preferred_language || null 
           };
           
-          if (prefs.theme && prefs.theme !== theme) {
-            setTheme(prefs.theme);
+          if (prefs.preferred_theme && prefs.preferred_theme !== theme) {
+            setTheme(prefs.preferred_theme);
           }
-          if (prefs.language && prefs.language !== i18nInstance.language) {
-            i18nInstance.changeLanguage(prefs.language);
+          if (prefs.preferred_language && prefs.preferred_language !== i18nInstance.language) {
+            i18nInstance.changeLanguage(prefs.preferred_language);
           }
         }
       } catch (err) {
-        console.warn('Backend preference sync failed, using local settings.');
+        console.warn('[DEBUG] LanguageProvider: Backend preference sync failed, relying on service fallbacks.');
       } finally {
         setSynced(true);
       }
