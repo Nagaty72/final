@@ -1,0 +1,66 @@
+# ─── Dependencies ─────────────────────────────────────────────
+node_modules/
+.pnp/
+.pnp.js
+
+# ─── Build / Output ──────────────────────────────────────────
+dist/
+build/
+.next/
+out/
+
+# ─── Environment Variables ───────────────────────────────────
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ─── Logs ─────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── OS Files ─────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── IDE / Editor ─────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── Python (AI Service) ─────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+venv/
+.venv/
+env/
+
+# ─── ML Models & Data ────────────────────────────────────────
+*.pkl
+*.joblib
+*.h5
+*.pt
+datasets/
+
+# ─── Docker ───────────────────────────────────────────────────
+docker-compose.override.yml
+
+# ─── Testing / Coverage ──────────────────────────────────────
+coverage/
+.nyc_output/
+.pytest_cache/
+htmlcov/
+
+# ─── Misc ─────────────────────────────────────────────────────
+*.tgz
+.turbo/
