@@ -7,8 +7,7 @@ const db = () => {
 };
 
 export const HospitalRepository = {
-  async findAll({ city, type, districtId, limit = 50, offset = 0 }) {
-    // Uses the new RPC to extract lat/lng from the PostGIS geography field
+  async findAll({ city, type, districtId, limit = 1000, offset = 0 }) {
     const { data, error } = await db().rpc('get_hospitals_with_gis', {
       p_city: city || null,
       p_type: type || null,
@@ -19,7 +18,6 @@ export const HospitalRepository = {
 
     if (error) throw error;
     
-    // Format the result to match expected output structure, handling the district relationship
     return data.map(h => ({
       ...h,
       districts: h.district_id ? { id: h.district_id, name: h.district_name } : null
@@ -34,12 +32,22 @@ export const HospitalRepository = {
     return data;
   },
 
-  async create({ name, address, city, district_id, longitude, latitude, capacity }) {
+  async findByNameAndDistrict(name, district_id) {
+    const { data, error } = await db().from('hospitals')
+      .select('id')
+      .ilike('name', name)
+      .eq('district_id', district_id)
+      .limit(1);
+    if (error) throw error;
+    return data.length > 0 ? data[0] : null;
+  },
+
+  async create({ name, address, city, district_id, longitude, latitude, capacity, phone, type, emergency_available }) {
     const location = (longitude && latitude)
       ? `POINT(${longitude} ${latitude})` : null;
 
     const { data, error } = await db().from('hospitals')
-      .insert({ name, address, city, district_id, location, capacity })
+      .insert({ name, address, city, district_id, location, capacity, phone, type, emergency_available })
       .select().single();
     if (error) throw error;
     return data;
@@ -62,7 +70,7 @@ export const HospitalRepository = {
     if (error) throw error;
   },
 
-  async findNearby(longitude, latitude, radiusMeters = 10000, city = null, type = null, limit = 50) {
+  async findNearby(longitude, latitude, radiusMeters = 10000, city = null, type = null, limit = 1000) {
     const { data, error } = await db().rpc('hospitals_within_radius', {
       lat: latitude,
       lng: longitude,

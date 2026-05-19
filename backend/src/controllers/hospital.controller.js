@@ -8,7 +8,7 @@ export const HospitalController = {
         city, 
         type, 
         districtId, 
-        limit: Number(limit) || 50, 
+        limit: Number(limit) || 1000, 
         offset: Number(offset) || 0 
       });
       res.json({ success: true, data });
@@ -45,13 +45,14 @@ export const HospitalController = {
 
   async findNearby(req, res, next) {
     try {
-      const { longitude, latitude, radius, city, type } = req.query;
+      const { longitude, latitude, radius, city, type, limit } = req.query;
       const data = await HospitalService.findNearby(
         Number(longitude), 
         Number(latitude), 
         Number(radius) || 10000,
         city,
-        type
+        type,
+        Number(limit) || 1000
       );
       res.json({ success: true, data });
     } catch (e) { next(e); }

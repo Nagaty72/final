@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/AuthContext';
 import { getHospitals, getNearbyHospitals, createHospital, updateHospital, deleteHospital } from '@/services/hospital.service';
@@ -8,13 +8,13 @@ import { getDistricts } from '@/services/district.service';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import HospitalCard from '@/components/HospitalCard';
 import { useTranslation } from 'react-i18next';
+import { X, Building2, MapPin, Phone, Settings2, ShieldAlert, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
-// Dynamically import the map component because Leaflet uses 'window'
 const MapComponent = dynamic(() => import('@/components/MapComponent'), {
   ssr: false,
   loading: () => (
     <div style={{ height: '100%', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)', borderRadius: '12px' }}>
-      <div className="pulse-dot" style={{ background: 'var(--accent)', width: 12, height: 12 }} />
+      <Loader2 className="animate-spin" style={{ color: 'var(--accent)' }} size={32} />
     </div>
   )
 });
@@ -36,16 +36,17 @@ export default function HospitalsPage() {
   // Interactive State
   const [activeHospitalId, setActiveHospitalId] = useState(null);
 
-  // Modal State (for CRUD)
+  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [formError, setFormError] = useState(null);
+  const [formSuccess, setFormSuccess] = useState(null);
   const [formData, setFormData] = useState({
     name: '', type: 'Hospital', address: '', city: '', district_id: '',
     phone: '', emergency_available: false, capacity: 0, latitude: '', longitude: ''
   });
 
-  // Extract unique cities for the dropdown
   const cities = useMemo(() => {
     if (!districts.length) return [];
     return [...new Set(districts.map(d => d.city))].sort();
@@ -60,19 +61,17 @@ export default function HospitalsPage() {
     }
   }, [user]);
 
-  // Refetch data when filters change (unless using geolocation which overrides city filter)
   useEffect(() => {
     if (user?.role === 'super_admin' && !location) {
       fetchData();
     }
-  }, [selectedCity, selectedType]);
+  }, [selectedCity, selectedType, location, user]);
 
-  // When geolocation changes, fetch nearby hospitals
   useEffect(() => {
     if (location && user?.role === 'super_admin') {
       fetchNearbyData();
     }
-  }, [location, selectedType]);
+  }, [location, selectedType, user]);
 
   const fetchDistricts = async () => {
     try {
@@ -86,7 +85,7 @@ export default function HospitalsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const params = {};
+      const params = { limit: 1000 };
       if (selectedCity) params.city = selectedCity;
       if (selectedType) params.type = selectedType;
       
@@ -102,12 +101,11 @@ export default function HospitalsPage() {
   const fetchNearbyData = async () => {
     setLoading(true);
     try {
-      const params = { radius: 20000 }; // 20km radius default
+      const params = { radius: 20000, limit: 1000 };
       if (selectedType) params.type = selectedType;
       
       const res = await getNearbyHospitals(location.latitude, location.longitude, params);
       if (Array.isArray(res)) setHospitals(res);
-      // Reset city filter visually since nearby overrides it
       if (selectedCity) setSelectedCity('');
     } catch (e) {
       console.error('Failed to fetch nearby hospitals:', e);
@@ -116,7 +114,6 @@ export default function HospitalsPage() {
     }
   };
 
-  // Client-side search filtering
   const filteredHospitals = useMemo(() => {
     if (!searchTerm) return hospitals;
     const term = searchTerm.toLowerCase();
@@ -127,7 +124,6 @@ export default function HospitalsPage() {
     );
   }, [hospitals, searchTerm]);
 
-  // Statistics calculation
   const stats = useMemo(() => {
     const total = filteredHospitals.length;
     const hospitalsCount = filteredHospitals.filter(h => !h.type?.toLowerCase().includes('clinic')).length;
@@ -137,7 +133,11 @@ export default function HospitalsPage() {
   }, [filteredHospitals]);
 
   if (loading && !hospitals.length) {
-    return <div className="pulse-dot" style={{ background: 'var(--accent)', width: 12, height: 12, margin: '100px auto' }} />;
+    return (
+      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader2 className="animate-spin text-blue-500" size={48} />
+      </div>
+    );
   }
 
   if (user?.role !== 'super_admin') {
@@ -149,8 +149,9 @@ export default function HospitalsPage() {
     );
   }
 
-  // CRUD Handlers
   const handleOpenModal = (hospital = null) => {
+    setFormError(null);
+    setFormSuccess(null);
     if (hospital) {
       setEditingId(hospital.id);
       setFormData({
@@ -174,11 +175,18 @@ export default function HospitalsPage() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingId(null);
+    setFormError(null);
+    setFormSuccess(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isSaving) return; // Prevent duplicate submissions
+
     setIsSaving(true);
+    setFormError(null);
+    setFormSuccess(null);
+
     try {
       const payload = { ...formData, capacity: Number(formData.capacity) };
       if (formData.latitude && formData.longitude) {
@@ -188,13 +196,21 @@ export default function HospitalsPage() {
       
       if (editingId) {
         await updateHospital(editingId, payload);
+        setFormSuccess(t('hospitals.update_success', 'Facility updated successfully.'));
       } else {
         await createHospital(payload);
+        setFormSuccess(t('hospitals.create_success', 'Facility created successfully.'));
       }
+      
       location ? await fetchNearbyData() : await fetchData();
-      handleCloseModal();
+      
+      setTimeout(() => {
+        handleCloseModal();
+      }, 1000); // Small delay to show success state before closing
+
     } catch (err) {
-      alert('Error saving hospital: ' + err.message);
+      const errorMessage = err.response?.data?.message || err.message || 'An error occurred';
+      setFormError(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -213,7 +229,6 @@ export default function HospitalsPage() {
 
   return (
     <div className="gis-container">
-      {/* Header section */}
       <div className="header-section">
         <div>
           <h1 className="page-title">{t('hospitals.title')}</h1>
@@ -225,7 +240,8 @@ export default function HospitalsPage() {
             onClick={requestLocation}
             disabled={geoLoading}
           >
-            {geoLoading ? t('hospitals.locating') : `📍 ${t('hospitals.use_my_location')}`}
+            {geoLoading ? <Loader2 className="animate-spin" size={16} /> : <MapPin size={16} />}
+            {geoLoading ? t('hospitals.locating') : t('hospitals.use_my_location')}
           </button>
           <button className="auth-btn" onClick={() => handleOpenModal()}>
             + {t('hospitals.add_facility')}
@@ -233,9 +249,8 @@ export default function HospitalsPage() {
         </div>
       </div>
       
-      {geoError && <div className="error-banner">{geoError}</div>}
+      {geoError && <div className="error-banner"><AlertCircle size={18} /> {geoError}</div>}
 
-      {/* KPI Stats */}
       <div className="kpi-grid">
         <div className="kpi-card blue">
           <div className="kpi-label">{t('hospitals.total_facilities')}</div>
@@ -255,19 +270,18 @@ export default function HospitalsPage() {
         </div>
       </div>
 
-      {/* Main Content Layout */}
       <div className="map-layout">
-        
-        {/* Left Side: Filters and Cards List */}
         <div className="sidebar-panel">
           <div className="filters-container">
-            <input 
-              type="text" 
-              placeholder={t('hospitals.search_placeholder')} 
-              className="input-field search-input"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+            <div className="search-wrapper">
+              <input 
+                type="text" 
+                placeholder={t('hospitals.search_placeholder')} 
+                className="input-field search-input"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
             <div className="filter-row">
               <select 
                 className="input-field filter-select"
@@ -300,7 +314,10 @@ export default function HospitalsPage() {
 
           <div className="cards-scroll-area">
             {loading ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>{t('hospitals.loading')}</div>
+              <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-secondary)' }}>
+                <Loader2 className="animate-spin mx-auto mb-2" size={24} />
+                {t('hospitals.loading')}
+              </div>
             ) : filteredHospitals.length === 0 ? (
               <div className="empty-state">{t('hospitals.no_facilities')}</div>
             ) : (
@@ -311,7 +328,6 @@ export default function HospitalsPage() {
                     isActive={activeHospitalId === hospital.id}
                     onClick={() => setActiveHospitalId(hospital.id)}
                   />
-                  {/* Small edit/delete controls inline for super_admin */}
                   <div className="card-quick-actions">
                     <button onClick={(e) => { e.stopPropagation(); handleOpenModal(hospital); }} className="action-link edit">{t('hospitals.edit')}</button>
                     <button onClick={(e) => { e.stopPropagation(); handleDelete(hospital.id); }} className="action-link delete">{t('hospitals.delete')}</button>
@@ -322,7 +338,6 @@ export default function HospitalsPage() {
           </div>
         </div>
 
-        {/* Right Side: Interactive Map */}
         <div className="map-panel">
           <MapComponent 
             hospitals={filteredHospitals}
@@ -333,42 +348,65 @@ export default function HospitalsPage() {
         </div>
       </div>
 
-      {/* CRUD Modal */}
       {isModalOpen && (
         <div className="modal-overlay">
-          <div className="modal-content">
-            <h2>{editingId ? t('hospitals.edit_facility') : t('hospitals.add_new_facility')}</h2>
+          <div className="modal-content glass-effect">
+            <div className="modal-header">
+              <h2>{editingId ? t('hospitals.edit_facility') : t('hospitals.add_new_facility')}</h2>
+              <button onClick={handleCloseModal} className="close-btn"><X size={24} /></button>
+            </div>
             
-            <form onSubmit={handleSubmit} className="crud-form">
-              <div className="input-group">
-                <label>{t('hospitals.facility_name')}</label>
-                <input required className="input-field" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+            {formError && (
+              <div className="modal-alert error">
+                <AlertCircle size={18} />
+                <span>{formError}</span>
               </div>
+            )}
 
-              <div className="grid-2">
+            {formSuccess && (
+              <div className="modal-alert success">
+                <CheckCircle2 size={18} />
+                <span>{formSuccess}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="crud-form">
+              <div className="form-section">
+                <h3 className="section-title"><Building2 size={16} /> Basic Information</h3>
                 <div className="input-group">
-                  <label>{t('hospitals.type')}</label>
-                  <select required className="input-field select-dark" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
-                    <option value="Hospital">{t('hospitals.hospital')}</option>
-                    <option value="Clinic">{t('hospitals.clinic')}</option>
-                    <option value="Medical Center">{t('hospitals.medical_center')}</option>
-                  </select>
+                  <label>{t('hospitals.facility_name')} *</label>
+                  <input required className="input-field modern" placeholder="e.g. City General Hospital" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                 </div>
-                <div className="input-group">
-                  <label>{t('hospitals.phone_number')}</label>
-                  <input className="input-field" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+
+                <div className="grid-2">
+                  <div className="input-group">
+                    <label>{t('hospitals.type')} *</label>
+                    <select required className="input-field modern" value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})}>
+                      <option value="Hospital">{t('hospitals.hospital')}</option>
+                      <option value="Clinic">{t('hospitals.clinic')}</option>
+                      <option value="Medical Center">{t('hospitals.medical_center')}</option>
+                    </select>
+                  </div>
+                  <div className="input-group">
+                    <label>{t('hospitals.phone_number')}</label>
+                    <div className="input-icon-wrapper">
+                      <Phone size={16} className="input-icon" />
+                      <input className="input-field modern pl-10" placeholder="e.g. +20100000000" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                    </div>
+                  </div>
                 </div>
               </div>
               
-              <div className="input-group">
-                <label>{t('hospitals.address')}</label>
-                <input className="input-field" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
-              </div>
-
-              <div className="grid-2">
+              <div className="form-section">
+                <h3 className="section-title"><MapPin size={16} /> Location Details</h3>
                 <div className="input-group">
-                  <label>{t('hospitals.district')}</label>
-                  <select required className="input-field select-dark" value={formData.district_id} onChange={e => {
+                  <label>{t('hospitals.address')} *</label>
+                  <input required className="input-field modern" placeholder="123 Health Street" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} />
+                </div>
+
+                <div className="input-group">
+                  <label>{t('hospitals.district')} *</label>
+                  <select required className="input-field modern" value={formData.district_id} onChange={e => {
                     const d = districts.find(x => x.id === e.target.value);
                     setFormData({...formData, district_id: e.target.value, city: d ? d.city : ''});
                   }}>
@@ -376,34 +414,41 @@ export default function HospitalsPage() {
                     {districts.map(d => <option key={d.id} value={d.id}>{d.name} ({d.city})</option>)}
                   </select>
                 </div>
-                <div className="input-group">
-                  <label>{t('hospitals.capacity_beds')}</label>
-                  <input type="number" min="0" className="input-field" value={formData.capacity} onChange={e => setFormData({...formData, capacity: e.target.value})} />
+
+                <div className="grid-2">
+                  <div className="input-group">
+                    <label>{t('hospitals.latitude')} (Optional)</label>
+                    <input type="number" step="any" className="input-field modern" placeholder="e.g. 30.0444" value={formData.latitude} onChange={e => setFormData({...formData, latitude: e.target.value})} />
+                  </div>
+                  <div className="input-group">
+                    <label>{t('hospitals.longitude')} (Optional)</label>
+                    <input type="number" step="any" className="input-field modern" placeholder="e.g. 31.2357" value={formData.longitude} onChange={e => setFormData({...formData, longitude: e.target.value})} />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid-2">
-                <div className="input-group">
-                  <label>{t('hospitals.latitude')}</label>
-                  <input type="number" step="any" className="input-field" placeholder="e.g. 30.0444" value={formData.latitude} onChange={e => setFormData({...formData, latitude: e.target.value})} />
+              <div className="form-section">
+                <h3 className="section-title"><Settings2 size={16} /> Operations</h3>
+                <div className="grid-2">
+                  <div className="input-group">
+                    <label>{t('hospitals.capacity_beds')}</label>
+                    <input type="number" min="0" className="input-field modern" placeholder="0" value={formData.capacity} onChange={e => setFormData({...formData, capacity: e.target.value})} />
+                  </div>
+                  <div className="checkbox-wrapper">
+                    <label className="custom-checkbox">
+                      <input type="checkbox" checked={formData.emergency_available} onChange={e => setFormData({...formData, emergency_available: e.target.checked})} />
+                      <span className="checkmark"></span>
+                      <ShieldAlert size={16} style={{ color: formData.emergency_available ? '#ef4444' : 'var(--text-muted)', marginLeft: '8px' }} />
+                      24/7 {t('hospitals.emergency_services')}
+                    </label>
+                  </div>
                 </div>
-                <div className="input-group">
-                  <label>{t('hospitals.longitude')}</label>
-                  <input type="number" step="any" className="input-field" placeholder="e.g. 31.2357" value={formData.longitude} onChange={e => setFormData({...formData, longitude: e.target.value})} />
-                </div>
-              </div>
-
-              <div className="checkbox-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', color: '#f8fafc' }}>
-                  <input type="checkbox" checked={formData.emergency_available} onChange={e => setFormData({...formData, emergency_available: e.target.checked})} style={{ width: 18, height: 18 }} />
-                  24/7 {t('hospitals.emergency_services')}
-                </label>
               </div>
 
               <div className="modal-actions">
-                <button type="button" onClick={handleCloseModal} className="btn-cancel">{t('hospitals.cancel')}</button>
+                <button type="button" onClick={handleCloseModal} className="btn-cancel" disabled={isSaving}>{t('hospitals.cancel')}</button>
                 <button type="submit" disabled={isSaving} className="auth-btn btn-save">
-                  {isSaving ? t('hospitals.saving') : (editingId ? t('hospitals.update') : t('hospitals.create'))}
+                  {isSaving ? <Loader2 className="animate-spin" size={18} /> : (editingId ? t('hospitals.update') : t('hospitals.create'))}
                 </button>
               </div>
             </form>
@@ -415,7 +460,7 @@ export default function HospitalsPage() {
         .gis-container {
           display: flex;
           flex-direction: column;
-          height: calc(100vh - 40px); /* Adjust based on AppShell padding */
+          height: calc(100vh - 40px);
           overflow: hidden;
         }
         .header-section {
@@ -431,7 +476,7 @@ export default function HospitalsPage() {
           margin: 0 0 4px;
         }
         .page-subtitle {
-          fontSize: 14px;
+          font-size: 14px;
           color: var(--text-muted);
           margin: 0;
         }
@@ -444,6 +489,9 @@ export default function HospitalsPage() {
           color: #3b82f6;
           border: 1px solid rgba(59, 130, 246, 0.3);
           transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
         .location-btn:hover {
           background: rgba(59, 130, 246, 0.2);
@@ -461,6 +509,9 @@ export default function HospitalsPage() {
           border: 1px solid rgba(239, 68, 68, 0.2);
           font-size: 14px;
           flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          gap: 8px;
         }
         .kpi-grid {
           display: grid;
@@ -484,7 +535,7 @@ export default function HospitalsPage() {
           display: flex;
           gap: 20px;
           flex: 1;
-          min-height: 0; /* Important for scrollable children */
+          min-height: 0;
         }
         .sidebar-panel {
           width: 380px;
@@ -541,7 +592,6 @@ export default function HospitalsPage() {
           flex-direction: column;
           gap: 12px;
         }
-        /* Custom scrollbar for cards area */
         .cards-scroll-area::-webkit-scrollbar { width: 6px; }
         .cards-scroll-area::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
         .cards-scroll-area::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
@@ -588,27 +638,94 @@ export default function HospitalsPage() {
           position: relative;
         }
         
-        /* Modal Styles */
+        /* Redesigned Modal Styles */
         .modal-overlay {
           position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
-          display: flex; alignItems: center; justifyContent: center; z-index: 9999;
+          background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+          display: flex; justify-content: center; align-items: center; z-index: 9999;
+          padding: 20px;
         }
-        .modal-content {
-          background: var(--bg-secondary); padding: 32px; border-radius: 16px;
-          width: 100%; maxWidth: 600px; border: 1px solid var(--border);
-          max-height: 90vh; overflow-y: auto;
+        .modal-content.glass-effect {
+          background: var(--bg-primary);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+          border-radius: 20px;
+          width: 100%;
+          max-width: 650px;
+          max-height: 90vh;
+          overflow-y: auto;
+          position: relative;
         }
-        .crud-form { display: flex; flex-direction: column; gap: 16px; }
+        .modal-header {
+          position: sticky; top: 0; z-index: 10;
+          background: var(--bg-primary); padding: 24px 32px;
+          border-bottom: 1px solid var(--border);
+          display: flex; justify-content: space-between; align-items: center;
+        }
+        .modal-header h2 { font-size: 20px; font-weight: 600; margin: 0; color: white; }
+        .close-btn {
+          background: transparent; border: none; color: var(--text-muted); cursor: pointer;
+          transition: color 0.2s; padding: 4px; border-radius: 6px;
+        }
+        .close-btn:hover { color: white; background: rgba(255,255,255,0.1); }
+        
+        .modal-alert {
+          margin: 20px 32px 0; padding: 12px 16px; border-radius: 8px;
+          display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500;
+        }
+        .modal-alert.error { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+        .modal-alert.success { background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); }
+
+        .crud-form { padding: 0 32px 32px; display: flex; flex-direction: column; gap: 24px; margin-top: 24px; }
+        .form-section { display: flex; flex-direction: column; gap: 16px; }
+        .section-title { 
+          font-size: 14px; font-weight: 600; color: #94a3b8; 
+          text-transform: uppercase; letter-spacing: 0.5px;
+          display: flex; align-items: center; gap: 8px; margin: 0 0 8px;
+          padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .input-group label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+        .input-field.modern {
+          width: 100%; background: var(--bg-secondary); border: 1px solid var(--border);
+          border-radius: 8px; padding: 10px 14px; color: white; transition: all 0.2s;
+        }
+        .input-field.modern:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2); outline: none; }
+        .input-icon-wrapper { position: relative; }
+        .input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .pl-10 { padding-left: 36px !important; }
+        
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        .select-dark { background: var(--bg-primary); color: white; }
-        .modal-actions { display: flex; gap: 12px; margin-top: 20px; }
+        
+        .checkbox-wrapper { display: flex; align-items: flex-end; padding-bottom: 10px; }
+        .custom-checkbox {
+          display: flex; align-items: center; cursor: pointer; font-size: 14px; color: white;
+          user-select: none; position: relative; padding-left: 28px;
+        }
+        .custom-checkbox input { position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0; }
+        .checkmark {
+          position: absolute; top: 0; left: 0; height: 18px; width: 18px;
+          background-color: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px;
+        }
+        .custom-checkbox:hover input ~ .checkmark { background-color: rgba(255,255,255,0.1); }
+        .custom-checkbox input:checked ~ .checkmark { background-color: #ef4444; border-color: #ef4444; }
+        .checkmark:after {
+          content: ""; position: absolute; display: none;
+          left: 5px; top: 2px; width: 4px; height: 8px;
+          border: solid white; border-width: 0 2px 2px 0;
+          transform: rotate(45deg);
+        }
+        .custom-checkbox input:checked ~ .checkmark:after { display: block; }
+
+        .modal-actions { display: flex; gap: 12px; margin-top: 8px; padding-top: 24px; border-top: 1px solid var(--border); }
         .btn-cancel {
           flex: 1; padding: 12px; border-radius: 8px;
-          background: transparent; border: 1px solid var(--border);
-          color: white; cursor: pointer;
+          background: rgba(255,255,255,0.05); border: 1px solid var(--border);
+          color: white; cursor: pointer; font-weight: 500; transition: all 0.2s;
         }
-        .btn-save { flex: 1; border-radius: 8px; padding: 12px; }
+        .btn-cancel:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
+        .btn-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-save { flex: 2; border-radius: 8px; padding: 12px; display: flex; justify-content: center; align-items: center; gap: 8px; }
         
         @media (max-width: 1024px) {
           .map-layout { flex-direction: column-reverse; }
