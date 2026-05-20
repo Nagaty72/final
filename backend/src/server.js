@@ -29,13 +29,16 @@ const app = express();
 app.use(helmet());
 
 // ─── 2. Security: CORS ─────────────────────────────────────────────────────
-app.use(cors({
-  origin: ENV.FRONTEND_URL,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+const corsOptions = {
+  origin: ENV.FRONTEND_URL || 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma', 'Expires'],
   credentials: true,
   maxAge: 86400,
-}));
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // ─── 3. Security: Rate Limiting ─────────────────────────────────────────────
 const generalLimiter = rateLimit({

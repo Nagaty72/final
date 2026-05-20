@@ -433,9 +433,8 @@ export default function SettingsPage() {
                     {['light', 'dark', 'system'].map((opt) => (
                       <button
                         key={opt}
-                        onClick={async () => {
+                        onClick={() => {
                           setTheme(opt);
-                          await updatePreferences({ theme: opt });
                           setPrefs(p => ({ ...p, preferred_theme: opt }));
                         }}
                         style={{
@@ -474,9 +473,8 @@ export default function SettingsPage() {
                   <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: '0 0 16px' }}>{t('settings.language_desc')}</p>
                   <div style={{ display: 'flex', gap: 12 }}>
                     <button
-                      onClick={async () => {
+                      onClick={() => {
                         i18n.changeLanguage('en');
-                        await updatePreferences({ language: 'en' });
                         setPrefs(p => ({ ...p, preferred_language: 'en' }));
                       }}
                       style={{
@@ -494,9 +492,8 @@ export default function SettingsPage() {
                       🇬🇧 {t('settings.english')}
                     </button>
                     <button
-                      onClick={async () => {
+                      onClick={() => {
                         i18n.changeLanguage('ar');
-                        await updatePreferences({ language: 'ar' });
                         setPrefs(p => ({ ...p, preferred_language: 'ar' }));
                       }}
                       style={{

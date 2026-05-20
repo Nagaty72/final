@@ -10,6 +10,7 @@ import { ENV } from '../config/env.js';
 export const authMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
+    console.log('[AUTH HEADER RECEIVED]', authHeader);
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({

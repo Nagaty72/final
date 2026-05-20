@@ -25,8 +25,6 @@ export default function ThemeToggle() {
       onClick={() => {
         const newTheme = isDark ? 'light' : 'dark';
         setTheme(newTheme);
-        const token = typeof window !== 'undefined' ? localStorage.getItem('ha_token') : null;
-        if (token) updatePreferences({ theme: newTheme });
       }}
       title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
       aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}

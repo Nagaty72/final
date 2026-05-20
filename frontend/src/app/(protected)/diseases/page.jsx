@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { diseaseService } from '@/services/disease.service';
-import { getDashboardData } from '@/services/analytics.service';
+import { getDashboardDiseaseBreakdown } from '@/services/analytics.service';
 
 const WEEKLY = [
   { week: 'W1', influenza: 280, malaria: 190, dengue: 120 },
@@ -27,14 +27,22 @@ export default function DiseasesPage() {
     try {
       const [disRes, dashRes] = await Promise.all([
         diseaseService.getAll(),
-        getDashboardData().catch(() => null)
+        getDashboardDiseaseBreakdown({}).catch(() => null)
       ]);
       
       if (disRes.success) {
         setDiseases(disRes.data);
       }
-      if (dashRes) {
-        setAnalytics(dashRes);
+      if (dashRes && Array.isArray(dashRes.data)) {
+        const rows = dashRes.data;
+        const total = rows.reduce((s, r) => s + Number(r.total_cases || 0), 0) || 1;
+        const enriched = rows.slice(0, 3).map((r) => ({
+          name:  r.disease_name || 'Unknown',
+          cases: Number(r.total_cases || 0),
+          pct:   Math.round((Number(r.total_cases || 0) / total) * 100),
+          color: '#3b82f6',
+        }));
+        setAnalytics({ diseaseStats: enriched });
       }
     } catch (err) {
       setError('Failed to fetch data');
