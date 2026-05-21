@@ -4,20 +4,35 @@ import { authorize } from '../middlewares/role.middleware.js';
 
 const router = Router();
 
-// Existing endpoints
-router.get('/daily-stats',    authorize('super_admin', 'decision_maker'), AnalyticsController.getDailyStats);
-router.get('/predictions',    authorize('super_admin', 'decision_maker'), AnalyticsController.getPredictions);
-router.get('/disease-summary',authorize('super_admin', 'decision_maker'), AnalyticsController.getDiseaseSummary);
-router.get('/reports',        authorize('super_admin', 'decision_maker'), AnalyticsController.getReports);
-router.post('/reports',       authorize('super_admin', 'decision_maker'), AnalyticsController.createReport);
+/**
+ * Analytics API — Role-based access control:
+ *
+ * ALL ROLES (super_admin, decision_maker, normal_user):
+ *   Dashboard KPIs, trends, bubble map, severity, disease/city lists
+ *   → Required by Dashboard + Disease Intelligence Map pages (all roles can access those pages)
+ *
+ * SUPER_ADMIN + DECISION_MAKER only:
+ *   Advanced analytics: daily stats, predictions, disease summary, reports
+ *   → Reports page and analytics deep-dives (normal_user cannot access those pages)
+ *
+ * SUPER_ADMIN only:
+ *   Admin-level mutations (none in analytics currently — handled via admin panel)
+ */
 
-// NEW: filter-aware dashboard endpoints
-router.get('/kpis',             authorize('super_admin', 'decision_maker'), AnalyticsController.getKpis);
-router.get('/trends',           authorize('super_admin', 'decision_maker'), AnalyticsController.getTrends);
-router.get('/bubble-data',      authorize('super_admin', 'decision_maker'), AnalyticsController.getBubbleData);
-router.get('/severity',         authorize('super_admin', 'decision_maker'), AnalyticsController.getSeverityData);
-router.get('/disease-breakdown',authorize('super_admin', 'decision_maker'), AnalyticsController.getDiseaseBreakdown);
-router.get('/disease-list',     authorize('super_admin', 'decision_maker'), AnalyticsController.getDiseaseList);
-router.get('/city-list',        authorize('super_admin', 'decision_maker'), AnalyticsController.getCityList);
+// ── Available to ALL authenticated roles ──────────────────────────────────
+router.get('/kpis',              authorize('super_admin', 'decision_maker', 'normal_user'), AnalyticsController.getKpis);
+router.get('/trends',            authorize('super_admin', 'decision_maker', 'normal_user'), AnalyticsController.getTrends);
+router.get('/bubble-data',       authorize('super_admin', 'decision_maker', 'normal_user'), AnalyticsController.getBubbleData);
+router.get('/severity',          authorize('super_admin', 'decision_maker', 'normal_user'), AnalyticsController.getSeverityData);
+router.get('/disease-breakdown', authorize('super_admin', 'decision_maker', 'normal_user'), AnalyticsController.getDiseaseBreakdown);
+router.get('/disease-list',      authorize('super_admin', 'decision_maker', 'normal_user'), AnalyticsController.getDiseaseList);
+router.get('/city-list',         authorize('super_admin', 'decision_maker', 'normal_user'), AnalyticsController.getCityList);
+
+// ── Super Admin + Decision Maker only ────────────────────────────────────
+router.get('/daily-stats',     authorize('super_admin', 'decision_maker'), AnalyticsController.getDailyStats);
+router.get('/predictions',     authorize('super_admin', 'decision_maker'), AnalyticsController.getPredictions);
+router.get('/disease-summary', authorize('super_admin', 'decision_maker'), AnalyticsController.getDiseaseSummary);
+router.get('/reports',         authorize('super_admin', 'decision_maker'), AnalyticsController.getReports);
+router.post('/reports',        authorize('super_admin', 'decision_maker'), AnalyticsController.createReport);
 
 export default router;

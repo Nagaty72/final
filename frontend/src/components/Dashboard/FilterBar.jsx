@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
 import { useShallow } from 'zustand/react/shallow';
 import { getDiseaseList, getCityList } from '@/services/analytics.service';
@@ -64,19 +65,39 @@ function FilterSelect({ label, value, onChange, options }) {
 
 function MultiSelect({ label, selectedValues, onChange, options }) {
   const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef(null);
+  const triggerRef          = useRef(null);
+  const dropdownRef         = useRef(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+  useEffect(() => { setMounted(true); }, []);
+
+  const openDropdown = useCallback(() => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setCoords({
+        top:   rect.bottom + window.scrollY + 4,
+        left:  rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+    setIsOpen(true);
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleOutside(e) {
+      if (
+        triggerRef.current && !triggerRef.current.contains(e.target) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target)
+      ) setIsOpen(false);
+    }
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
+  }, [isOpen]);
+
   const toggleValue = (val) => {
+    if (!val) { onChange([]); setIsOpen(false); return; }
     if (selectedValues.includes(val)) {
       onChange(selectedValues.filter(v => v !== val));
     } else {
@@ -84,66 +105,87 @@ function MultiSelect({ label, selectedValues, onChange, options }) {
     }
   };
 
-  const displayText = selectedValues.length === 0 
-    ? 'All Diseases' 
-    : selectedValues.length === 1 
-      ? selectedValues[0] 
+  const displayText = selectedValues.length === 0
+    ? 'All Diseases'
+    : selectedValues.length === 1
+      ? selectedValues[0]
       : `${selectedValues.length} selected`;
 
+  const dropdownPortal = mounted && isOpen ? createPortal(
+    <div
+      ref={dropdownRef}
+      style={{
+        position: 'fixed',
+        top: coords.top,
+        left: coords.left,
+        width: Math.max(coords.width, 220),
+        zIndex: 99999,
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border)',
+        borderRadius: 8,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+        maxHeight: 250,
+        overflowY: 'auto',
+        padding: '4px 0',
+      }}
+    >
+      {options.map(o => {
+        const isSelected = selectedValues.includes(o.value);
+        return (
+          <div
+            key={o.value}
+            onClick={() => o.value ? toggleValue(o.value) : onChange([])}
+            style={{
+              padding: '8px 12px', fontSize: 13, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: isSelected ? 'rgba(59,130,246,0.1)' : 'transparent',
+              color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)',
+            }}
+            onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = 'var(--bg-primary)'; }}
+            onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}
+          >
+            <div style={{
+              width: 16, height: 16, borderRadius: 4, flexShrink: 0,
+              border: `1px solid ${isSelected ? '#3b82f6' : 'var(--border)'}`,
+              background: isSelected ? '#3b82f6' : 'transparent',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              {isSelected && <Check size={12} color="white" />}
+            </div>
+            {o.label}
+          </div>
+        );
+      })}
+    </div>,
+    document.body
+  ) : null;
+
   return (
-    <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 160, position: 'relative' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 160, position: 'relative' }}>
       <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
         {label}
       </label>
-      <div 
-        onClick={() => setIsOpen(!isOpen)}
+      <div
+        ref={triggerRef}
+        onClick={isOpen ? () => setIsOpen(false) : openDropdown}
         style={{
           width: '100%', padding: '9px 32px 9px 12px',
-          background: 'var(--bg-primary)', border: `1px solid ${isOpen ? 'var(--accent)' : 'var(--border)'}`,
-          borderRadius: 8, color: selectedValues.length ? 'var(--text-primary)' : 'var(--text-muted)',
+          background: 'var(--bg-primary)',
+          border: `1px solid ${isOpen ? 'var(--accent)' : 'var(--border)'}`,
+          borderRadius: 8,
+          color: selectedValues.length ? 'var(--text-primary)' : 'var(--text-muted)',
           fontSize: 13, cursor: 'pointer', transition: 'border-color 0.2s',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}
       >
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayText}</span>
-        <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />
+        <ChevronDown size={14} style={{
+          position: 'absolute', right: 10, top: '50%',
+          transform: `translateY(-50%) rotate(${isOpen ? 180 : 0}deg)`,
+          color: 'var(--text-muted)', pointerEvents: 'none', transition: 'transform 0.2s',
+        }} />
       </div>
-
-      {isOpen && (
-        <div style={{
-          position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 4,
-          background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-          borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.15)', zIndex: 50,
-          maxHeight: 250, overflowY: 'auto', padding: '4px 0'
-        }}>
-          {options.map(o => {
-            const isSelected = selectedValues.includes(o.value);
-            return (
-              <div 
-                key={o.value} 
-                onClick={() => o.value ? toggleValue(o.value) : onChange([])}
-                style={{
-                  padding: '8px 12px', fontSize: 13, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  background: isSelected ? 'rgba(59,130,246,0.1)' : 'transparent',
-                  color: isSelected ? 'var(--text-primary)' : 'var(--text-secondary)'
-                }}
-                onMouseEnter={(e) => { if(!isSelected) e.currentTarget.style.background = 'var(--bg-primary)' }}
-                onMouseLeave={(e) => { if(!isSelected) e.currentTarget.style.background = 'transparent' }}
-              >
-                <div style={{ 
-                  width: 16, height: 16, borderRadius: 4, border: `1px solid ${isSelected ? '#3b82f6' : 'var(--border)'}`, 
-                  background: isSelected ? '#3b82f6' : 'transparent',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center' 
-                }}>
-                  {isSelected && <Check size={12} color="white" />}
-                </div>
-                {o.label}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {dropdownPortal}
     </div>
   );
 }

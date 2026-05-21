@@ -3,14 +3,13 @@
     "dashboard": "Dashboard",
     "hospitals": "Hospitals",
     "disease_analytics": "Disease Analytics",
-    "users": "Users Management",
-    "medical_records": "Medical Records",
-    "report_builder": "Report Builder",
     "admin_panel": "Admin Panel",
+    "report_builder": "Report Builder",
     "health_analytics": "Health Analytics",
     "settings": "Settings",
     "logout": "Logout",
-    "chatbot": "AI Assistant"
+    "chatbot": "AI Assistant",
+    "disease_map": "Disease Map"
   },
   "auth": {
     "login": "Login",
@@ -234,7 +233,7 @@
     "footer_terms": "Terms of Service"
   },
   "users": {
-    "title": "User Management",
+    "title": "Admin Panel",
     "subtitle": "Manage authenticated users and system access roles",
     "total_users": "Total System Users",
     "active_users": "Active Authenticated Users",
@@ -254,6 +253,8 @@
     "save_user": "Save User",
     "cancel": "Cancel",
     "loading": "Loading users...",
-    "no_users": "No users found"
+    "no_users": "No users found",
+    "error_fetch": "Failed to load users. Please try again.",
+    "error_delete": "Failed to delete user. Please try again."
   }
 }
