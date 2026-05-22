@@ -16,8 +16,6 @@ function buildQueryString(params = {}) {
       q.append(key, String(val));
     }
   });
-  // Cache buster to prevent 304 responses
-  q.append('_t', Date.now().toString());
   const str = q.toString();
   return str ? `?${str}` : '';
 }

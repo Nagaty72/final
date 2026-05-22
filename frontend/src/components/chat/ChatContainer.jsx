@@ -31,20 +31,6 @@ export default function ChatContainer() {
   const [error, setError] = useState(null);
   const scrollRef = useRef(null);
 
-  // 1. Fetch conversations on mount
-  useEffect(() => {
-    loadConversations();
-  }, []);
-
-  // 2. Fetch messages when active conversation changes
-  useEffect(() => {
-    if (activeConversationId) {
-      loadMessages(activeConversationId);
-    } else {
-      setMessages([WELCOME_MESSAGE]);
-    }
-  }, [activeConversationId]);
-
   const loadConversations = async () => {
     try {
       setIsSidebarLoading(true);
@@ -71,6 +57,20 @@ export default function ChatContainer() {
       setIsLoading(false);
     }
   };
+
+  // 1. Fetch conversations on mount
+  useEffect(() => {
+    loadConversations();
+  }, []);
+
+  // 2. Fetch messages when active conversation changes
+  useEffect(() => {
+    if (activeConversationId) {
+      loadMessages(activeConversationId);
+    } else {
+      setMessages([WELCOME_MESSAGE]);
+    }
+  }, [activeConversationId]);
 
   const handleNewChat = async () => {
     try {

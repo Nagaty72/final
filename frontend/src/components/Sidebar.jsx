@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import ThemeToggle from './ThemeToggle';
 import LanguageSwitcher from './LanguageSwitcher';
+import NotificationsDropdown from './Notifications/NotificationsDropdown';
 import { ROLES, getRoleLabel, getRoleBadgeColor } from '@/lib/rbac';
 
 /**
@@ -82,7 +83,7 @@ const NAV_ITEMS = [
   // ── Super Admin only ─────────────────────────────────────────────────────
   {
     key:   'admin_panel',
-    href:  '/users',
+    href:  '/admin-panel',
     roles: [ROLES.SUPER_ADMIN],
     icon: (
       <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -188,11 +189,14 @@ export default function Sidebar() {
         </svg>
       </button>
 
-      {/* Theme / Language */}
+      {/* Theme / Language / Notifications */}
       {!isCollapsed && (
-        <div style={{ padding: '0 16px 8px', display: 'flex', gap: 8 }}>
+        <div style={{ padding: '0 16px 8px', display: 'flex', gap: 8, alignItems: 'center' }}>
           <ThemeToggle />
           <LanguageSwitcher />
+          <div style={{ marginLeft: 'auto' }}>
+            <NotificationsDropdown />
+          </div>
         </div>
       )}
 

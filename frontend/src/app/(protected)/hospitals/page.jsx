@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/context/AuthContext';
 import { getHospitals, getNearbyHospitals, createHospital, updateHospital, deleteHospital } from '@/services/hospital.service';
 import { getDistricts } from '@/services/district.service';
+import { getCityList } from '@/services/analytics.service';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import HospitalCard from '@/components/HospitalCard';
 import { useTranslation } from 'react-i18next';
-import { X, Building2, MapPin, Phone, Settings2, ShieldAlert, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Building2, MapPin, Phone, Settings2, ShieldAlert, CheckCircle2, AlertCircle, Loader2, ChevronDown } from 'lucide-react';
 
 const MapComponent = dynamic(() => import('@/components/MapComponent'), {
   ssr: false,
@@ -18,6 +20,152 @@ const MapComponent = dynamic(() => import('@/components/MapComponent'), {
     </div>
   )
 });
+
+function GovernorateDropdown({ value, onChange, options, disabled, placeholder }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const triggerRef = useRef(null);
+  const dropdownRef = useRef(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+
+  const openDropdown = useCallback(() => {
+    if (disabled) return;
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+    setIsOpen(true);
+  }, [disabled]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleClickOutside(e) {
+      if (
+        triggerRef.current && !triggerRef.current.contains(e.target) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target)
+      ) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  const selectedOption = options.find(o => o.value === value);
+  const displayText = selectedOption ? selectedOption.label : placeholder;
+
+  const dropdownEl = isOpen ? createPortal(
+    <div
+      ref={dropdownRef}
+      style={{
+        position: 'fixed',
+        top: coords.top,
+        left: coords.left,
+        width: coords.width,
+        zIndex: 99999,
+        background: 'var(--bg-secondary)',
+        border: '1px solid var(--border)',
+        borderRadius: 8,
+        boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+        maxHeight: 200,
+        overflowY: 'auto',
+        padding: '4px 0',
+      }}
+    >
+      <div
+        onClick={() => {
+          onChange('');
+          setIsOpen(false);
+        }}
+        style={{
+          padding: '8px 12px',
+          fontSize: 13,
+          cursor: 'pointer',
+          background: value === '' ? 'rgba(59,130,246,0.1)' : 'transparent',
+          color: value === '' ? 'var(--accent)' : 'var(--text-secondary)',
+          display: 'flex',
+          alignItems: 'center',
+          userSelect: 'none',
+        }}
+        onMouseEnter={e => { if (value !== '') e.currentTarget.style.background = 'var(--bg-primary)'; }}
+        onMouseLeave={e => { if (value !== '') e.currentTarget.style.background = 'transparent'; }}
+      >
+        {placeholder}
+      </div>
+      {options.map(o => {
+        const isSel = o.value === value;
+        return (
+          <div
+            key={o.value}
+            onClick={() => {
+              onChange(o.value);
+              setIsOpen(false);
+            }}
+            style={{
+              padding: '8px 12px',
+              fontSize: 13,
+              cursor: 'pointer',
+              background: isSel ? 'rgba(59,130,246,0.1)' : 'transparent',
+              color: isSel ? 'var(--accent)' : 'var(--text-secondary)',
+              display: 'flex',
+              alignItems: 'center',
+              userSelect: 'none',
+            }}
+            onMouseEnter={e => { if (!isSel) e.currentTarget.style.background = 'var(--bg-primary)'; }}
+            onMouseLeave={e => { if (!isSel) e.currentTarget.style.background = 'transparent'; }}
+          >
+            {o.label}
+          </div>
+        );
+      })}
+    </div>,
+    document.body
+  ) : null;
+
+  return (
+    <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
+      <div
+        ref={triggerRef}
+        onClick={() => {
+          if (disabled) return;
+          if (isOpen) setIsOpen(false);
+          else openDropdown();
+        }}
+        style={{
+          width: '100%',
+          padding: '10px 14px',
+          background: 'var(--bg-primary)',
+          border: `1px solid ${isOpen ? 'var(--accent)' : 'var(--border)'}`,
+          borderRadius: 8,
+          fontSize: 13,
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          color: value ? 'var(--text-primary)' : 'var(--text-muted)',
+          opacity: disabled ? 0.5 : 1,
+          boxSizing: 'border-box',
+        }}
+      >
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, textAlign: 'start' }}>
+          {displayText}
+        </span>
+        <ChevronDown size={14} style={{
+          marginLeft: 8,
+          marginRight: 8,
+          color: 'var(--text-muted)',
+          transition: 'transform 0.2s',
+          transform: `rotate(${isOpen ? 180 : 0}deg)`,
+          flexShrink: 0
+        }} />
+      </div>
+      {dropdownEl}
+    </div>
+  );
+}
 
 export default function HospitalsPage() {
   const { user } = useAuth();
@@ -47,31 +195,7 @@ export default function HospitalsPage() {
     phone: '', emergency_available: false, capacity: 0, latitude: '', longitude: ''
   });
 
-  const cities = useMemo(() => {
-    if (!districts.length) return [];
-    return [...new Set(districts.map(d => d.city))].sort();
-  }, [districts]);
-
-  useEffect(() => {
-    if (user?.role === 'super_admin') {
-      fetchDistricts();
-      fetchData();
-    } else {
-      setLoading(false);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (user?.role === 'super_admin' && !location) {
-      fetchData();
-    }
-  }, [selectedCity, selectedType, location, user]);
-
-  useEffect(() => {
-    if (location && user?.role === 'super_admin') {
-      fetchNearbyData();
-    }
-  }, [location, selectedType, user]);
+  const [cities, setCities] = useState([]);
 
   const fetchDistricts = async () => {
     try {
@@ -114,6 +238,37 @@ export default function HospitalsPage() {
     }
   };
 
+  useEffect(() => {
+    const fetchAllCities = async () => {
+      try {
+        const cRes = await getCityList();
+        if (cRes?.data) setCities(cRes.data.sort());
+      } catch (e) {
+        console.error('Failed to fetch cities:', e);
+      }
+    };
+    fetchAllCities();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchDistricts();
+      fetchData();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user && !location) {
+      fetchData();
+    }
+  }, [selectedCity, selectedType, location, user]);
+
+  useEffect(() => {
+    if (location && user) {
+      fetchNearbyData();
+    }
+  }, [location, selectedType, user]);
+
   const filteredHospitals = useMemo(() => {
     if (!searchTerm) return hospitals;
     const term = searchTerm.toLowerCase();
@@ -140,14 +295,6 @@ export default function HospitalsPage() {
     );
   }
 
-  if (user?.role !== 'super_admin') {
-    return (
-      <div style={{ textAlign: 'center', padding: '100px 20px', background: 'var(--bg-secondary)', borderRadius: 16, border: '1px solid var(--border)' }}>
-        <h1 style={{ fontSize: 32, marginBottom: 16, color: '#ef4444' }}>🚫 {t('hospitals.unauthorized')}</h1>
-        <p style={{ color: 'var(--text-muted)' }}>{t('hospitals.no_permission')}<br/>{t('hospitals.super_admin_only')}</p>
-      </div>
-    );
-  }
 
   const handleOpenModal = (hospital = null) => {
     setFormError(null);
@@ -181,6 +328,7 @@ export default function HospitalsPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (user?.role !== 'super_admin') return;
     if (isSaving) return; // Prevent duplicate submissions
 
     setIsSaving(true);
@@ -217,6 +365,7 @@ export default function HospitalsPage() {
   };
 
   const handleDelete = async (id) => {
+    if (user?.role !== 'super_admin') return;
     if (window.confirm(t('hospitals.confirm_delete'))) {
       try {
         await deleteHospital(id);
@@ -243,9 +392,11 @@ export default function HospitalsPage() {
             {geoLoading ? <Loader2 className="animate-spin" size={16} /> : <MapPin size={16} />}
             {geoLoading ? t('hospitals.locating') : t('hospitals.use_my_location')}
           </button>
-          <button className="auth-btn" onClick={() => handleOpenModal()}>
-            + {t('hospitals.add_facility')}
-          </button>
+          {user?.role === 'super_admin' && (
+            <button className="auth-btn" onClick={() => handleOpenModal()}>
+              + {t('hospitals.add_facility')}
+            </button>
+          )}
         </div>
       </div>
       
@@ -283,15 +434,13 @@ export default function HospitalsPage() {
               />
             </div>
             <div className="filter-row">
-              <select 
-                className="input-field filter-select"
+              <GovernorateDropdown
                 value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
+                onChange={setSelectedCity}
+                options={cities.map(city => ({ value: city, label: city }))}
                 disabled={!!location}
-              >
-                <option value="">{t('hospitals.all_governorates')}</option>
-                {cities.map(city => <option key={city} value={city}>{city}</option>)}
-              </select>
+                placeholder={t('hospitals.all_governorates')}
+              />
               
               <select 
                 className="input-field filter-select"
@@ -328,10 +477,12 @@ export default function HospitalsPage() {
                     isActive={activeHospitalId === hospital.id}
                     onClick={() => setActiveHospitalId(hospital.id)}
                   />
-                  <div className="card-quick-actions">
-                    <button onClick={(e) => { e.stopPropagation(); handleOpenModal(hospital); }} className="action-link edit">{t('hospitals.edit')}</button>
-                    <button onClick={(e) => { e.stopPropagation(); handleDelete(hospital.id); }} className="action-link delete">{t('hospitals.delete')}</button>
-                  </div>
+                  {user?.role === 'super_admin' && (
+                    <div className="card-quick-actions">
+                      <button onClick={(e) => { e.stopPropagation(); handleOpenModal(hospital); }} className="action-link edit">{t('hospitals.edit')}</button>
+                      <button onClick={(e) => { e.stopPropagation(); handleDelete(hospital.id); }} className="action-link delete">{t('hospitals.delete')}</button>
+                    </div>
+                  )}
                 </div>
               ))
             )}

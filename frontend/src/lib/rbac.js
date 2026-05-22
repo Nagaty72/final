@@ -32,7 +32,7 @@ export const ROUTE_PERMISSIONS = {
   '/patients':         [ROLES.SUPER_ADMIN, ROLES.DECISION_MAKER],
 
   // ── Super Admin only ──────────────────────────────────────────────
-  '/users':  [ROLES.SUPER_ADMIN],
+  '/admin-panel':  [ROLES.SUPER_ADMIN],
 
   // ── All roles (null = no restriction beyond being authenticated) ───────────
   '/dashboard':        null,
@@ -46,7 +46,7 @@ export const ROUTE_PERMISSIONS = {
  * canAccess(role, pathname) — Check if a role may access a given route.
  *
  * @param {string|null|undefined} role     - The user's role string
- * @param {string}                pathname - Next.js pathname e.g. '/users'
+ * @param {string}                pathname - Next.js pathname e.g. '/admin-panel'
  * @returns {boolean}
  */
 export function canAccess(role, pathname) {

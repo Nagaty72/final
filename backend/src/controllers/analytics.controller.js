@@ -95,6 +95,17 @@ export const AnalyticsController = {
     } catch (e) { next(e); }
   },
 
+  async upsertDailyStat(req, res, next) {
+    try {
+      // This triggers AnalyticsService.upsertDailyStat, which then triggers the Alert Engine
+      const data = await AnalyticsService.upsertDailyStat(req.body);
+      res.status(200).json({ success: true, data, message: 'Stat upserted and alert engine triggered.' });
+    } catch (e) {
+      console.error('[AnalyticsController] Error in upsertDailyStat:', e);
+      next(e);
+    }
+  },
+
   async getPredictions(req, res, next) {
     try {
       const { diseaseId, districtId, limit } = req.query;

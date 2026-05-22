@@ -16,6 +16,7 @@ import analyticsRoutes from './routes/analytics.routes.js';
 import preferencesRoutes from './routes/preferences.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 import userRoutes from './routes/user.routes.js';
+import notificationRoutes from './routes/notification.routes.js';
 
 
 // Middleware imports
@@ -42,7 +43,7 @@ app.options('*', cors(corsOptions));
 
 // ─── 3. Security: Rate Limiting ─────────────────────────────────────────────
 const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, max: 100,
+  windowMs: 15 * 60 * 1000, max: 3000,
   standardHeaders: true, legacyHeaders: false,
   message: { success: false, error: 'Too many requests. Please try again later.' },
 });
@@ -81,6 +82,7 @@ app.use('/api/v1/analytics', authMiddleware, analyticsRoutes);
 app.use('/api/v1/users/preferences', authMiddleware, preferencesRoutes);
 app.use('/api/v1/chat', authMiddleware, chatRoutes);
 app.use('/api/v1/users', authMiddleware, userRoutes);
+app.use('/api/v1/notifications', authMiddleware, notificationRoutes);
 
 
 // ─── 404 + Global Error Handler ─────────────────────────────────────────────

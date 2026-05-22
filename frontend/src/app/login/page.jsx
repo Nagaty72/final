@@ -220,7 +220,7 @@ function AuthPageContent() {
             </div>
             <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#f1f5f9', marginBottom: '12px' }}>Verify your email</h2>
             <p style={{ color: '#94a3b8', fontSize: '15px', lineHeight: '1.6', marginBottom: '32px' }}>
-              We've sent a verification link to <strong style={{ color: '#e2e8f0' }}>{email}</strong>.
+              We&apos;ve sent a verification link to <strong style={{ color: '#e2e8f0' }}>{email}</strong>.
               <br />Please check your inbox and click the link to verify your account before logging in.
             </p>
             

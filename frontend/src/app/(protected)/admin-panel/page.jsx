@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { userService } from '@/services/user.service';
 import { useTranslation } from 'react-i18next';
+import { notificationService } from '@/services/notification.service';
+import { Bell } from 'lucide-react';
 
 export default function UsersPage() {
   const { t } = useTranslation();
@@ -20,6 +22,9 @@ export default function UsersPage() {
     password: '', 
     role_id: 3 // Default to 'normal_user'
   });
+
+  const [isNotifModalOpen, setIsNotifModalOpen] = useState(false);
+  const [notifData, setNotifData] = useState({ title: '', message: '', type: 'system', severity: 'info', target_role: '', governorate: '' });
 
   const rolesMap = {
     1: { label: t('users.role_super_admin'), class: 'red' },
@@ -101,6 +106,18 @@ export default function UsersPage() {
     }
   };
 
+  const handleNotifSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await notificationService.create(notifData);
+      setIsNotifModalOpen(false);
+      alert(t('notifications.success_sent', 'Notification sent successfully'));
+      setNotifData({ title: '', message: '', type: 'system', severity: 'info', target_role: '', governorate: '' });
+    } catch (err) {
+      alert(err.message || 'Action failed');
+    }
+  };
+
   return (
     <div className="fade-in">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 28 }}>
@@ -108,12 +125,18 @@ export default function UsersPage() {
           <h1 style={{ fontSize: 26, fontWeight: 700, margin: '0 0 4px' }}>{t('users.title')}</h1>
           <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>{t('users.subtitle')}</p>
         </div>
-        <button className="btn-primary" onClick={() => openModal()} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          {t('users.add_user')}
-        </button>
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button className="btn-secondary" onClick={() => setIsNotifModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Bell size={18} />
+            {t('notifications.send_notification', 'Send Notification')}
+          </button>
+          <button className="btn-primary" onClick={() => openModal()} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            {t('users.add_user')}
+          </button>
+        </div>
       </div>
 
       {/* KPI Stats */}
@@ -271,6 +294,64 @@ export default function UsersPage() {
                 </button>
                 <button type="submit" className="btn-primary" style={{ padding: '8px 16px' }}>
                   {t('users.save_user')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Notification Modal */}
+      {isNotifModalOpen && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)'
+        }}>
+          <div className="glass-card" style={{ width: 500, padding: 24, background: 'var(--bg-card)', maxHeight: '90vh', overflowY: 'auto' }}>
+            <h2 style={{ fontSize: 20, fontWeight: 600, marginBottom: 16 }}>
+              {t('notifications.send_notification', 'Send Notification')}
+            </h2>
+            <form onSubmit={handleNotifSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: 'var(--text-secondary)' }}>{t('notifications.form_title', 'Title')}</label>
+                <input type="text" required value={notifData.title} onChange={e => setNotifData({...notifData, title: e.target.value})} className="form-input" style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: 'var(--text-secondary)' }}>{t('notifications.form_message', 'Message')}</label>
+                <textarea required rows={3} value={notifData.message} onChange={e => setNotifData({...notifData, message: e.target.value})} className="form-input" style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
+              </div>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: 'var(--text-secondary)' }}>{t('notifications.form_severity', 'Severity')}</label>
+                  <select value={notifData.severity} onChange={e => setNotifData({...notifData, severity: e.target.value})} className="form-input" style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
+                    <option value="info">Info</option>
+                    <option value="warning">Warning</option>
+                    <option value="critical">Critical</option>
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: 'var(--text-secondary)' }}>{t('notifications.form_type', 'Type')}</label>
+                  <select value={notifData.type} onChange={e => setNotifData({...notifData, type: e.target.value})} className="form-input" style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
+                    <option value="system">System</option>
+                    <option value="alert">Alert</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: 6, fontSize: 14, fontWeight: 500, color: 'var(--text-secondary)' }}>{t('notifications.form_target_role', 'Target Role')}</label>
+                <select value={notifData.target_role} onChange={e => setNotifData({...notifData, target_role: e.target.value})} className="form-input" style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
+                  <option value="">All Roles</option>
+                  <option value="super_admin">Super Admin</option>
+                  <option value="decision_maker">Decision Maker</option>
+                  <option value="normal_user">Normal User</option>
+                </select>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 10 }}>
+                <button type="button" onClick={() => setIsNotifModalOpen(false)} style={{ padding: '8px 16px', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontWeight: 500 }}>
+                  {t('notifications.btn_cancel', 'Cancel')}
+                </button>
+                <button type="submit" className="btn-primary" style={{ padding: '8px 16px' }}>
+                  {t('notifications.btn_send', 'Send')}
                 </button>
               </div>
             </form>

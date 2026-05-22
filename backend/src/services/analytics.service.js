@@ -1,4 +1,5 @@
 import { AnalyticsRepository } from '../repositories/analytics.repository.js';
+import { AnalyticsAlertService } from './analytics-alert.service.js';
 import NodeCache from 'node-cache';
 
 // 60-second TTL
@@ -15,7 +16,12 @@ async function withCache(cacheKey, fetchFn) {
 
 export const AnalyticsService = {
   getDailyStats:    (filters) => AnalyticsRepository.getDailyStats(filters),
-  upsertDailyStat:  (data)    => AnalyticsRepository.upsertDailyStat(data),
+  upsertDailyStat:  async (data) => {
+    const result = await AnalyticsRepository.upsertDailyStat(data || {});
+    // Fire-and-forget alert evaluation
+    AnalyticsAlertService.evaluateDailyStats(data || {}).catch(e => console.error('[AnalyticsService] evaluateDailyStats threw an error:', e));
+    return result;
+  },
   getPredictions:   (filters) => AnalyticsRepository.getPredictions(filters),
   insertPrediction: (data)    => AnalyticsRepository.insertPrediction(data),
   getDiseaseSummary:()        => AnalyticsRepository.getDiseaseSummary(),

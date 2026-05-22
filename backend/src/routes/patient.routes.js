@@ -6,8 +6,8 @@ const router = Router();
 
 router.get('/', PatientController.getAll);
 router.get('/:id', PatientController.getById);
-router.post('/', authorize('super_admin', 'decision_maker', 'normal_user'), PatientController.create);
-router.put('/:id', authorize('super_admin', 'decision_maker'), PatientController.update);
+router.post('/', authorize('super_admin'), PatientController.create);
+router.put('/:id', authorize('super_admin'), PatientController.update);
 router.delete('/:id', authorize('super_admin'), PatientController.delete);
 
 export default router;

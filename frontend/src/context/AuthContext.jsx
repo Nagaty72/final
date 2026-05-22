@@ -49,6 +49,8 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('ha_token');
     localStorage.removeItem('ha_user');
     localStorage.removeItem('ha_refresh');
+    sessionStorage.clear();
+    window.location.href = '/';
   }, []);
 
   const updateUser = useCallback((userData) => {

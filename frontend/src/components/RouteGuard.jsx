@@ -27,7 +27,7 @@ export default function RouteGuard({ children }) {
     if (loading) return;
 
     if (!user) {
-      router.replace('/login');
+      router.replace('/');
       return;
     }
 

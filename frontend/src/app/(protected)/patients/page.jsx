@@ -3,8 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { patientService } from '@/services/patient.service';
 import { getDistricts } from '@/services/district.service';
+import { useAuth } from '@/context/AuthContext';
 
 export default function PatientsPage() {
+  const { user } = useAuth();
   const [patients, setPatients] = useState([]);
   const [districts, setDistricts] = useState([]);
   const [search, setSearch] = useState('');
@@ -105,6 +107,7 @@ export default function PatientsPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (user?.role !== 'super_admin') return;
     try {
       if (editingPatient) {
         await patientService.update(editingPatient.id, formData);
@@ -119,6 +122,7 @@ export default function PatientsPage() {
   };
 
   const handleDelete = async (id) => {
+    if (user?.role !== 'super_admin') return;
     if (!confirm('Are you sure you want to delete this patient?')) return;
     try {
       await patientService.delete(id);
@@ -135,12 +139,14 @@ export default function PatientsPage() {
           <h1 style={{ fontSize: 26, fontWeight: 700, margin: '0 0 4px' }}>Patients</h1>
           <p style={{ fontSize: 14, color: 'var(--text-muted)', margin: 0 }}>Patient records and demographics</p>
         </div>
-        <button className="btn-primary" onClick={() => openModal()} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-          </svg>
-          Add Patient
-        </button>
+        {user?.role === 'super_admin' && (
+          <button className="btn-primary" onClick={() => openModal()} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Add Patient
+          </button>
+        )}
       </div>
 
       {/* KPI Stats */}
@@ -202,7 +208,7 @@ export default function PatientsPage() {
                   <th>Gender</th>
                   <th>City</th>
                   <th>District</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
+                  {user?.role === 'super_admin' && <th style={{ textAlign: 'right' }}>Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -220,10 +226,12 @@ export default function PatientsPage() {
                     </td>
                     <td>{p.city || 'Unknown'}</td>
                     <td>{p.districts?.name || 'Unknown'}</td>
-                    <td style={{ textAlign: 'right' }}>
-                      <button onClick={() => openModal(p)} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', marginRight: 10, fontSize: 14, fontWeight: 500 }}>Edit</button>
-                      <button onClick={() => handleDelete(p.id)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>Delete</button>
-                    </td>
+                    {user?.role === 'super_admin' && (
+                      <td style={{ textAlign: 'right' }}>
+                        <button onClick={() => openModal(p)} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', marginRight: 10, fontSize: 14, fontWeight: 500 }}>Edit</button>
+                        <button onClick={() => handleDelete(p.id)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>Delete</button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

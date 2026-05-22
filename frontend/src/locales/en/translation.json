@@ -1,10 +1,11 @@
 {
   "sidebar": {
     "dashboard": "Dashboard",
-    "hospitals": "Hospitals",
+    "hospitals": "Nearby Facilities",
     "disease_analytics": "Disease Analytics",
-    "admin_panel": "Admin Panel",
+    "users": "Users Management",
     "report_builder": "Report Builder",
+    "admin_panel": "Admin Panel",
     "health_analytics": "Health Analytics",
     "settings": "Settings",
     "logout": "Logout",
@@ -86,7 +87,7 @@
     "heatmap_desc": "Spatial distribution of health cases"
   },
   "hospitals": {
-    "title": "Health Intelligence Map",
+    "title": "Nearby Facilities",
     "subtitle": "Interactive GIS network for hospitals and clinics",
     "use_my_location": "Use My Location",
     "locating": "Locating...",
@@ -253,8 +254,23 @@
     "save_user": "Save User",
     "cancel": "Cancel",
     "loading": "Loading users...",
-    "no_users": "No users found",
-    "error_fetch": "Failed to load users. Please try again.",
-    "error_delete": "Failed to delete user. Please try again."
+    "no_users": "No users found"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No new notifications",
+    "mark_all_read": "Mark all as read",
+    "view_all": "View all notifications",
+    "send_notification": "Send Notification",
+    "form_title": "Title",
+    "form_message": "Message",
+    "form_severity": "Severity",
+    "form_type": "Type",
+    "form_target_role": "Target Role",
+    "form_governorate": "Governorate (Optional)",
+    "btn_send": "Send",
+    "btn_cancel": "Cancel",
+    "success_sent": "Notification sent successfully",
+    "all_caught_up": "You're all caught up!"
   }
 }

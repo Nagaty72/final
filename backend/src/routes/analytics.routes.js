@@ -35,4 +35,7 @@ router.get('/disease-summary', authorize('super_admin', 'decision_maker'), Analy
 router.get('/reports',         authorize('super_admin', 'decision_maker'), AnalyticsController.getReports);
 router.post('/reports',        authorize('super_admin', 'decision_maker'), AnalyticsController.createReport);
 
+// ── Testing Endpoint for Alerts ──────────────────────────────────────────
+router.post('/daily-stats/upsert', authorize('super_admin'), AnalyticsController.upsertDailyStat);
+
 export default router;
