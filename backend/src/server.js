@@ -16,6 +16,7 @@ import analyticsRoutes from './routes/analytics.routes.js';
 import preferencesRoutes from './routes/preferences.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 import userRoutes from './routes/user.routes.js';
+import publicRoutes from './routes/public.routes.js';
 
 
 // Middleware imports
@@ -67,6 +68,7 @@ app.get('/health', (req, res) =>
 
 // ─── Public Routes ──────────────────────────────────────────────────────────
 app.use('/api/v1/auth', authLimiter, authRoutes);
+app.use('/api/v1/public', publicRoutes);
 
 // ─── Protected Routes (require valid JWT) ───────────────────────────────────
 app.use('/api/v1/hospitals', authMiddleware, hospitalRoutes);

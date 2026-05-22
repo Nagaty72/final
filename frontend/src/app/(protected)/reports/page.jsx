@@ -130,7 +130,7 @@ export default function ReportsPage() {
         XLSX.writeFile(workbook, `${filename}.xlsx`);
       } else {
         const doc = new jsPDF('landscape');
-        doc.text(`Health Analytics - ${DATA_SOURCES.find(d => d.id === source).label} Report`, 14, 15);
+        doc.text(`Epicare - ${DATA_SOURCES.find(d => d.id === source).label} Report`, 14, 15);
         doc.setFontSize(10);
         doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22);
 

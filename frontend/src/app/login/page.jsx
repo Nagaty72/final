@@ -29,12 +29,39 @@ function AuthPageContent() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [emailError, setEmailError] = useState('');
+  const [nameError, setNameError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmError, setConfirmError] = useState('');
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  // ── Validators ──────────────────────────────────────────────────────────
+  const validateName = (val) => {
+    const parts = val.trim().split(/\s+/);
+    if (parts.length < 2) return 'Please enter your first and last name.';
+    for (const p of parts) {
+      if (p.length < 3) return 'Each name must be at least 3 characters.';
+      if (p.length > 15) return 'Each name must be at most 15 characters.';
+    }
+    return '';
+  };
+
+  const validateGmail = (val) => {
+    if (!val) return '';
+    return val.toLowerCase().endsWith('@gmail.com') ? '' : 'Only Gmail addresses are allowed (@gmail.com).';
+  };
+
+  const validatePassword = (val) => {
+    if (val.length < 8) return 'Password must be at least 8 characters.';
+    if (!/[A-Z]/.test(val)) return 'Password must include at least one uppercase letter.';
+    if (!/[0-9]/.test(val)) return 'Password must include at least one number.';
+    if (!/[^A-Za-z0-9]/.test(val)) return 'Password must include at least one special character.';
+    return '';
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -59,6 +86,9 @@ function AuthPageContent() {
     setConfirmPassword('');
     setError('');
     setEmailError('');
+    setNameError('');
+    setPasswordError('');
+    setConfirmError('');
     setVerificationSent(false);
   };
 
@@ -94,19 +124,16 @@ function AuthPageContent() {
     e.preventDefault();
     setError('');
 
-    if (mode === 'register' && emailError) {
-      setError('Please resolve email errors first');
-      return;
-    }
-
-    if (mode === 'register' && password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (mode === 'register' && password.length < 8) {
-      setError('Password must be at least 8 characters');
-      return;
+    if (mode === 'register') {
+      const nErr = validateName(fullName);
+      const eErr = validateGmail(email) || emailError;
+      const pErr = validatePassword(password);
+      const cErr = password !== confirmPassword ? 'Passwords do not match.' : '';
+      setNameError(nErr);
+      if (eErr && !emailError) setEmailError(eErr);
+      setPasswordError(pErr);
+      setConfirmError(cErr);
+      if (nErr || eErr || pErr || cErr) return;
     }
 
     setLoading(true);
@@ -187,13 +214,14 @@ function AuthPageContent() {
 
   const handleEmailBlur = async () => {
     if (mode !== 'register' || !email) return;
+    // Gmail check first
+    const gmailErr = validateGmail(email);
+    if (gmailErr) { setEmailError(gmailErr); return; }
     setCheckingEmail(true);
     setEmailError('');
     try {
       const res = await authService.checkEmail(email);
-      if (res.data?.exists) {
-        setEmailError('This email is already in use');
-      }
+      if (res.data?.exists) setEmailError('This email is already in use.');
     } catch (err) {
       console.error('Failed to check email availability', err);
     } finally {
@@ -275,6 +303,12 @@ function AuthPageContent() {
     );
   }
 
+  // Field state helpers
+  const fieldState = (err, val) => {
+    if (!val) return '';
+    return err ? 'has-error' : 'has-success';
+  };
+
   return (
     <div className="auth-page">
       {/* Animated background orbs */}
@@ -283,6 +317,17 @@ function AuthPageContent() {
       <div className="auth-orb auth-orb-3" />
 
       <div className="auth-container" style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(20px)' }}>
+
+        {/* Back to Home — sits above the card, left-aligned */}
+        <div style={{ marginBottom: 16 }}>
+          <Link href="/" className="auth-back-link">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            Back to Epicare
+          </Link>
+        </div>
+
         {/* Logo & Header */}
         <div className="auth-header">
           <div className="auth-logo">
@@ -345,19 +390,23 @@ function AuthPageContent() {
                   <input
                     id="fullName"
                     type="text"
-                    className="auth-input"
-                    placeholder={t('auth.full_name_placeholder')}
+                    className={`auth-input ${fieldState(nameError, fullName)}`}
+                    placeholder="e.g. Ahmed Mohamed"
                     value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
+                    onChange={(e) => { setFullName(e.target.value); setNameError(validateName(e.target.value)); }}
                     required
-                    minLength={2}
                   />
+                  {fullName && !nameError && <span className="auth-valid-icon">✓</span>}
                 </div>
+                {nameError && <div className="auth-field-error">{nameError}</div>}
               </div>
             )}
 
             <div className="auth-field">
-              <label htmlFor="email" className="auth-label">{t('auth.email')}</label>
+              <label htmlFor="email" className="auth-label">
+                {t('auth.email')}
+                {mode === 'register' && <span style={{ color: '#64748b', fontWeight: 400, marginLeft: 6, fontSize: 11 }}>Gmail only</span>}
+              </label>
               <div className="auth-input-wrap">
                 <svg className="auth-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="4" width="20" height="16" rx="2" />
@@ -366,24 +415,21 @@ function AuthPageContent() {
                 <input
                   id="email"
                   type="email"
-                  className={`auth-input ${emailError ? 'has-error' : ''}`}
-                  placeholder={t('auth.email_placeholder')}
+                  className={`auth-input ${fieldState(emailError, email)}`}
+                  placeholder={mode === 'register' ? 'you@gmail.com' : t('auth.email_placeholder')}
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
-                    if (emailError) setEmailError('');
+                    if (mode === 'register') setEmailError(validateGmail(e.target.value));
+                    else if (emailError) setEmailError('');
                   }}
                   onBlur={handleEmailBlur}
                   required
                   autoComplete="email"
                 />
+                {email && !emailError && <span className="auth-valid-icon">✓</span>}
               </div>
-              {emailError && (
-                <div style={{ color: '#f87171', fontSize: 13, marginTop: 6, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                  {emailError}
-                </div>
-              )}
+              {emailError && <div className="auth-field-error">{emailError}</div>}
             </div>
 
             <div className="auth-field">
@@ -396,20 +442,22 @@ function AuthPageContent() {
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  className="auth-input"
+                  className={`auth-input ${mode === 'register' ? fieldState(passwordError, password) : ''}`}
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (mode === 'register') {
+                      setPasswordError(validatePassword(e.target.value));
+                      if (confirmPassword) setConfirmError(e.target.value !== confirmPassword ? 'Passwords do not match.' : '');
+                    }
+                  }}
                   required
                   minLength={mode === 'register' ? 8 : 1}
                   autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                 />
-                <button
-                  type="button"
-                  className="auth-toggle-pw"
-                  onClick={() => setShowPassword(!showPassword)}
-                  tabIndex={-1}
-                >
+                {mode === 'register' && password && !passwordError && <span className="auth-valid-icon" style={{ right: 40 }}>✓</span>}
+                <button type="button" className="auth-toggle-pw" onClick={() => setShowPassword(!showPassword)} tabIndex={-1}>
                   {showPassword ? (
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
@@ -424,6 +472,10 @@ function AuthPageContent() {
                   )}
                 </button>
               </div>
+              {mode === 'register' && passwordError && <div className="auth-field-error">{passwordError}</div>}
+              {mode === 'register' && password && !passwordError && (
+                <div className="auth-field-hint">✓ Strong password</div>
+              )}
               {mode === 'login' && (
                 <div style={{ textAlign: 'right', marginTop: '8px' }}>
                   <Link href="/forgot-password" style={{ color: '#3b82f6', fontSize: '13px', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}>
@@ -443,14 +495,16 @@ function AuthPageContent() {
                   <input
                     id="confirmPassword"
                     type={showPassword ? 'text' : 'password'}
-                    className="auth-input"
+                    className={`auth-input ${fieldState(confirmError, confirmPassword)}`}
                     placeholder="••••••••"
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={(e) => { setConfirmPassword(e.target.value); setConfirmError(e.target.value !== password ? 'Passwords do not match.' : ''); }}
                     required
                     autoComplete="new-password"
                   />
+                  {confirmPassword && !confirmError && <span className="auth-valid-icon">✓</span>}
                 </div>
+                {confirmError && <div className="auth-field-error">{confirmError}</div>}
               </div>
             )}
 
@@ -458,7 +512,7 @@ function AuthPageContent() {
               id="auth-submit"
               type="submit"
               className="auth-submit-btn"
-              disabled={loading || checkingEmail || !!emailError}
+              disabled={loading || checkingEmail || !!emailError || (mode === 'register' && (!!nameError || !!passwordError || !!confirmError))}
             >
               {loading || checkingEmail ? (
                 <span className="auth-spinner" />
@@ -707,13 +761,50 @@ function AuthPageContent() {
         }
         .auth-input.has-error {
           border-color: #f87171;
-          box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.2);
+          box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.18);
         }
         .auth-input.has-error:focus {
-          box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.15), 0 0 20px rgba(248, 113, 113, 0.08);
+          box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.15);
         }
-        .auth-input::placeholder {
-          color: #334155;
+        .auth-input.has-success {
+          border-color: #22c55e;
+          box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.12);
+        }
+        .auth-input.has-success:focus {
+          box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+        }
+        .auth-input::placeholder { color: #334155; }
+        .auth-field-error {
+          color: #f87171; font-size: 12px; margin-top: 5px;
+          font-weight: 500; display: flex; align-items: center; gap: 4px;
+        }
+        .auth-field-hint {
+          color: #22c55e; font-size: 12px; margin-top: 5px; font-weight: 600;
+        }
+        .auth-valid-icon {
+          position: absolute; right: 14px;
+          color: #22c55e; font-size: 14px; font-weight: 700; pointer-events: none;
+        }
+        .auth-back-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          color: #64748b;
+          font-size: 12px;
+          font-weight: 600;
+          text-decoration: none;
+          letter-spacing: 0.02em;
+          padding: 5px 12px 5px 9px;
+          border-radius: 20px;
+          background: rgba(15, 23, 42, 0.5);
+          backdrop-filter: blur(8px);
+          border: 1px solid rgba(51, 65, 85, 0.45);
+          transition: color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .auth-back-link:hover {
+          color: #cbd5e1;
+          border-color: rgba(99, 102, 241, 0.45);
+          box-shadow: 0 0 12px rgba(99, 102, 241, 0.15);
         }
         .auth-toggle-pw {
           position: absolute;
