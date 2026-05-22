@@ -50,17 +50,29 @@ function normalizeBreakdown(responseData) {
     rows = responseData.data;
   }
 
-  const total = rows.reduce((s, r) => s + Number(r.total_cases ?? r.count ?? 0), 0) || 1;
+  // Deduplicate by disease name — aggregate case counts if backend returns duplicates
+  const dedupMap = new Map();
+  for (const r of rows) {
+    const name = r.disease_name ?? r.name ?? 'Unknown';
+    const count = Number(r.total_cases ?? r.count ?? 0);
+    if (dedupMap.has(name)) {
+      dedupMap.get(name).count += count;
+    } else {
+      dedupMap.set(name, { name, count });
+    }
+  }
+  const deduped = Array.from(dedupMap.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
 
-  return rows.slice(0, 8).map((r, i) => {
-    const cases = Number(r.total_cases ?? r.count ?? 0);
-    return {
-      name:  r.disease_name ?? r.name ?? 'Unknown',
-      cases,
-      pct:   Math.round((cases / total) * 100),
-      color: DISEASE_COLORS[i % DISEASE_COLORS.length],
-    };
-  });
+  const total = deduped.reduce((s, r) => s + r.count, 0) || 1;
+
+  return deduped.map((r, i) => ({
+    name:  r.name,
+    cases: r.count,
+    pct:   Math.round((r.count / total) * 100),
+    color: DISEASE_COLORS[i % DISEASE_COLORS.length],
+  }));
 }
 
 export default function DiseaseBreakdown() {

@@ -79,8 +79,10 @@ function buildChartData(trendRows, diseaseRows, selectedDiseases) {
     }));
   }
 
-  // Cap at 12 diseases for readability
-  diseases = diseases.slice(0, 12);
+  // Deduplicate diseases by name to prevent duplicate React keys
+  const uniqueDiseasesMap = new Map();
+  diseases.forEach(d => { if (!uniqueDiseasesMap.has(d.name)) uniqueDiseasesMap.set(d.name, d); });
+  diseases = Array.from(uniqueDiseasesMap.values());
 
   const totalCasesAllDiseases = diseaseRows.reduce((s, d) => s + Number(d.cases ?? d.total_cases ?? 0), 1);
 
@@ -404,9 +406,9 @@ export default function DiseaseTrendChart() {
                   content={<CustomTooltip colorMap={colorMap} />}
                   cursor={{ stroke: 'rgba(148,163,184,0.15)', strokeWidth: 1 }}
                 />
-                {diseases.map(d => (
+                {diseases.map((d, i) => (
                   <Line
-                    key={d.name}
+                    key={`line-${d.name}-${i}`}
                     type="monotone"
                     dataKey={d.name}
                     stroke={d.color}
@@ -423,11 +425,11 @@ export default function DiseaseTrendChart() {
 
             {/* Interactive legend */}
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0, paddingTop: 4 }}>
-              {diseases.map(d => {
+              {diseases.map((d, i) => {
                 const hidden = hiddenLines.has(d.name);
                 return (
                   <button
-                    key={d.name}
+                    key={`legend-${d.name}-${i}`}
                     onClick={() => toggleLine(d.name)}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 6,

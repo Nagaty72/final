@@ -97,11 +97,11 @@ function PortalMultiSelect({ label, selectedValues, onChange, options }) {
         padding: '4px 0',
       }}
     >
-      {options.map(o => {
+      {options.map((o, idx) => {
         const isSel = selectedValues.includes(o.value);
         return (
           <div
-            key={o.value}
+            key={`${o.value}-${idx}`}
             onClick={() => toggle(o.value)}
             style={{
               padding: '8px 12px', fontSize: 13, cursor: 'pointer',
@@ -216,11 +216,11 @@ function FilterSelect({ label, value, onChange, options }) {
         padding: '4px 0',
       }}
     >
-      {options.map(o => {
+      {options.map((o, idx) => {
         const isSel = String(o.value) === String(value);
         return (
           <div
-            key={o.value}
+            key={`${o.value}-${idx}`}
             onClick={() => {
               onChange(o.value);
               setIsOpen(false);
@@ -327,15 +327,21 @@ export default function MapFilterPanel({
     filters.timeRange && filters.timeRange !== '1y' ? filters.timeRange : null,
   ].filter(Boolean).length, [filters]);
 
-  const cityOptions = useMemo(() => [
-    { value: '', label: 'All Governorates' },
-    ...cities.map(c => ({ value: c, label: c })),
-  ], [cities]);
+  const cityOptions = useMemo(() => {
+    const unique = Array.from(new Map(cities.map(c => [c, c])).values());
+    return [
+      { value: '', label: 'All Governorates' },
+      ...unique.map(c => ({ value: c, label: c })),
+    ];
+  }, [cities]);
 
-  const diseaseOptions = useMemo(() => [
-    { value: '', label: 'All Diseases' },
-    ...diseases.map(d => ({ value: d.name ?? d, label: d.name ?? d })),
-  ], [diseases]);
+  const diseaseOptions = useMemo(() => {
+    const unique = Array.from(new Map(diseases.map(d => [d.name ?? d, d])).values());
+    return [
+      { value: '', label: 'All Diseases' },
+      ...unique.map(d => ({ value: d.name ?? d, label: d.name ?? d })),
+    ];
+  }, [diseases]);
 
   return (
     <aside style={{

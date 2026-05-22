@@ -50,7 +50,7 @@ export default function MapLegend({ diseaseNames, colorMap, hiddenDiseases, onTo
         <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>{collapsed ? '▲' : '▼'}</span>
       </div>
 
-      {!collapsed && sorted.map(name => {
+      {!collapsed && sorted.map((name, i) => {
         const hidden = hiddenDiseases.has(name);
         const color  = colorMap[name] ?? '#64748b';
         const cases  = casesPerDisease[name] || 0;
@@ -58,7 +58,7 @@ export default function MapLegend({ diseaseNames, colorMap, hiddenDiseases, onTo
 
         return (
           <button
-            key={name}
+            key={`map-legend-${name}-${i}`}
             onClick={() => onToggle(name)}
             style={{
               display: 'flex', alignItems: 'center', gap: 8,

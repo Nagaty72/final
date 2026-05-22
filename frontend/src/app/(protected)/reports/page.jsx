@@ -1,263 +1,380 @@
 'use client';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { getReportTemplates, getReportFilterOptions, previewReport, exportReport } from '@/services/report.service';
+import {
+  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  XAxis, YAxis, Tooltip, ResponsiveContainer, Legend
+} from 'recharts';
+import { FileText, Download, Eye, RefreshCw, Filter, AlertTriangle, CheckCircle, ChevronDown, X } from 'lucide-react';
 
-import React, { useState, useEffect } from 'react';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { medicalRecordService } from '@/services/medical-record.service';
-import { patientService } from '@/services/patient.service';
-import { diseaseService } from '@/services/disease.service';
+const ACCENT   = '#7C3AED';
+const PALETTE  = ['#7C3AED','#3B82F6','#10B981','#F59E0B','#EF4444','#EC4899','#06B6D4','#84CC16'];
+const SEVERITY = { 1:'Mild', 2:'Moderate', 3:'Severe', 4:'Critical', 5:'Extreme' };
+const OUTCOMES = ['recovered','active','deceased','under_treatment'];
+const GENDERS  = ['male','female'];
 
-const DATA_SOURCES = [
-  { id: 'records', label: 'Medical Records', desc: 'Case logs, severity, and outcomes', icon: '🩺' },
-  { id: 'patients', label: 'Patient Demographics', desc: 'Patient ages, genders, and locations', icon: '👥' },
-  { id: 'diseases', label: 'Disease Directory', desc: 'Monitored diseases and their chronicity', icon: '🦠' }
-];
+function Toast({ message, type, onClose }) {
+  useEffect(() => { const t = setTimeout(onClose, 4000); return () => clearTimeout(t); }, [onClose]);
+  const bg = type === 'success' ? '#10B981' : '#EF4444';
+  return (
+    <div style={{ position:'fixed', bottom:24, right:24, zIndex:9999, background:bg, color:'#fff', padding:'12px 20px', borderRadius:12, display:'flex', alignItems:'center', gap:10, boxShadow:'0 8px 32px rgba(0,0,0,0.3)', animation:'slideUp 0.3s ease' }}>
+      {type === 'success' ? <CheckCircle size={18}/> : <AlertTriangle size={18}/>}
+      <span style={{ fontSize:14, fontWeight:500 }}>{message}</span>
+      <button onClick={onClose} style={{ background:'none', border:'none', color:'#fff', cursor:'pointer', marginLeft:8 }}><X size={14}/></button>
+      <style>{`@keyframes slideUp { from { transform:translateY(20px); opacity:0; } to { transform:translateY(0); opacity:1; } }`}</style>
+    </div>
+  );
+}
+
+function KpiCard({ label, value, color = ACCENT, icon }) {
+  return (
+    <div style={{ background:'var(--bg-secondary)', border:'1px solid var(--border)', borderRadius:12, padding:'16px 20px', display:'flex', flexDirection:'column', gap:6, flex:1, minWidth:130 }}>
+      <span style={{ fontSize:11, fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>{label}</span>
+      <span style={{ fontSize:26, fontWeight:700, color }}>{value ?? '—'}</span>
+    </div>
+  );
+}
+
+function SelectField({ label, value, onChange, options, placeholder = 'All' }) {
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:4, flex:1, minWidth:140 }}>
+      <label style={{ fontSize:11, fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase' }}>{label}</label>
+      <select value={value} onChange={e => onChange(e.target.value)} style={{ padding:'8px 12px', background:'var(--bg-primary)', border:'1px solid var(--border)', borderRadius:8, color:'var(--text-primary)', fontSize:13, cursor:'pointer' }}>
+        <option value="">{placeholder}</option>
+        {options.map((o, idx) => <option key={`${o.value ?? o}-${idx}`} value={o.value ?? o}>{o.label ?? o}</option>)}
+      </select>
+    </div>
+  );
+}
+
+function DataTable({ headers, rows }) {
+  if (!rows?.length) return <p style={{ color:'var(--text-muted)', textAlign:'center', padding:24 }}>No rows to display.</p>;
+  return (
+    <div style={{ overflowX:'auto', borderRadius:8, border:'1px solid var(--border)' }}>
+      <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
+        <thead>
+          <tr style={{ background:'var(--bg-primary)' }}>
+            {headers.map(h => <th key={h.key} style={{ padding:'10px 14px', textAlign:'left', fontWeight:600, color:'var(--text-muted)', fontSize:11, textTransform:'uppercase', borderBottom:'1px solid var(--border)', whiteSpace:'nowrap' }}>{h.label}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i} style={{ borderBottom:'1px solid var(--border)', background: i%2===0 ? 'transparent' : 'var(--bg-primary)' }}>
+              {headers.map(h => <td key={h.key} style={{ padding:'9px 14px', color:'var(--text-primary)', whiteSpace:'nowrap' }}>{r[h.key] ?? '—'}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 export default function ReportsPage() {
-  const [source, setSource] = useState('records');
-  const [format, setFormat] = useState('pdf');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  
-  const [columns, setColumns] = useState({});
-  const [dataCache, setDataCache] = useState({});
-  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
 
-  // Column definitions per source
-  const COL_DEFS = {
-    records: [
-      { key: 'id', label: 'Record ID' },
-      { key: 'date', label: 'Diagnosis Date' },
-      { key: 'patient', label: 'Patient ID' },
-      { key: 'disease', label: 'Disease Name' },
-      { key: 'hospital', label: 'Hospital' },
-      { key: 'severity', label: 'Severity Level' },
-      { key: 'outcome', label: 'Outcome' },
-    ],
-    patients: [
-      { key: 'id', label: 'Patient ID' },
-      { key: 'gender', label: 'Gender' },
-      { key: 'birth_date', label: 'Birth Date' },
-      { key: 'city', label: 'City' },
-      { key: 'district', label: 'District' }
-    ],
-    diseases: [
-      { key: 'id', label: 'Disease ID' },
-      { key: 'name', label: 'Disease Name' },
-      { key: 'category', label: 'Category' },
-      { key: 'is_chronic', label: 'Is Chronic' }
-    ]
-  };
+  // RBAC guard
+  if (user && user.role === 'normal_user') {
+    return (
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:'60vh', gap:16 }}>
+        <AlertTriangle size={48} color="#EF4444"/>
+        <h2 style={{ fontSize:20, fontWeight:700, color:'var(--text-primary)' }}>Access Denied</h2>
+        <p style={{ color:'var(--text-muted)' }}>Report Builder is available to Admins and Decision Makers only.</p>
+      </div>
+    );
+  }
 
+  const [templates,      setTemplates]      = useState([]);
+  const [filterOptions,  setFilterOptions]  = useState({ diseases:[], cities:[], hospitals:[] });
+  const [selectedTpl,    setSelectedTpl]    = useState(null);
+  const [filters,        setFilters]        = useState({ city:'', disease:'', gender:'', severity:'', outcome:'', dateFrom:'', dateTo:'', hospital:'' });
+  const [selectedCols,   setSelectedCols]   = useState({});
+  const [preview,        setPreview]        = useState(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [exportLoading,  setExportLoading]  = useState({ pdf:false, excel:false });
+  const [toast,          setToast]          = useState(null);
+  const [activeTab,      setActiveTab]      = useState('table');
+  const mountedRef = useRef(true);
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
+
+  const showToast = useCallback((message, type='success') => setToast({ message, type }), []);
+
+  // Load templates + filter options on mount
   useEffect(() => {
-    // Reset columns when source changes
-    const defaultCols = {};
-    COL_DEFS[source].forEach(c => defaultCols[c.key] = true);
-    setColumns(defaultCols);
-  }, [source]);
+    let alive = true;
+    Promise.all([getReportTemplates(), getReportFilterOptions()])
+      .then(([tRes, fRes]) => {
+        if (!alive) return;
+        if (tRes?.data) { setTemplates(tRes.data); setSelectedTpl(tRes.data[0]); }
+        if (fRes?.data) {
+          const raw = fRes.data;
+          setFilterOptions({
+            diseases: Array.from(new Map((raw.diseases || []).map(d => [d.name, d])).values()),
+            cities: Array.from(new Set(raw.cities || [])),
+            hospitals: Array.from(new Map((raw.hospitals || []).map(h => [h.name, h])).values()),
+          });
+        }
+      })
+      .catch(e => showToast(e.message || 'Failed to load report options', 'error'));
+    return () => { alive = false; };
+  }, [showToast]);
 
-  const toggleColumn = (key) => {
-    setColumns(prev => ({ ...prev, [key]: !prev[key] }));
-  };
+  // Reset columns when template changes
+  useEffect(() => {
+    if (!selectedTpl) return;
+    const cols = {};
+    selectedTpl.columns.forEach(c => { cols[c.key] = true; });
+    setSelectedCols(cols);
+    setPreview(null);
+  }, [selectedTpl]);
 
-  const handleGenerate = async () => {
-    setLoading(true);
+  const activeFilters = useMemo(() => {
+    const af = {};
+    Object.entries(filters).forEach(([k,v]) => { if (v) af[k] = v; });
+    return af;
+  }, [filters]);
+
+  const visibleHeaders = useMemo(() =>
+    (selectedTpl?.columns || []).filter(c => selectedCols[c.key]),
+  [selectedTpl, selectedCols]);
+
+  const handlePreview = useCallback(async () => {
+    if (!selectedTpl) return;
+    setLoadingPreview(true);
+    setPreview(null);
     try {
-      let rawData = dataCache[source];
-      
-      // Fetch if not in cache
-      if (!rawData) {
-        if (source === 'records') {
-          const res = await medicalRecordService.getAll();
-          rawData = res.success ? res.data : [];
-        } else if (source === 'patients') {
-          const res = await patientService.getAll();
-          rawData = res.success ? res.data : [];
-        } else if (source === 'diseases') {
-          const res = await diseaseService.getAll();
-          rawData = res.success ? res.data : [];
-        }
-        setDataCache(prev => ({ ...prev, [source]: rawData }));
-      }
-
-      // Filter Data
-      let filteredData = [...rawData];
-      if (source === 'records' && (dateFrom || dateTo)) {
-        if (dateFrom) filteredData = filteredData.filter(r => new Date(r.diagnosis_date) >= new Date(dateFrom));
-        if (dateTo) filteredData = filteredData.filter(r => new Date(r.diagnosis_date) <= new Date(dateTo));
-      }
-
-      // Format Data for Export
-      const exportData = filteredData.map(item => {
-        const row = {};
-        if (source === 'records') {
-          if (columns.id) row['Record ID'] = `MR-${item.id.substring(0, 6).toUpperCase()}`;
-          if (columns.date) row['Diagnosis Date'] = new Date(item.diagnosis_date).toLocaleDateString();
-          if (columns.patient) row['Patient ID'] = `P-${item.patients?.id?.substring(0,6).toUpperCase() || 'N/A'}`;
-          if (columns.disease) row['Disease Name'] = item.diseases?.name || 'N/A';
-          if (columns.hospital) row['Hospital'] = item.hospitals?.name || 'N/A';
-          if (columns.severity) row['Severity Level'] = `Level ${item.severity}`;
-          if (columns.outcome) row['Outcome'] = item.outcome;
-        } else if (source === 'patients') {
-          if (columns.id) row['Patient ID'] = `P-${item.id.substring(0, 6).toUpperCase()}`;
-          if (columns.gender) row['Gender'] = item.gender;
-          if (columns.birth_date) row['Birth Date'] = item.birth_date;
-          if (columns.city) row['City'] = item.city;
-          if (columns.district) row['District'] = item.districts?.name || 'N/A';
-        } else if (source === 'diseases') {
-          if (columns.id) row['Disease ID'] = `D-${item.id.substring(0, 6).toUpperCase()}`;
-          if (columns.name) row['Disease Name'] = item.name;
-          if (columns.category) row['Category'] = item.category || 'N/A';
-          if (columns.is_chronic) row['Is Chronic'] = item.is_chronic ? 'Yes' : 'No';
-        }
-        return row;
-      });
-
-      if (exportData.length === 0) {
-        alert("No data matches your criteria.");
-        setLoading(false);
-        return;
-      }
-
-      // Generate File
-      const filename = `Health_Analytics_${source.toUpperCase()}_Report_${new Date().toISOString().split('T')[0]}`;
-      
-      if (format === 'excel') {
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Report Data");
-        XLSX.writeFile(workbook, `${filename}.xlsx`);
-      } else {
-        const doc = new jsPDF('landscape');
-        doc.text(`Epicare - ${DATA_SOURCES.find(d => d.id === source).label} Report`, 14, 15);
-        doc.setFontSize(10);
-        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 22);
-
-        const tableColumn = Object.keys(exportData[0]);
-        const tableRows = exportData.map(row => Object.values(row));
-
-        autoTable(doc, {
-          head: [tableColumn],
-          body: tableRows,
-          startY: 28,
-          styles: { fontSize: 9 },
-          headStyles: { fillColor: [139, 92, 246] }
-        });
-        doc.save(`${filename}.pdf`);
-      }
-
-    } catch (error) {
-      console.error(error);
-      alert("Failed to generate report.");
+      const res = await previewReport(selectedTpl.id, activeFilters);
+      if (mountedRef.current && res?.data) setPreview(res.data);
+    } catch(e) {
+      showToast(e.message || 'Preview failed', 'error');
     } finally {
-      setLoading(false);
+      if (mountedRef.current) setLoadingPreview(false);
     }
-  };
+  }, [selectedTpl, activeFilters, showToast]);
+
+  const handleExport = useCallback(async (format) => {
+    if (!selectedTpl) return;
+    setExportLoading(p => ({ ...p, [format]:true }));
+    try {
+      const { blob, filename } = await exportReport(selectedTpl.id, activeFilters, format);
+      const url = URL.createObjectURL(blob);
+      const a   = document.createElement('a');
+      a.href = url; a.download = filename; a.click();
+      URL.revokeObjectURL(url);
+      showToast(`${format.toUpperCase()} exported successfully!`, 'success');
+    } catch(e) {
+      showToast(e.message || 'Export failed', 'error');
+    } finally {
+      if (mountedRef.current) setExportLoading(p => ({ ...p, [format]:false }));
+    }
+  }, [selectedTpl, activeFilters, showToast]);
+
+  const resetFilters = () => setFilters({ city:'', disease:'', gender:'', severity:'', outcome:'', dateFrom:'', dateTo:'', hospital:'' });
+
+  const kpi = preview?.kpis;
+  const activeFilterCount = Object.values(activeFilters).filter(Boolean).length;
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto' }}>
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, margin: '0 0 6px', color: 'var(--text-primary)' }}>Report Builder</h1>
-        <p style={{ fontSize: 15, color: 'var(--text-muted)', margin: 0 }}>Create advanced, adjustable data exports in Excel or PDF formats.</p>
+    <div style={{ maxWidth:1100, margin:'0 auto' }}>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)}/>}
+
+      {/* Header */}
+      <div style={{ marginBottom:32 }}>
+        <h1 style={{ fontSize:28, fontWeight:700, margin:'0 0 6px', color:'var(--text-primary)', display:'flex', alignItems:'center', gap:12 }}>
+          <span style={{ width:40, height:40, borderRadius:10, background:'rgba(124,58,237,0.12)', display:'inline-flex', alignItems:'center', justifyContent:'center' }}>
+            <FileText size={20} color={ACCENT}/>
+          </span>
+          Report Builder
+        </h1>
+        <p style={{ fontSize:14, color:'var(--text-muted)', margin:0 }}>Generate live reports from Supabase — export to PDF or Excel.</p>
       </div>
 
-      <div className="glass-card" style={{ padding: 32 }}>
-        
-        {/* 1. Select Data Source */}
-        <div style={{ marginBottom: 32 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>1. Select Data Source</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
-            {DATA_SOURCES.map(d => (
-              <div 
-                key={d.id} 
-                onClick={() => setSource(d.id)}
-                style={{ 
-                  padding: 16, borderRadius: 12, border: `2px solid ${source === d.id ? 'var(--purple)' : 'var(--border)'}`, 
-                  background: source === d.id ? 'var(--purple-light)' : 'var(--bg-primary)', 
-                  cursor: 'pointer', transition: 'all 0.2s ease'
-                }}
-              >
-                <div style={{ fontSize: 24, marginBottom: 8 }}>{d.icon}</div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: source === d.id ? 'var(--purple)' : 'var(--text-primary)', marginBottom: 4 }}>
-                  {d.label}
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{d.desc}</div>
-              </div>
-            ))}
-          </div>
+      {/* Step 1: Template */}
+      <section style={{ background:'var(--bg-secondary)', border:'1px solid var(--border)', borderRadius:16, padding:24, marginBottom:20 }}>
+        <h2 style={{ fontSize:15, fontWeight:700, margin:'0 0 16px', color:'var(--text-primary)' }}>1 — Select Report Template</h2>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))', gap:14 }}>
+          {templates.map(t => (
+            <div key={t.id} onClick={() => setSelectedTpl(t)} style={{ padding:16, borderRadius:12, border:`2px solid ${selectedTpl?.id === t.id ? ACCENT : 'var(--border)'}`, background: selectedTpl?.id === t.id ? 'rgba(124,58,237,0.06)' : 'var(--bg-primary)', cursor:'pointer', transition:'all 0.2s' }}>
+              <div style={{ fontSize:26, marginBottom:8 }}>{t.icon}</div>
+              <div style={{ fontSize:14, fontWeight:600, color: selectedTpl?.id === t.id ? ACCENT : 'var(--text-primary)', marginBottom:4 }}>{t.name}</div>
+              <div style={{ fontSize:12, color:'var(--text-muted)' }}>{t.description}</div>
+              <div style={{ marginTop:8, display:'inline-block', fontSize:10, fontWeight:600, padding:'2px 8px', borderRadius:6, background:'rgba(124,58,237,0.1)', color:ACCENT }}>{t.category}</div>
+            </div>
+          ))}
         </div>
+      </section>
 
-        {/* 2. Configure Columns */}
-        <div style={{ marginBottom: 32 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>2. Adjust Columns</h2>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, padding: 20, background: 'var(--bg-primary)', borderRadius: 12, border: '1px solid var(--border)' }}>
-            {COL_DEFS[source].map(c => (
-              <label key={c.key} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: columns[c.key] ? 'var(--accent-light)' : 'var(--bg-card)', border: `1px solid ${columns[c.key] ? 'var(--accent)' : 'var(--border)'}`, borderRadius: 24, cursor: 'pointer', transition: '0.2s', fontSize: 14, fontWeight: 500, color: columns[c.key] ? 'var(--accent)' : 'var(--text-secondary)' }}>
-                <input 
-                  type="checkbox" 
-                  checked={!!columns[c.key]} 
-                  onChange={() => toggleColumn(c.key)}
-                  style={{ display: 'none' }}
-                />
-                {columns[c.key] && <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+      {/* Step 2: Filters */}
+      {selectedTpl && (
+        <section style={{ background:'var(--bg-secondary)', border:'1px solid var(--border)', borderRadius:16, padding:24, marginBottom:20 }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+            <h2 style={{ fontSize:15, fontWeight:700, margin:0, color:'var(--text-primary)', display:'flex', alignItems:'center', gap:8 }}>
+              <Filter size={16}/> 2 — Filters
+              {activeFilterCount > 0 && <span style={{ fontSize:11, fontWeight:700, background:ACCENT, color:'#fff', padding:'2px 8px', borderRadius:10 }}>{activeFilterCount} active</span>}
+            </h2>
+            {activeFilterCount > 0 && <button onClick={resetFilters} style={{ fontSize:12, color:'var(--text-muted)', background:'none', border:'1px solid var(--border)', borderRadius:8, padding:'4px 12px', cursor:'pointer' }}>Clear all</button>}
+          </div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:14 }}>
+            {selectedTpl.filters.includes('city') && (
+              <SelectField label="Governorate" value={filters.city} onChange={v => setFilters(p=>({...p, city:v}))} options={filterOptions.cities.map(c=>({value:c, label:c}))}/>
+            )}
+            {selectedTpl.filters.includes('disease') && (
+              <SelectField label="Disease" value={filters.disease} onChange={v => setFilters(p=>({...p, disease:v}))} options={filterOptions.diseases.map(d=>({value:d.name, label:d.name}))}/>
+            )}
+            {selectedTpl.filters.includes('gender') && (
+              <SelectField label="Gender" value={filters.gender} onChange={v => setFilters(p=>({...p, gender:v}))} options={GENDERS.map(g=>({value:g, label:g.charAt(0).toUpperCase()+g.slice(1)}))}/>
+            )}
+            {selectedTpl.filters.includes('severity') && (
+              <SelectField label="Severity" value={filters.severity} onChange={v => setFilters(p=>({...p, severity:v}))} options={Object.entries(SEVERITY).map(([v,l])=>({value:v, label:l}))}/>
+            )}
+            {selectedTpl.filters.includes('outcome') && (
+              <SelectField label="Outcome" value={filters.outcome} onChange={v => setFilters(p=>({...p, outcome:v}))} options={OUTCOMES.map(o=>({value:o, label:o.replace('_',' ')}))}/>
+            )}
+            {selectedTpl.filters.includes('hospital') && (
+              <SelectField label="Hospital" value={filters.hospital} onChange={v => setFilters(p=>({...p, hospital:v}))} options={filterOptions.hospitals.map(h=>({value:h.name, label:h.name}))}/>
+            )}
+            {selectedTpl.filters.includes('dateFrom') && (
+              <div style={{ display:'flex', flexDirection:'column', gap:4, flex:1, minWidth:140 }}>
+                <label style={{ fontSize:11, fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase' }}>Date From</label>
+                <input type="date" value={filters.dateFrom} onChange={e => setFilters(p=>({...p, dateFrom:e.target.value}))} style={{ padding:'8px 12px', background:'var(--bg-primary)', border:'1px solid var(--border)', borderRadius:8, color:'var(--text-primary)', fontSize:13 }}/>
+              </div>
+            )}
+            {selectedTpl.filters.includes('dateTo') && (
+              <div style={{ display:'flex', flexDirection:'column', gap:4, flex:1, minWidth:140 }}>
+                <label style={{ fontSize:11, fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase' }}>Date To</label>
+                <input type="date" value={filters.dateTo} onChange={e => setFilters(p=>({...p, dateTo:e.target.value}))} style={{ padding:'8px 12px', background:'var(--bg-primary)', border:'1px solid var(--border)', borderRadius:8, color:'var(--text-primary)', fontSize:13 }}/>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Step 3: Columns */}
+      {selectedTpl && (
+        <section style={{ background:'var(--bg-secondary)', border:'1px solid var(--border)', borderRadius:16, padding:24, marginBottom:20 }}>
+          <h2 style={{ fontSize:15, fontWeight:700, margin:'0 0 14px', color:'var(--text-primary)' }}>3 — Select Columns</h2>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:10 }}>
+            {selectedTpl.columns.map(c => (
+              <label key={c.key} style={{ display:'flex', alignItems:'center', gap:7, padding:'7px 14px', borderRadius:20, cursor:'pointer', border:`1px solid ${selectedCols[c.key] ? ACCENT : 'var(--border)'}`, background: selectedCols[c.key] ? 'rgba(124,58,237,0.08)' : 'var(--bg-primary)', fontSize:13, fontWeight:500, color: selectedCols[c.key] ? ACCENT : 'var(--text-secondary)', transition:'all 0.15s' }}>
+                <input type="checkbox" checked={!!selectedCols[c.key]} onChange={() => setSelectedCols(p=>({...p, [c.key]:!p[c.key]}))} style={{ display:'none' }}/>
+                {selectedCols[c.key] && <CheckCircle size={13}/>}
                 {c.label}
               </label>
             ))}
           </div>
-        </div>
+        </section>
+      )}
 
-        {/* 3. Filters */}
-        {source === 'records' && (
-          <div style={{ marginBottom: 32 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>3. Date Filter (Optional)</h2>
-            <div style={{ display: 'flex', gap: 16 }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 6 }}>From Date</label>
-                <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} className="form-input" style={{ width: '100%', padding: '12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 6 }}>To Date</label>
-                <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} className="form-input" style={{ width: '100%', padding: '12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }} />
-              </div>
+      {/* Step 4: Preview + Export */}
+      {selectedTpl && (
+        <section style={{ background:'var(--bg-secondary)', border:'1px solid var(--border)', borderRadius:16, padding:24, marginBottom:20 }}>
+          <h2 style={{ fontSize:15, fontWeight:700, margin:'0 0 16px', color:'var(--text-primary)' }}>4 — Preview &amp; Export</h2>
+          <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
+            <button onClick={handlePreview} disabled={loadingPreview} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 22px', background:'rgba(124,58,237,0.1)', border:`1px solid ${ACCENT}`, borderRadius:10, color:ACCENT, fontSize:14, fontWeight:600, cursor:loadingPreview?'not-allowed':'pointer', opacity:loadingPreview?0.7:1, transition:'all 0.2s' }}>
+              {loadingPreview ? <RefreshCw size={15} style={{ animation:'spin 1s linear infinite' }}/> : <Eye size={15}/>}
+              {loadingPreview ? 'Loading Preview…' : 'Preview Report'}
+            </button>
+            <button onClick={() => handleExport('pdf')} disabled={exportLoading.pdf} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 22px', background:'rgba(239,68,68,0.08)', border:'1px solid rgba(239,68,68,0.4)', borderRadius:10, color:'#EF4444', fontSize:14, fontWeight:600, cursor:exportLoading.pdf?'not-allowed':'pointer', opacity:exportLoading.pdf?0.7:1, transition:'all 0.2s' }}>
+              {exportLoading.pdf ? <RefreshCw size={15} style={{ animation:'spin 1s linear infinite' }}/> : <Download size={15}/>}
+              {exportLoading.pdf ? 'Generating PDF…' : 'Export PDF'}
+            </button>
+            <button onClick={() => handleExport('excel')} disabled={exportLoading.excel} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 22px', background:'rgba(16,185,129,0.08)', border:'1px solid rgba(16,185,129,0.4)', borderRadius:10, color:'#10B981', fontSize:14, fontWeight:600, cursor:exportLoading.excel?'not-allowed':'pointer', opacity:exportLoading.excel?0.7:1, transition:'all 0.2s' }}>
+              {exportLoading.excel ? <RefreshCw size={15} style={{ animation:'spin 1s linear infinite' }}/> : <Download size={15}/>}
+              {exportLoading.excel ? 'Generating Excel…' : 'Export Excel (.xlsx)'}
+            </button>
+          </div>
+          <style>{`@keyframes spin { to { transform:rotate(360deg); } }`}</style>
+        </section>
+      )}
+
+      {/* Preview Panel */}
+      {preview && (
+        <section style={{ background:'var(--bg-secondary)', border:'1px solid var(--border)', borderRadius:16, padding:24 }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+            <h2 style={{ fontSize:15, fontWeight:700, margin:0, color:'var(--text-primary)' }}>Preview: {preview.title}</h2>
+            <span style={{ fontSize:12, color:'var(--text-muted)' }}>{preview.total} total rows · showing {Math.min(50, preview.total)}</span>
+          </div>
+
+          {/* Filter summary */}
+          {preview.filters && preview.filters !== 'No filters applied — all data' && (
+            <div style={{ padding:'8px 14px', background:'rgba(124,58,237,0.05)', border:'1px solid rgba(124,58,237,0.15)', borderRadius:8, fontSize:12, color:'var(--text-secondary)', marginBottom:18 }}>
+              <strong>Filters:</strong> {preview.filters}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* 4. Format & Export */}
-        <div>
-          <h2 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>{source === 'records' ? '4' : '3'}. Export Format</h2>
-          <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-            <label style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '16px', border: `2px solid ${format === 'pdf' ? 'var(--red)' : 'var(--border)'}`, borderRadius: 12, cursor: 'pointer', background: format === 'pdf' ? 'rgba(248, 113, 113, 0.05)' : 'var(--bg-primary)' }}>
-              <input type="radio" name="format" value="pdf" checked={format === 'pdf'} onChange={(e) => setFormat(e.target.value)} style={{ display: 'none' }} />
-              <span style={{ fontSize: 24 }}>📄</span> 
-              <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>PDF Document</span>
-            </label>
-            <label style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '16px', border: `2px solid ${format === 'excel' ? 'var(--green)' : 'var(--border)'}`, borderRadius: 12, cursor: 'pointer', background: format === 'excel' ? 'rgba(74, 222, 128, 0.05)' : 'var(--bg-primary)' }}>
-              <input type="radio" name="format" value="excel" checked={format === 'excel'} onChange={(e) => setFormat(e.target.value)} style={{ display: 'none' }} />
-              <span style={{ fontSize: 24 }}>📊</span> 
-              <span style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>Excel (.xlsx)</span>
-            </label>
-          </div>
+          {/* KPI cards */}
+          {kpi && (
+            <div style={{ display:'flex', gap:12, flexWrap:'wrap', marginBottom:24 }}>
+              {kpi.total_cases        != null && <KpiCard label="Total Cases"        value={kpi.total_cases?.toLocaleString()}        color={ACCENT}/>}
+              {kpi.active_cases       != null && <KpiCard label="Active Cases"       value={kpi.active_cases?.toLocaleString()}       color="#F59E0B"/>}
+              {kpi.recovered          != null && <KpiCard label="Recovered"          value={kpi.recovered?.toLocaleString()}          color="#10B981"/>}
+              {kpi.deceased           != null && <KpiCard label="Deceased"           value={kpi.deceased?.toLocaleString()}           color="#EF4444"/>}
+              {kpi.hospitals_affected != null && <KpiCard label="Hospitals Affected" value={kpi.hospitals_affected?.toLocaleString()} color="#3B82F6"/>}
+            </div>
+          )}
 
-          <button 
-            className="btn-primary" 
-            onClick={handleGenerate} 
-            disabled={loading}
-            style={{ width: '100%', padding: '16px', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
-          >
-            {loading ? (
-              'Processing Data...'
-            ) : (
-              <>
-                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                Generate & Download Report
-              </>
-            )}
-          </button>
-        </div>
+          {/* Chart tabs */}
+          {(preview.trends?.length > 0 || preview.breakdown?.length > 0 || preview.severity?.length > 0) && (
+            <div style={{ marginBottom:24 }}>
+              <div style={{ display:'flex', gap:8, marginBottom:16 }}>
+                {[['table','Table'], ['trends','Trend Line'], ['breakdown','Disease Mix'], ['severity','Severity']].map(([id, label]) => {
+                  const has = id === 'table' ? true : id === 'trends' ? preview.trends?.length > 0 : id === 'breakdown' ? preview.breakdown?.length > 0 : preview.severity?.length > 0;
+                  if (!has) return null;
+                  return (
+                    <button key={id} onClick={() => setActiveTab(id)} style={{ padding:'6px 16px', borderRadius:8, border:'none', background: activeTab===id ? ACCENT : 'var(--bg-primary)', color: activeTab===id ? '#fff' : 'var(--text-secondary)', fontSize:13, fontWeight:600, cursor:'pointer', transition:'all 0.2s' }}>{label}</button>
+                  );
+                })}
+              </div>
 
-      </div>
+              {activeTab === 'trends' && preview.trends?.length > 0 && (
+                <div style={{ height:260 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={preview.trends}>
+                      <XAxis dataKey="month" tick={{ fontSize:11 }}/>
+                      <YAxis tick={{ fontSize:11 }}/>
+                      <Tooltip/>
+                      <Line type="monotone" dataKey="total_cases" stroke={ACCENT} strokeWidth={2} dot={false} name="Cases"/>
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {activeTab === 'breakdown' && preview.breakdown?.length > 0 && (
+                <div style={{ height:260 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={preview.breakdown.slice(0,10)} layout="vertical" margin={{ left:100 }}>
+                      <XAxis type="number" tick={{ fontSize:11 }}/>
+                      <YAxis type="category" dataKey="disease_name" tick={{ fontSize:11 }} width={95}/>
+                      <Tooltip/>
+                      <Bar dataKey="total_cases" name="Cases">
+                        {preview.breakdown.slice(0,10).map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]}/>)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {activeTab === 'severity' && preview.severity?.length > 0 && (
+                <div style={{ height:260, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                  <ResponsiveContainer width="60%" height="100%">
+                    <PieChart>
+                      <Pie data={preview.severity} dataKey="count" nameKey="severity_label" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} ${(percent*100).toFixed(0)}%`} labelLine={false}>
+                        {preview.severity.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]}/>)}
+                      </Pie>
+                      <Tooltip/>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Data table */}
+          {(activeTab === 'table' || !preview.trends?.length) && (
+            <DataTable headers={visibleHeaders} rows={preview.rows}/>
+          )}
+        </section>
+      )}
     </div>
   );
 }

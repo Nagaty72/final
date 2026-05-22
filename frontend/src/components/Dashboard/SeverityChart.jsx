@@ -75,15 +75,25 @@ function normalizeSeverity(responseData) {
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
   });
 
-  return sorted.map((r) => {
-    const count = Number(r.count ?? r.total_cases ?? 0);
-    return {
-      name:  r.severity || 'Unknown',
-      value: count,
-      pct:   Math.round((count / total) * 100),
-      fill:  SEVERITY_PALETTE[r.severity] || FALLBACK_COLOR,
-    };
-  });
+  // Deduplicate by severity label — aggregate counts if backend returns duplicates
+  const dedupMap = new Map();
+  for (const r of sorted) {
+    const key = r.severity || 'Unknown';
+    if (dedupMap.has(key)) {
+      dedupMap.get(key).count += Number(r.count ?? r.total_cases ?? 0);
+    } else {
+      dedupMap.set(key, { ...r, count: Number(r.count ?? r.total_cases ?? 0) });
+    }
+  }
+  const deduped = Array.from(dedupMap.values());
+  const dedupeTotal = deduped.reduce((s, r) => s + r.count, 0) || 1;
+
+  return deduped.map((r) => ({
+    name:  r.severity || 'Unknown',
+    value: r.count,
+    pct:   Math.round((r.count / dedupeTotal) * 100),
+    fill:  SEVERITY_PALETTE[r.severity] || FALLBACK_COLOR,
+  }));
 }
 
 export default function SeverityChart() {
@@ -172,8 +182,8 @@ export default function SeverityChart() {
             </PieChart>
           </ResponsiveContainer>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 8, justifyContent: 'center' }}>
-            {data.map((d) => (
-              <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-secondary)' }}>
+            {data.map((d, i) => (
+              <div key={`sev-${d.name}-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-secondary)' }}>
                 <div style={{ width: 10, height: 10, borderRadius: 2, background: d.fill }} />
                 <span>{d.name}</span>
                 <span style={{ color: d.fill, fontWeight: 600 }}>{d.pct}%</span>

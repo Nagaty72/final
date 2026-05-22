@@ -193,12 +193,12 @@ function DiseaseLegend({ diseaseNames, colorMap, hiddenDiseases, onToggle }) {
       aria-label="Disease visibility filter"
       style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8, flexShrink: 0 }}
     >
-      {diseaseNames.map((name) => {
+      {diseaseNames.map((name, i) => {
         const hidden = hiddenDiseases.has(name);
         const color  = colorMap[name] ?? '#64748b';
         return (
           <button
-            key={name}
+            key={`bubble-legend-${name}-${i}`}
             onClick={() => onToggle(name)}
             aria-pressed={!hidden}
             style={{

@@ -18,6 +18,7 @@ import chatRoutes from './routes/chat.routes.js';
 import userRoutes from './routes/user.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import publicRoutes from './routes/public.routes.js';
+import reportRoutes from './routes/report.routes.js';
 
 
 // Middleware imports
@@ -85,6 +86,7 @@ app.use('/api/v1/users/preferences', authMiddleware, preferencesRoutes);
 app.use('/api/v1/chat', authMiddleware, chatRoutes);
 app.use('/api/v1/users', authMiddleware, userRoutes);
 app.use('/api/v1/notifications', authMiddleware, notificationRoutes);
+app.use('/api/v1/reports',        authMiddleware, reportRoutes);
 
 
 // ─── 404 + Global Error Handler ─────────────────────────────────────────────

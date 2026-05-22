@@ -89,11 +89,11 @@ function FilterSelect({ label, value, onChange, options }) {
         padding: '4px 0',
       }}
     >
-      {options.map(o => {
+      {options.map((o, idx) => {
         const isSel = String(o.value) === String(value);
         return (
           <div
-            key={o.value}
+            key={`${o.value}-${idx}`}
             onClick={() => {
               onChange(o.value);
               setIsOpen(false);
@@ -233,11 +233,11 @@ function MultiSelect({ label, selectedValues, onChange, options }) {
         padding: '4px 0',
       }}
     >
-      {options.map(o => {
+      {options.map((o, idx) => {
         const isSelected = selectedValues.includes(o.value);
         return (
           <div
-            key={o.value}
+            key={`${o.value}-${idx}`}
             onClick={() => o.value ? toggleValue(o.value) : onChange([])}
             style={{
               padding: '8px 12px', fontSize: 13, cursor: 'pointer',
@@ -314,8 +314,16 @@ export default function FilterBar() {
   const loadDropdowns = useCallback(async () => {
     try {
       const [cRes, dRes] = await Promise.all([getCityList(), getDiseaseList()]);
-      if (cRes?.data)  setCities([{ value: '', label: 'All Governorates' }, ...cRes.data.map(c => ({ value: c, label: c }))]);
-      if (dRes?.data)  setDiseases([{ value: '', label: 'All Diseases' }, ...dRes.data.map(d => ({ value: d.name, label: d.name }))]);
+      if (cRes?.data) {
+        // Deduplicate city names before building options
+        const uniqueCities = Array.from(new Map(cRes.data.map(c => [c, c])).values());
+        setCities([{ value: '', label: 'All Governorates' }, ...uniqueCities.map(c => ({ value: c, label: c }))]);
+      }
+      if (dRes?.data) {
+        // Deduplicate disease names before building options
+        const uniqueDiseases = Array.from(new Map(dRes.data.map(d => [d.name, d])).values());
+        setDiseases([{ value: '', label: 'All Diseases' }, ...uniqueDiseases.map(d => ({ value: d.name, label: d.name }))]);
+      }
     } catch (_) {}
   }, []);
 
