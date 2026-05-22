@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Health Analytics Platform",
-  description: "Real-time health data analytics, disease monitoring, and AI-powered trend forecasting.",
+  title: "Epicare — National Health Intelligence Platform",
+  description: "AI-powered national disease intelligence. Monitor outbreaks, analyze epidemiological trends, and track public health risks across Egypt in real time.",
 };
 
 export default function RootLayout({ children }) {

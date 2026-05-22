@@ -3,10 +3,9 @@
     "dashboard": "Dashboard",
     "hospitals": "Nearby Facilities",
     "disease_analytics": "Disease Analytics",
-    "users": "Users Management",
-    "report_builder": "Report Builder",
     "admin_panel": "Admin Panel",
-    "health_analytics": "Health Analytics",
+    "report_builder": "Report Builder",
+    "health_analytics": "Epicare",
     "settings": "Settings",
     "logout": "Logout",
     "chatbot": "AI Assistant",
@@ -179,7 +178,7 @@
     "success": "Success"
   },
   "landing": {
-    "nav_platform": "Health Analytics",
+    "nav_platform": "Epicare",
     "nav_features": "Features",
     "nav_how": "How It Works",
     "nav_login": "Login",
@@ -254,6 +253,7 @@
     "save_user": "Save User",
     "cancel": "Cancel",
     "loading": "Loading users...",
+<<<<<<< HEAD
     "no_users": "No users found"
   },
   "notifications": {
@@ -272,5 +272,10 @@
     "btn_cancel": "Cancel",
     "success_sent": "Notification sent successfully",
     "all_caught_up": "You're all caught up!"
+=======
+    "no_users": "No users found",
+    "error_fetch": "Failed to load users. Please try again.",
+    "error_delete": "Failed to delete user. Please try again."
+>>>>>>> david
   }
 }

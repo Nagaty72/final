@@ -17,11 +17,18 @@ function debounce(key, fn, delay = 300) {
 
 // ── Store ────────────────────────────────────────────────────────────────────
 export const useDashboardFilterStore = create((set, get) => ({
-  // Raw filter values
+  // Raw UI filter values (used by FilterBar)
+  uiCity:      '',
+  uiDisease:   [],
+  uiGender:    '',
+  uiSeverity:  '',
+  uiTimeRange: '1y',
+
+  // Applied filter values (used by chart widgets)
   city:      '',
-  disease:   [], // Array of selected disease names
+  disease:   [], 
   gender:    '',
-  severity:  '', // Integer string '1'-'5' or empty
+  severity:  '', 
   timeRange: '1y',   // default: last year
 
   // Pending flag — true while debounce is in flight
@@ -34,15 +41,24 @@ export const useDashboardFilterStore = create((set, get) => ({
     set({ [key]: value, filtersChanging: true });
 
     debounce('filters', () => {
-      set({ filtersChanging: false });
-    }, 300);
+      const state = get();
+      set({
+        city:      state.uiCity,
+        disease:   state.uiDisease,
+        gender:    state.uiGender,
+        severity:  state.uiSeverity,
+        timeRange: state.uiTimeRange,
+        filtersChanging: false,
+      });
+    }, 600); // 600ms debounce before triggering fetches
   },
 
   /** Reset all filters to default state */
   resetFilters: () => {
     set({
-      city: '', disease: [], gender: '', severity: '',
-      timeRange: '1y', filtersChanging: false,
+      uiCity: '', uiDisease: [], uiGender: '', uiSeverity: '', uiTimeRange: '1y',
+      city: '', disease: [], gender: '', severity: '', timeRange: '1y',
+      filtersChanging: false,
     });
   },
 

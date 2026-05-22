@@ -20,9 +20,17 @@ function buildQueryString(params = {}) {
   return str ? `?${str}` : '';
 }
 
+const inFlightRequests = new Map();
+
 async function request(endpoint, options = {}, params = {}) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('ha_token') : null;
   const url = `${API_BASE}${endpoint}${buildQueryString(params)}`;
+  const method = options.method || 'GET';
+  const cacheKey = `${method}:${url}`;
+
+  if (method === 'GET' && inFlightRequests.has(cacheKey)) {
+    return inFlightRequests.get(cacheKey);
+  }
 
   const headers = {
     'Content-Type': 'application/json',
@@ -36,19 +44,31 @@ async function request(endpoint, options = {}, params = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(url, {
-    headers,
-    cache: 'no-store',
-    ...options,
-  });
+  const fetchPromise = (async () => {
+    try {
+      const res = await fetch(url, {
+        headers,
+        cache: 'no-store',
+        ...options,
+      });
 
-  const data = await res.json();
+      const data = await res.json();
 
-  if (!res.ok) {
-    throw new Error(data.error || data.message || `Request failed (${res.status})`);
+      if (!res.ok) {
+        throw new Error(data.error || data.message || `Request failed (${res.status})`);
+      }
+
+      return data;
+    } finally {
+      inFlightRequests.delete(cacheKey);
+    }
+  })();
+
+  if (method === 'GET') {
+    inFlightRequests.set(cacheKey, fetchPromise);
   }
 
-  return data;
+  return fetchPromise;
 }
 
 export const api = {

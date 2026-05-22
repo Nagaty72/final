@@ -121,6 +121,8 @@ function FilterSelect({ label, value, onChange, options }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 130, position: 'relative' }}>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 130 }}>
       <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
         {label}
       </label>
@@ -163,6 +165,27 @@ function FilterSelect({ label, value, onChange, options }) {
         />
       </div>
       {dropdownPortal}
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          style={{
+            width: '100%', padding: '9px 32px 9px 12px', appearance: 'none',
+            background: 'var(--bg-primary)', border: '1px solid var(--border)',
+            borderRadius: 8, color: value ? 'var(--text-primary)' : 'var(--text-muted)',
+            fontSize: 13, cursor: 'pointer', transition: 'border-color 0.2s',
+            outline: 'none',
+          }}
+          onFocus={(e) => e.target.style.borderColor = 'var(--accent)'}
+          onBlur={(e) => e.target.style.borderColor = 'var(--border)'}
+        >
+          {options.map(o => (
+            <option key={o.value} value={o.value} style={{ background: 'var(--bg-secondary)' }}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown size={14} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+      </div>
     </div>
   );
 }
@@ -274,6 +297,7 @@ function MultiSelect({ label, selectedValues, onChange, options }) {
         onClick={isOpen ? () => setIsOpen(false) : openDropdown}
         style={{
           width: '100%', padding: '8px 32px 8px 12px',
+          width: '100%', padding: '9px 32px 9px 12px',
           background: 'var(--bg-primary)',
           border: `1px solid ${isOpen ? 'var(--accent)' : 'var(--border)'}`,
           borderRadius: 8,
@@ -302,6 +326,13 @@ export default function FilterBar() {
       gender: state.gender,
       severity: state.severity,
       timeRange: state.timeRange,
+  const { uiCity, uiDisease, uiGender, uiSeverity, uiTimeRange, setFilter, resetFilters, filtersChanging } = useDashboardFilterStore(
+    useShallow((state) => ({
+      uiCity: state.uiCity,
+      uiDisease: state.uiDisease,
+      uiGender: state.uiGender,
+      uiSeverity: state.uiSeverity,
+      uiTimeRange: state.uiTimeRange,
       setFilter: state.setFilter,
       resetFilters: state.resetFilters,
       filtersChanging: state.filtersChanging,
@@ -322,6 +353,7 @@ export default function FilterBar() {
   useEffect(() => { loadDropdowns(); }, [loadDropdowns]);
 
   const activeFiltersCount = [city, ...(disease || []), gender, severity, timeRange !== '1y' ? timeRange : null].filter(Boolean).length;
+  const activeFiltersCount = [uiCity, ...(uiDisease || []), uiGender, uiSeverity, uiTimeRange !== '1y' ? uiTimeRange : null].filter(Boolean).length;
   const isDefault = activeFiltersCount === 0;
 
   return (
@@ -388,6 +420,11 @@ export default function FilterBar() {
         <FilterSelect label="Gender"      value={gender}   onChange={(v) => setFilter('gender', v)}    options={GENDERS} />
         <FilterSelect label="Severity"    value={severity} onChange={(v) => setFilter('severity', v)}  options={SEVERITIES} />
         <FilterSelect label="Time Range"  value={timeRange} onChange={(v) => setFilter('timeRange', v)} options={TIME_RANGES} />
+        <FilterSelect label="Governorate" value={uiCity}     onChange={(v) => setFilter('uiCity', v)}      options={cities.length ? cities : [{ value: '', label: 'Loading…' }]} />
+        <MultiSelect  label="Disease"     selectedValues={uiDisease}  onChange={(v) => setFilter('uiDisease', v)}   options={diseases.length ? diseases : [{ value: '', label: 'Loading…' }]} />
+        <FilterSelect label="Gender"      value={uiGender}   onChange={(v) => setFilter('uiGender', v)}    options={GENDERS} />
+        <FilterSelect label="Severity"    value={uiSeverity} onChange={(v) => setFilter('uiSeverity', v)}  options={SEVERITIES} />
+        <FilterSelect label="Time Range"  value={uiTimeRange} onChange={(v) => setFilter('uiTimeRange', v)} options={TIME_RANGES} />
       </div>
     </div>
   );
