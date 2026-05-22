@@ -253,8 +253,9 @@
     "save_user": "Save User",
     "cancel": "Cancel",
     "loading": "Loading users...",
-<<<<<<< HEAD
-    "no_users": "No users found"
+    "no_users": "No users found",
+    "error_fetch": "Failed to load users. Please try again.",
+    "error_delete": "Failed to delete user. Please try again."
   },
   "notifications": {
     "title": "Notifications",
@@ -272,10 +273,5 @@
     "btn_cancel": "Cancel",
     "success_sent": "Notification sent successfully",
     "all_caught_up": "You're all caught up!"
-=======
-    "no_users": "No users found",
-    "error_fetch": "Failed to load users. Please try again.",
-    "error_delete": "Failed to delete user. Please try again."
->>>>>>> david
   }
 }
