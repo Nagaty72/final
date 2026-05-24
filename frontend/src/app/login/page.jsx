@@ -415,7 +415,7 @@ function AuthPageContent() {
                 <input
                   id="email"
                   type="email"
-                  className={`auth-input ${fieldState(emailError, email)}`}
+                  className={`auth-input ${mode === 'register' ? fieldState(emailError, email) : (emailError ? 'has-error' : '')}`}
                   placeholder={mode === 'register' ? 'you@gmail.com' : t('auth.email_placeholder')}
                   value={email}
                   onChange={(e) => {
@@ -427,7 +427,7 @@ function AuthPageContent() {
                   required
                   autoComplete="email"
                 />
-                {email && !emailError && <span className="auth-valid-icon">✓</span>}
+                {mode === 'register' && email && !emailError && <span className="auth-valid-icon">✓</span>}
               </div>
               {emailError && <div className="auth-field-error">{emailError}</div>}
             </div>
@@ -473,9 +473,6 @@ function AuthPageContent() {
                 </button>
               </div>
               {mode === 'register' && passwordError && <div className="auth-field-error">{passwordError}</div>}
-              {mode === 'register' && password && !passwordError && (
-                <div className="auth-field-hint">✓ Strong password</div>
-              )}
               {mode === 'login' && (
                 <div style={{ textAlign: 'right', marginTop: '8px' }}>
                   <Link href="/forgot-password" style={{ color: '#3b82f6', fontSize: '13px', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}>

@@ -15,7 +15,7 @@ export const ENV = {
   JWT_SECRET:
     process.env.JWT_SECRET || 'change-this-to-a-strong-secret-in-production',
 
-  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
+  JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '6h',
 
   JWT_REFRESH_SECRET:
     process.env.JWT_REFRESH_SECRET ||

@@ -16,7 +16,7 @@
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { SlidersHorizontal, RotateCcw, ChevronDown, Check, Map, X } from 'lucide-react';
+import { SlidersHorizontal, RotateCcw, ChevronDown, Check, Map as MapIcon, X } from 'lucide-react';
 
 const TIME_RANGES = [
   { value: '',     label: 'All Time'       },
