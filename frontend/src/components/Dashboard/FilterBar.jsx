@@ -1,6 +1,5 @@
 'use client';
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
 import { useShallow } from 'zustand/react/shallow';
 import { getDiseaseList, getCityList } from '@/services/analytics.service';
@@ -35,22 +34,8 @@ function FilterSelect({ label, value, onChange, options }) {
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef(null);
   const dropdownRef = useRef(null);
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const openDropdown = useCallback(() => {
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setCoords({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-      });
-    }
     setIsOpen(true);
   }, []);
 
@@ -71,14 +56,15 @@ function FilterSelect({ label, value, onChange, options }) {
   const selectedOption = options.find(o => String(o.value) === String(value)) || options[0];
   const displayText = selectedOption ? selectedOption.label : 'Select...';
 
-  const dropdownPortal = mounted && isOpen ? createPortal(
+  const dropdownMenu = isOpen ? (
     <div
       ref={dropdownRef}
       style={{
-        position: 'fixed',
-        top: coords.top,
-        left: coords.left,
-        width: coords.width,
+        position: 'absolute',
+        top: 'calc(100% + 4px)',
+        left: 0,
+        width: '100%',
+        minWidth: 160,
         zIndex: 99999,
         background: 'var(--bg-secondary)',
         border: '1px solid var(--border)',
@@ -115,8 +101,7 @@ function FilterSelect({ label, value, onChange, options }) {
           </div>
         );
       })}
-    </div>,
-    document.body
+    </div>
   ) : null;
 
   return (
@@ -161,8 +146,8 @@ function FilterSelect({ label, value, onChange, options }) {
             transition: 'transform 0.2s',
           }}
         />
+        {dropdownMenu}
       </div>
-      {dropdownPortal}
     </div>
   );
 }
@@ -171,20 +156,8 @@ function MultiSelect({ label, selectedValues, onChange, options }) {
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef          = useRef(null);
   const dropdownRef         = useRef(null);
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => { setMounted(true); }, []);
 
   const openDropdown = useCallback(() => {
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setCoords({
-        top:   rect.bottom + window.scrollY + 4,
-        left:  rect.left + window.scrollX,
-        width: rect.width,
-      });
-    }
     setIsOpen(true);
   }, []);
 
@@ -215,14 +188,15 @@ function MultiSelect({ label, selectedValues, onChange, options }) {
       ? selectedValues[0]
       : `${selectedValues.length} selected`;
 
-  const dropdownPortal = mounted && isOpen ? createPortal(
+  const dropdownMenu = isOpen ? (
     <div
       ref={dropdownRef}
       style={{
-        position: 'fixed',
-        top: coords.top,
-        left: coords.left,
-        width: Math.max(coords.width, 220),
+        position: 'absolute',
+        top: 'calc(100% + 4px)',
+        left: 0,
+        width: 'max-content',
+        minWidth: '100%',
         zIndex: 99999,
         background: 'var(--bg-secondary)',
         border: '1px solid var(--border)',
@@ -260,8 +234,7 @@ function MultiSelect({ label, selectedValues, onChange, options }) {
           </div>
         );
       })}
-    </div>,
-    document.body
+    </div>
   ) : null;
 
   return (
@@ -269,27 +242,29 @@ function MultiSelect({ label, selectedValues, onChange, options }) {
       <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
         {label}
       </label>
-      <div
-        ref={triggerRef}
-        onClick={isOpen ? () => setIsOpen(false) : openDropdown}
-        style={{
-          width: '100%', padding: '8px 32px 8px 12px',
-          background: 'var(--bg-primary)',
-          border: `1px solid ${isOpen ? 'var(--accent)' : 'var(--border)'}`,
-          borderRadius: 8,
-          color: selectedValues.length ? 'var(--text-primary)' : 'var(--text-muted)',
-          fontSize: 13, cursor: 'pointer', transition: 'border-color 0.2s',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}
-      >
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayText}</span>
-        <ChevronDown size={14} style={{
-          position: 'absolute', right: 10, top: '50%',
-          transform: `translateY(-50%) rotate(${isOpen ? 180 : 0}deg)`,
-          color: 'var(--text-muted)', pointerEvents: 'none', transition: 'transform 0.2s',
-        }} />
+      <div style={{ position: 'relative' }}>
+        <div
+          ref={triggerRef}
+          onClick={isOpen ? () => setIsOpen(false) : openDropdown}
+          style={{
+            width: '100%', padding: '8px 32px 8px 12px',
+            background: 'var(--bg-primary)',
+            border: `1px solid ${isOpen ? 'var(--accent)' : 'var(--border)'}`,
+            borderRadius: 8,
+            color: selectedValues.length ? 'var(--text-primary)' : 'var(--text-muted)',
+            fontSize: 13, cursor: 'pointer', transition: 'border-color 0.2s',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}
+        >
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayText}</span>
+          <ChevronDown size={14} style={{
+            position: 'absolute', right: 10, top: '50%',
+            transform: `translateY(-50%) rotate(${isOpen ? 180 : 0}deg)`,
+            color: 'var(--text-muted)', pointerEvents: 'none', transition: 'transform 0.2s',
+          }} />
+        </div>
+        {dropdownMenu}
       </div>
-      {dropdownPortal}
     </div>
   );
 }
@@ -334,6 +309,7 @@ export default function FilterBar() {
 
   return (
     <div style={{
+      position: 'relative', zIndex: 999,
       background: 'var(--bg-secondary)', border: '1px solid var(--border)',
       borderRadius: 16, padding: '16px 20px', marginBottom: 24,
       boxShadow: '0 8px 32px rgba(0,0,0,0.1)', backdropFilter: 'blur(12px)',

@@ -1,20 +1,77 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
 import ExcelJS from 'exceljs';
 import { ReportRepository } from '../repositories/report.repository.js';
 
-// Dynamic import of jsPDF (requires canvas in Node — uses built-in fallback)
+// ─── SETUP HELPERS FOR ES MODULES ─────────────────────────────────────────────
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const require = createRequire(import.meta.url); // السر كله في السطر ده
+
+// ─── BULLETPROOF ARABIC RESHAPER ──────────────────────────────────────────────
+let reshapeFunction = null;
+
+try {
+  // هنجرب نسحب المكتبة بأي طريقة كانت نازلة بيها عندك
+  const pkg = require('arabic-persian-reshaper');
+  reshapeFunction = pkg.reshape || pkg.convertArabic || pkg.ArabicShaper?.convertArabic || (typeof pkg === 'function' ? pkg : null);
+  
+  if (!reshapeFunction) {
+    const pkg2 = require('arabic-reshaper');
+    reshapeFunction = pkg2.convertArabic || pkg2.reshape || (typeof pkg2 === 'function' ? pkg2 : null);
+  }
+} catch (e) {
+  console.error("⚠️ فشل في استدعاء مكتبة التشكيل. اتأكد إنك عامل: npm install arabic-persian-reshaper");
+}
+
+// Dynamic import of jsPDF
 async function getJsPdf() {
   const { jsPDF } = await import('jspdf');
   const { default: autoTable } = await import('jspdf-autotable');
   return { jsPDF, autoTable };
 }
 
-// ─── Severity label helper ────────────────────────────────────────────────────
+// ─── Severity & Date helpers ──────────────────────────────────────────────────
 const SEVERITY_LABELS = { 1: 'Mild', 2: 'Moderate', 3: 'Severe', 4: 'Critical', 5: 'Extreme' };
 const severityLabel = (n) => SEVERITY_LABELS[n] ?? `Level ${n}`;
 
-// ─── Date helpers ─────────────────────────────────────────────────────────────
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-GB') : 'N/A';
 const nowStr  = () => new Date().toLocaleString('en-GB', { hour12: false });
+
+// ─── Arabic RTL and Connection Reshaper Helper ──────────────────────────────
+function processArabicText(text) {
+  if (!text) return '';
+  const containsArabic = /[\u0600-\u06FF]/.test(text);
+  if (!containsArabic) return text;
+
+  if (reshapeFunction) {
+    try {
+      // 1. تشبيك الحروف الأول
+      let reshaped = reshapeFunction(String(text));
+      
+      // 2. إصلاح مشكلة الحروف والأرقام المعكوسة (Bidi Fix)
+      // نقسم النص، ونعكس الحروف للكلمات العربية فقط عشان jsPDF، ونسيب الأرقام والإنجليزي زي ما هما
+      let words = reshaped.split(' ');
+      let processedWords = words.map(word => {
+        if (/[\u0600-\u06FF]/.test(word)) {
+          // التعامل مع الأقواس عشان متتعكسش غلط
+          let w = word.replace('(', '\u0001').replace(')', '(').replace('\u0001', ')');
+          return w.split('').reverse().join('');
+        }
+        return word;
+      });
+      
+      return processedWords.join(' ');
+    } catch (e) {
+      console.error("⚠️ خطأ أثناء التشكيل:", e.message);
+    }
+  }
+  
+  // لو الدالة مش موجودة
+  return String(text).split(' ').join(' '); // or simply String(text)
+}
 
 // ─── Common filter extraction ─────────────────────────────────────────────────
 function extractFilters(query) {
@@ -47,6 +104,61 @@ function buildFilterSummary(filters) {
   return parts.length ? parts.join('  |  ') : 'No filters applied — all data';
 }
 
+// ─── Controllers ──────────────────────────────────────────────────────────────
+export const ReportController = {
+  getTemplates(req, res) {
+    try {
+      const templates = ReportService.getTemplates();
+      res.json({ success: true, data: templates });
+    } catch (e) {
+      res.status(500).json({ success: false, error: e.message });
+    }
+  },
+
+  async getFilterOptions(req, res, next) {
+    try {
+      const data = await ReportService.getFilterOptions();
+      res.json({ success: true, data });
+    } catch (e) { next(e); }
+  },
+
+  async preview(req, res, next) {
+    try {
+      const { templateId, filters = {} } = req.body;
+      if (!templateId) {
+        return res.status(400).json({ success: false, error: 'templateId is required.' });
+      }
+      const data = await ReportService.generatePreview(templateId, filters);
+      res.json({ success: true, data });
+    } catch (e) { next(e); }
+  },
+
+  async exportReport(req, res, next) {
+    try {
+      const { templateId, filters = {}, format = 'pdf' } = req.body;
+      if (!templateId) {
+        return res.status(400).json({ success: false, error: 'templateId is required.' });
+      }
+      if (!['pdf', 'excel'].includes(format)) {
+        return res.status(400).json({ success: false, error: 'format must be "pdf" or "excel".' });
+      }
+
+      const { buffer, filename, contentType } = await ReportService.generateExport(templateId, filters, format);
+
+      res.set({
+        'Content-Type':        contentType,
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Length':      buffer.length,
+        'Cache-Control':       'no-store',
+      });
+      res.send(buffer);
+    } catch (e) { 
+      console.error('❌ [ERROR] Export failed:', e.message);
+      res.status(500).json({ success: false, error: e.message });
+    }
+  },
+};
+
 // ─── EXCEL generator ──────────────────────────────────────────────────────────
 async function buildExcel({ title, headers, rows, kpis, filterSummary, sheetName = 'Report Data' }) {
   const wb = new ExcelJS.Workbook();
@@ -54,10 +166,8 @@ async function buildExcel({ title, headers, rows, kpis, filterSummary, sheetName
   wb.created  = new Date();
   wb.modified = new Date();
 
-  // ── Main data sheet ──
   const ws = wb.addWorksheet(sheetName, { views: [{ state: 'frozen', ySplit: 5 }] });
 
-  // Title rows
   ws.mergeCells('A1', `${String.fromCharCode(64 + headers.length)}1`);
   const titleCell = ws.getCell('A1');
   titleCell.value = `EPICARE — ${title.toUpperCase()}`;
@@ -79,22 +189,17 @@ async function buildExcel({ title, headers, rows, kpis, filterSummary, sheetName
   filterCell.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
   filterCell.alignment = { horizontal: 'center', wrapText: true };
 
-  ws.getRow(4).height = 4; // spacer
+  ws.getRow(4).height = 4;
 
-  // Header row
   const headerRow = ws.addRow(headers.map(h => h.label));
   headerRow.eachCell(cell => {
     cell.font  = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
     cell.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F46E5' } };
     cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-    cell.border = {
-      top:    { style: 'thin', color: { argb: 'FF818CF8' } },
-      bottom: { style: 'thin', color: { argb: 'FF818CF8' } },
-    };
+    cell.border = { top: { style: 'thin', color: { argb: 'FF818CF8' } }, bottom: { style: 'thin', color: { argb: 'FF818CF8' } } };
   });
   headerRow.height = 24;
 
-  // Data rows
   rows.forEach((row, i) => {
     const r = ws.addRow(headers.map(h => row[h.key] ?? ''));
     const isEven = i % 2 === 0;
@@ -105,17 +210,12 @@ async function buildExcel({ title, headers, rows, kpis, filterSummary, sheetName
     });
   });
 
-  // Auto column widths
   headers.forEach((h, i) => {
     const col = ws.getColumn(i + 1);
-    const maxLen = Math.max(
-      h.label.length,
-      ...rows.map(r => String(r[h.key] ?? '').length)
-    );
+    const maxLen = Math.max(h.label.length, ...rows.map(r => String(r[h.key] ?? '').length));
     col.width = Math.min(Math.max(maxLen + 4, 12), 40);
   });
 
-  // ── Filters metadata sheet ──
   const wsMeta = wb.addWorksheet('Report Metadata');
   wsMeta.addRow(['EPICARE Report Metadata']).font = { bold: true, size: 12 };
   wsMeta.addRow([]);
@@ -141,32 +241,50 @@ async function buildExcel({ title, headers, rows, kpis, filterSummary, sheetName
   wsMeta.getColumn(1).width = 22;
   wsMeta.getColumn(2).width = 32;
 
-  const buffer = await wb.xlsx.writeBuffer();
-  return buffer;
+  return await wb.xlsx.writeBuffer();
 }
 
-// ─── PDF generator ────────────────────────────────────────────────────────────
+// ─── PDF generator (With Dynamic Font Loading) ────────────────────────────────
 async function buildPdf({ title, headers, rows, kpis, filterSummary }) {
   const { jsPDF, autoTable } = await getJsPdf();
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   let y = 10;
 
+  // ── 1. Read Font Dynamically (With Safety Net) ──
+  let fontBase64 = '';
+  try {
+    const fontPath = path.join(__dirname, '../fonts/Amiri-Regular.ttf'); 
+    fontBase64 = fs.readFileSync(fontPath).toString('base64');
+  } catch (err) {
+    console.error('❌ [FATAL] Cannot read Arabic font file:', err.message);
+    throw new Error('PDF Generation Failed: Missing font file at src/fonts/Amiri-Regular.ttf');
+  }
+
+  // ── 2. Register Custom Arabic Font ──
+  doc.addFileToVFS('Amiri-Regular.ttf', fontBase64);
+  doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+  doc.addFont('Amiri-Regular.ttf', 'Amiri', 'bold'); 
+  
+  const setPdfFont = (fontStyle = 'normal') => {
+    doc.setFont('Amiri', fontStyle);
+  };
+
   // Header banner
   doc.setFillColor(124, 58, 237);
   doc.rect(0, 0, pageW, 22, 'F');
   doc.setTextColor(255, 255, 255);
-  doc.setFont('helvetica', 'bold');
+  setPdfFont('bold');
   doc.setFontSize(14);
   doc.text('EPICARE — Health Intelligence Platform', pageW / 2, 10, { align: 'center' });
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.text(title, pageW / 2, 17, { align: 'center' });
+  doc.setFontSize(10);
+  setPdfFont('normal');
+  doc.text(processArabicText(title), pageW / 2, 17, { align: 'center' });
   y = 28;
 
   // Generation info
   doc.setTextColor(100, 116, 139);
-  doc.setFontSize(8);
+  doc.setFontSize(9);
   doc.text(`Generated: ${nowStr()}`, 14, y);
   doc.text(`Total Records: ${rows.length}`, pageW - 14, y, { align: 'right' });
   y += 6;
@@ -175,8 +293,8 @@ async function buildPdf({ title, headers, rows, kpis, filterSummary }) {
   doc.setFillColor(243, 244, 246);
   doc.rect(12, y, pageW - 24, 8, 'F');
   doc.setTextColor(55, 65, 81);
-  doc.setFontSize(7.5);
-  doc.text(`Filters: ${filterSummary}`, 15, y + 5.5);
+  doc.setFontSize(8);
+  doc.text(processArabicText(`Filters: ${filterSummary}`), 15, y + 5.5);
   y += 12;
 
   // KPI cards row
@@ -198,12 +316,12 @@ async function buildPdf({ title, headers, rows, kpis, filterSummary }) {
         doc.roundedRect(cx, y, cardW, cardH, 2, 2, 'F');
         doc.setTextColor(79, 70, 229);
         doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
+        setPdfFont('bold');
         doc.text(String(k.value), cx + cardW / 2, y + 10, { align: 'center' });
         doc.setTextColor(107, 114, 128);
-        doc.setFontSize(7);
-        doc.setFont('helvetica', 'normal');
-        doc.text(k.label, cx + cardW / 2, y + 16, { align: 'center' });
+        doc.setFontSize(8);
+        setPdfFont('normal');
+        doc.text(processArabicText(k.label), cx + cardW / 2, y + 16, { align: 'center' });
       });
       y += cardH + 8;
     }
@@ -211,10 +329,10 @@ async function buildPdf({ title, headers, rows, kpis, filterSummary }) {
 
   // Data table
   if (rows.length > 0) {
-    const colDefs    = headers.map(h => ({ header: h.label, dataKey: h.key }));
+    const colDefs    = headers.map(h => ({ header: processArabicText(h.label), dataKey: h.key }));
     const tableRows  = rows.map(r => {
       const obj = {};
-      headers.forEach(h => { obj[h.key] = r[h.key] ?? ''; });
+      headers.forEach(h => { obj[h.key] = processArabicText(String(r[h.key] ?? '')); });
       return obj;
     });
 
@@ -223,28 +341,28 @@ async function buildPdf({ title, headers, rows, kpis, filterSummary }) {
       columns: colDefs,
       body:    tableRows,
       margin:  { left: 14, right: 14 },
-      styles:  { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak', font: 'helvetica' },
+      styles:  { fontSize: 8.5, cellPadding: 2.5, overflow: 'linebreak', font: 'Amiri', halign: 'center' },
       headStyles: {
         fillColor:  [79, 70, 229],
         textColor:  [255, 255, 255],
         fontStyle:  'bold',
-        fontSize:   8,
+        fontSize:   9,
         halign:     'center',
       },
       alternateRowStyles: { fillColor: [249, 250, 251] },
       didDrawPage: (data) => {
-        // Footer on every page
         const pn = doc.internal.getNumberOfPages();
-        doc.setFontSize(7);
+        doc.setFontSize(8);
         doc.setTextColor(156, 163, 175);
+        setPdfFont('normal');
         doc.text(`Epicare Health Intelligence Platform  —  Confidential`, 14, doc.internal.pageSize.getHeight() - 6);
         doc.text(`Page ${data.pageNumber}`, pageW - 14, doc.internal.pageSize.getHeight() - 6, { align: 'right' });
       },
     });
   } else {
     doc.setTextColor(156, 163, 175);
-    doc.setFontSize(10);
-    doc.text('No data matches the selected filters.', pageW / 2, y + 10, { align: 'center' });
+    doc.setFontSize(11);
+    doc.text(processArabicText('No data matches the selected filters.'), pageW / 2, y + 10, { align: 'center' });
   }
 
   return Buffer.from(doc.output('arraybuffer'));
@@ -252,8 +370,6 @@ async function buildPdf({ title, headers, rows, kpis, filterSummary }) {
 
 // ─── Report definitions ───────────────────────────────────────────────────────
 export const ReportService = {
-
-  // Returns template metadata for the UI
   getTemplates() {
     return [
       {
@@ -331,7 +447,6 @@ export const ReportService = {
     ];
   },
 
-  // ─── Preview — returns JSON data for frontend rendering ───────────────────
   async generatePreview(templateId, filters) {
     const result = await ReportService._fetchReportData(templateId, filters);
     return {
@@ -339,7 +454,7 @@ export const ReportService = {
       title:   result.title,
       filters: buildFilterSummary(filters),
       kpis:    result.kpis,
-      rows:    result.rows.slice(0, 50),       // preview max 50 rows
+      rows:    result.rows.slice(0, 50),       
       total:   result.rows.length,
       trends:  result.trends || [],
       breakdown: result.breakdown || [],
@@ -347,7 +462,6 @@ export const ReportService = {
     };
   },
 
-  // ─── Export — streams a real file buffer ──────────────────────────────────
   async generateExport(templateId, filters, format) {
     const result = await ReportService._fetchReportData(templateId, filters);
     const filterSummary = buildFilterSummary(filters);
@@ -364,7 +478,6 @@ export const ReportService = {
       return { buffer, filename: result.filename + '.xlsx', contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' };
     }
 
-    // PDF
     const buffer = await buildPdf({
       title:         result.title,
       headers:       result.headers,
@@ -375,13 +488,10 @@ export const ReportService = {
     return { buffer, filename: result.filename + '.pdf', contentType: 'application/pdf' };
   },
 
-  // ─── Private: fetch + normalise per template ──────────────────────────────
   async _fetchReportData(templateId, filters) {
     const dateTag  = new Date().toISOString().split('T')[0];
 
     switch (templateId) {
-
-      // ── 1. Disease Statistics ────────────────────────────────────────────
       case 'disease_statistics': {
         const [rawData, kpisRaw, trends, breakdown, severity] = await Promise.all([
           ReportRepository.getDiseaseStats(filters),
@@ -410,7 +520,6 @@ export const ReportService = {
         };
       }
 
-      // ── 2. Hospital Performance ──────────────────────────────────────────
       case 'hospital_performance': {
         const rawData = await ReportRepository.getHospitalPerformance(filters);
         const rows = rawData.map(h => ({
@@ -437,7 +546,6 @@ export const ReportService = {
         };
       }
 
-      // ── 3. Active Cases ──────────────────────────────────────────────────
       case 'active_cases': {
         const [rawData, kpisRaw] = await Promise.all([
           ReportRepository.getActiveCases(filters),
@@ -462,7 +570,6 @@ export const ReportService = {
         };
       }
 
-      // ── 4. Governorate Outbreak ──────────────────────────────────────────
       case 'governorate_outbreak': {
         const rawData = await ReportRepository.getGovernorateOutbreak(filters);
         const rows = rawData.map(r => ({
@@ -493,7 +600,6 @@ export const ReportService = {
     }
   },
 
-  // ─── Filter dropdown options ──────────────────────────────────────────────
   async getFilterOptions() {
     const [diseases, cities, hospitals] = await Promise.all([
       ReportRepository.getDiseaseList(),
