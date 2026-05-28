@@ -77,6 +77,7 @@ export default function ChatContainer() {
       const newConv = await chatService.createConversation();
       setConversations(prev => [newConv, ...prev]);
       setActiveConversationId(newConv.id);
+      setMessages([WELCOME_MESSAGE]); // Instantly clear chat view
     } catch (err) {
       setError('Failed to create new conversation.');
     }
@@ -84,12 +85,22 @@ export default function ChatContainer() {
 
   const handleDeleteChat = async (id) => {
     try {
-      await chatService.deleteConversation(id);
-      setConversations(prev => prev.filter(c => c.id !== id));
+      // Optimistic update
+      const nextConversations = conversations.filter(c => c.id !== id);
+      setConversations(nextConversations);
+      
       if (activeConversationId === id) {
-        setActiveConversationId(null);
+        if (nextConversations.length > 0) {
+          setActiveConversationId(nextConversations[0].id);
+        } else {
+          setActiveConversationId(null);
+          setMessages([WELCOME_MESSAGE]);
+        }
       }
+
+      await chatService.deleteConversation(id);
     } catch (err) {
+      console.error(err);
       setError('Failed to delete conversation.');
     }
   };
@@ -142,22 +153,27 @@ export default function ChatContainer() {
       const response = await chatService.sendMessage(currentId, text);
       
       // 4. Update messages with actual server data
-      // Replace optimistic message with the one from server (has real ID/timestamp)
-      // and append the assistant message
       setMessages(prev => {
         const filtered = prev.filter(m => m.id !== userMsg.id);
         return [...filtered, response.userMessage, response.assistantMessage];
       });
+
+      // 5. Update title if it was generated (smart title)
+      if (response.conversationTitle) {
+        setConversations(prev => prev.map(c => 
+          c.id === currentId ? { ...c, title: response.conversationTitle } : c
+        ));
+      }
+
     } catch (err) {
       setError(err.message || 'Failed to get AI response.');
-      // Keep user message but show error
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex h-full overflow-hidden bg-slate-950">
+    <div className="flex h-full overflow-hidden" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
       {/* Sidebar */}
       <ChatSidebar 
         conversations={conversations}
@@ -169,15 +185,15 @@ export default function ChatContainer() {
       />
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col h-full bg-slate-950">
+      <div className="flex-1 flex flex-col h-full" style={{ background: 'var(--bg-primary)' }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/50 backdrop-blur-md">
+        <div className="flex items-center justify-between px-6 py-4 border-b backdrop-blur-md" style={{ background: 'var(--glass-bg)', borderColor: 'var(--border)' }}>
           <div>
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <h2 className="text-lg font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+              <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--success)' }} />
               {conversations.find(c => c.id === activeConversationId)?.title || 'Healthcare AI Assistant'}
             </h2>
-            <p className="text-xs text-slate-500">Gemini 1.5 Flash • Context Aware</p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Epicare Health Intelligence • Context Aware</p>
           </div>
         </div>
 
@@ -191,14 +207,14 @@ export default function ChatContainer() {
           ))}
           {isLoading && <TypingIndicator />}
           {error && (
-            <div className="p-3 bg-red-900/20 border border-red-800/50 text-red-400 rounded-lg text-sm">
+            <div className="p-3 border rounded-lg text-sm" style={{ background: 'var(--danger-light)', borderColor: 'rgba(220, 38, 38, 0.3)', color: 'var(--danger)' }}>
               {error}
             </div>
           )}
         </div>
 
         {/* Input */}
-        <div className="p-6 bg-slate-950 border-t border-slate-800">
+        <div className="p-6 border-t" style={{ background: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
           <ChatInput onSend={handleSend} disabled={isLoading} />
         </div>
       </div>

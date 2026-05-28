@@ -10,6 +10,13 @@ export const notificationService = {
   },
 
   /**
+   * Fetch ALL notifications — admin panel view (Super Admin only).
+   */
+  async getAdminAll() {
+    return api.get('/api/v1/notifications/admin');
+  },
+
+  /**
    * Create a notification (Super Admin only).
    */
   async create(payload) {
@@ -28,6 +35,13 @@ export const notificationService = {
    */
   async markAllAsRead() {
     return api.patch('/api/v1/notifications/read-all');
+  },
+
+  /**
+   * Update a notification (Super Admin only).
+   */
+  async update(id, payload) {
+    return api.patch(`/api/v1/notifications/${id}`, payload);
   },
 
   /**

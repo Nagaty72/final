@@ -30,32 +30,32 @@ function renderMarkdown(text) {
 
   function flushTable() {
     if (tableBuffer.length === 0) return;
-    
+
     // Parse markdown table rows
-    const rows = tableBuffer.map(line => 
+    const rows = tableBuffer.map(line =>
       line.split('|').slice(1, -1).map(cell => cell.trim())
     );
-    
+
     if (rows.length > 1) {
       const headers = rows[0];
       // Skip the separator row (e.g., |---|---|)
       const dataRows = rows.slice(2);
-      
+
       elements.push(
         <div key={`table-${elements.length}`} style={{ overflowX: 'auto', margin: '12px 0' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, textAlign: 'left' }}>
             <thead>
-              <tr style={{ background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+              <tr style={{ background: 'var(--bg-card-hover)', borderBottom: '1px solid var(--border)' }}>
                 {headers.map((h, i) => (
-                  <th key={i} style={{ padding: '8px 12px', fontWeight: 600, color: '#e2e8f0' }}>{formatInline(h)}</th>
+                  <th key={i} style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text-primary)' }}>{formatInline(h)}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {dataRows.map((row, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
                   {row.map((cell, j) => (
-                    <td key={j} style={{ padding: '8px 12px', color: '#cbd5e1' }}>{formatInline(cell)}</td>
+                    <td key={j} style={{ padding: '8px 12px', color: 'var(--text-secondary)' }}>{formatInline(cell)}</td>
                   ))}
                 </tr>
               ))}
@@ -71,8 +71,8 @@ function renderMarkdown(text) {
     if (listBuffer.length === 0) return;
     const Tag = listType === 'ol' ? 'ol' : 'ul';
     const style = listType === 'ol'
-      ? { paddingLeft: 20, margin: '6px 0', listStyleType: 'decimal' }
-      : { paddingLeft: 20, margin: '6px 0', listStyleType: 'disc' };
+      ? { paddingLeft: 20, margin: '6px 0', listStyleType: 'decimal', color: 'var(--text-primary)' }
+      : { paddingLeft: 20, margin: '6px 0', listStyleType: 'disc', color: 'var(--text-primary)' };
     elements.push(
       <Tag key={`list-${elements.length}`} style={style}>
         {listBuffer.map((li, i) => <li key={i} style={{ marginBottom: 2, fontSize: 14, lineHeight: 1.6 }}>{formatInline(li)}</li>)}
@@ -92,7 +92,7 @@ function renderMarkdown(text) {
     const parts = str.split(/(\*\*[^*]+\*\*)/g);
     return parts.map((part, i) => {
       if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={i}>{part.slice(2, -2)}</strong>;
+        return <strong key={i} style={{ color: 'var(--text-primary)' }}>{part.slice(2, -2)}</strong>;
       }
       // Inline code: `code`
       const codeParts = part.split(/(`[^`]+`)/g);
@@ -100,7 +100,7 @@ function renderMarkdown(text) {
         if (cp.startsWith('`') && cp.endsWith('`')) {
           return (
             <code key={`${i}-${j}`} style={{
-              background: 'rgba(59,130,246,0.15)', color: '#93c5fd',
+              background: 'var(--accent-light)', color: 'var(--accent)',
               padding: '1px 6px', borderRadius: 4, fontSize: 13,
             }}>
               {cp.slice(1, -1)}
@@ -118,17 +118,17 @@ function renderMarkdown(text) {
     // Headers
     if (line.startsWith('### ')) {
       flushAll();
-      elements.push(<h4 key={i} style={{ fontSize: 14, fontWeight: 700, margin: '10px 0 4px', color: '#e2e8f0' }}>{formatInline(line.slice(4))}</h4>);
+      elements.push(<h4 key={i} style={{ fontSize: 14, fontWeight: 700, margin: '10px 0 4px', color: 'var(--text-primary)' }}>{formatInline(line.slice(4))}</h4>);
       continue;
     }
     if (line.startsWith('## ')) {
       flushAll();
-      elements.push(<h3 key={i} style={{ fontSize: 15, fontWeight: 700, margin: '12px 0 4px', color: '#f1f5f9' }}>{formatInline(line.slice(3))}</h3>);
+      elements.push(<h3 key={i} style={{ fontSize: 15, fontWeight: 700, margin: '12px 0 4px', color: 'var(--text-primary)' }}>{formatInline(line.slice(3))}</h3>);
       continue;
     }
     if (line.startsWith('# ')) {
       flushAll();
-      elements.push(<h2 key={i} style={{ fontSize: 16, fontWeight: 700, margin: '14px 0 6px', color: '#f8fafc' }}>{formatInline(line.slice(2))}</h2>);
+      elements.push(<h2 key={i} style={{ fontSize: 16, fontWeight: 700, margin: '14px 0 6px', color: 'var(--text-primary)' }}>{formatInline(line.slice(2))}</h2>);
       continue;
     }
 
@@ -151,7 +151,7 @@ function renderMarkdown(text) {
       listBuffer.push(numMatch[1]);
       continue;
     }
-    
+
     // Tables
     if (line.trim().startsWith('|') && line.includes('|')) {
       flushList();
@@ -194,13 +194,13 @@ export default function MessageBubble({ message }) {
         className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
         style={{
           background: isUser
-            ? 'rgba(59, 130, 246, 0.2)'
-            : 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+            ? 'var(--accent-light)'
+            : 'linear-gradient(135deg, var(--accent), var(--purple))',
           border: isUser ? '1px solid rgba(59,130,246,0.3)' : 'none',
         }}
       >
         {isUser ? (
-          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="#60a5fa" strokeWidth={2}>
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="var(--accent)" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round"
               d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
@@ -217,11 +217,12 @@ export default function MessageBubble({ message }) {
         className={`max-w-[75%] px-4 py-3 ${isUser ? 'rounded-2xl rounded-tr-sm' : 'rounded-2xl rounded-tl-sm'}`}
         style={{
           background: isUser
-            ? 'linear-gradient(135deg, #2563eb, #3b82f6)'
-            : 'rgba(30, 41, 59, 0.8)',
+            ? 'linear-gradient(135deg, var(--accent), var(--accent-hover))'
+            : 'var(--bg-secondary)',
           border: isUser ? 'none' : '1px solid var(--border)',
-          color: '#f1f5f9',
+          color: isUser ? '#fff' : 'var(--text-primary)',
           wordBreak: 'break-word',
+          boxShadow: isUser ? '0 4px 15px var(--accent-glow)' : 'none'
         }}
       >
         {isUser ? (
@@ -234,7 +235,7 @@ export default function MessageBubble({ message }) {
         <div
           style={{
             fontSize: 10,
-            color: isUser ? 'rgba(255,255,255,0.55)' : 'var(--text-muted)',
+            color: isUser ? 'rgba(255,255,255,0.7)' : 'var(--text-muted)',
             marginTop: 6,
             textAlign: isUser ? (rtl ? 'left' : 'right') : (rtl ? 'right' : 'left'),
           }}

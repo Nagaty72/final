@@ -246,8 +246,8 @@ function AuthPageContent() {
                 <path d="m16 19 2 2 4-4" />
               </svg>
             </div>
-            <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#f1f5f9', marginBottom: '12px' }}>Verify your email</h2>
-            <p style={{ color: '#94a3b8', fontSize: '15px', lineHeight: '1.6', marginBottom: '32px' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '12px' }}>Verify your email</h2>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '15px', lineHeight: '1.6', marginBottom: '32px' }}>
               We&apos;ve sent a verification link to <strong style={{ color: '#e2e8f0' }}>{email}</strong>.
               <br />Please check your inbox and click the link to verify your account before logging in.
             </p>
@@ -282,22 +282,22 @@ function AuthPageContent() {
           </div>
         </div>
         <style jsx>{`
-          .auth-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #050a18; position: relative; overflow: hidden; padding: 24px; }
+          .auth-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg-primary); position: relative; overflow: hidden; padding: 24px; }
           .auth-orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.5; animation: float 8s ease-in-out infinite; }
           .auth-orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(59, 130, 246, 0.25), transparent 70%); top: -150px; right: -100px; animation-delay: 0s; }
           .auth-orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(168, 85, 247, 0.2), transparent 70%); bottom: -120px; left: -80px; animation-delay: -3s; }
           .auth-orb-3 { width: 300px; height: 300px; background: radial-gradient(circle, rgba(34, 197, 94, 0.12), transparent 70%); top: 50%; left: 50%; transform: translate(-50%, -50%); animation-delay: -5s; }
           @keyframes float { 0%, 100% { transform: translate(0, 0) scale(1); } 33% { transform: translate(30px, -20px) scale(1.05); } 66% { transform: translate(-20px, 15px) scale(0.95); } }
           .auth-container { width: 100%; max-width: 440px; position: relative; z-index: 1; }
-          .auth-card { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(24px) saturate(1.5); border: 1px solid rgba(51, 65, 85, 0.5); border-radius: 20px; padding: 32px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4); }
+          .auth-card { background: var(--glass-bg); backdrop-filter: blur(24px) saturate(1.5); border: 1px solid var(--border); border-radius: 20px; padding: 32px; box-shadow: 0 20px 60px var(--shadow-color); }
           .auth-submit-btn { width: 100%; padding: 13px 20px; color: #fff; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
-          .auth-submit-btn:hover:not(:disabled) { background: rgba(71, 85, 105, 0.7) !important; }
+          .auth-submit-btn:hover:not(:disabled) { opacity: 0.88; }
           .auth-submit-btn:disabled { opacity: 0.7; cursor: not-allowed; }
           .auth-spinner { width: 20px; height: 20px; border: 2.5px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
-          .auth-error { display: flex; align-items: center; gap: 8px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #f87171; padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 500; margin-bottom: 20px; }
+          .auth-error { display: flex; align-items: center; gap: 8px; background: var(--danger-light); border: 1px solid var(--danger); color: var(--danger); padding: 10px 14px; border-radius: 10px; font-size: 13px; font-weight: 500; margin-bottom: 20px; }
           @keyframes spin { to { transform: rotate(360deg); } }
-          .auth-switch { color: #3b82f6; font-weight: 600; cursor: pointer; border: none; transition: color 0.2s ease; }
-          .auth-switch:hover { color: #60a5fa; text-decoration: underline; }
+          .auth-switch { color: var(--accent); font-weight: 600; cursor: pointer; border: none; background: none; transition: color 0.2s ease; }
+          .auth-switch:hover { color: var(--accent-hover); text-decoration: underline; }
         `}</style>
       </div>
     );
@@ -552,7 +552,7 @@ function AuthPageContent() {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #050a18;
+          background: var(--bg-primary);
           position: relative;
           overflow: hidden;
           padding: 24px;
@@ -631,13 +631,13 @@ function AuthPageContent() {
         .auth-title {
           font-size: 26px;
           font-weight: 800;
-          color: #f1f5f9;
+          color: var(--text-primary);
           margin: 0 0 6px;
           letter-spacing: -0.02em;
         }
         .auth-subtitle {
           font-size: 14px;
-          color: #64748b;
+          color: var(--text-muted);
           margin: 0;
         }
 
@@ -645,18 +645,18 @@ function AuthPageContent() {
         .auth-tabs {
           display: flex;
           position: relative;
-          background: rgba(15, 23, 42, 0.6);
+          background: var(--bg-secondary);
           border-radius: 12px;
           padding: 4px;
           margin-bottom: 24px;
-          border: 1px solid rgba(51, 65, 85, 0.4);
+          border: 1px solid var(--border);
         }
         .auth-tab {
           flex: 1;
           padding: 10px 16px;
           background: none;
           border: none;
-          color: #64748b;
+          color: var(--text-muted);
           font-size: 14px;
           font-weight: 600;
           cursor: pointer;
@@ -666,7 +666,7 @@ function AuthPageContent() {
           border-radius: 8px;
         }
         .auth-tab.active {
-          color: #f1f5f9;
+          color: var(--text-primary);
         }
         .auth-tab-indicator {
           position: absolute;
@@ -674,20 +674,20 @@ function AuthPageContent() {
           left: 4px;
           width: calc(50% - 4px);
           height: calc(100% - 8px);
-          background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
-          border: 1px solid rgba(59, 130, 246, 0.3);
+          background: var(--accent-light);
+          border: 1px solid var(--accent);
           border-radius: 8px;
           transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         /* Card */
         .auth-card {
-          background: rgba(15, 23, 42, 0.75);
+          background: var(--glass-bg);
           backdrop-filter: blur(24px) saturate(1.5);
-          border: 1px solid rgba(51, 65, 85, 0.5);
+          border: 1px solid var(--border);
           border-radius: 20px;
           padding: 32px;
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.03);
+          box-shadow: 0 20px 60px var(--shadow-color);
         }
 
         /* Error */
@@ -721,7 +721,7 @@ function AuthPageContent() {
           display: block;
           font-size: 13px;
           font-weight: 600;
-          color: #94a3b8;
+          color: var(--text-secondary);
           margin-bottom: 6px;
           letter-spacing: 0.01em;
         }
@@ -733,44 +733,44 @@ function AuthPageContent() {
         .auth-input-icon {
           position: absolute;
           left: 14px;
-          color: #475569;
+          color: var(--text-muted);
           pointer-events: none;
           transition: color 0.2s ease;
         }
         .auth-input-wrap:focus-within .auth-input-icon {
-          color: #3b82f6;
+          color: var(--accent);
         }
         .auth-input {
           width: 100%;
           padding: 12px 14px 12px 44px;
-          background: rgba(15, 23, 42, 0.6);
-          border: 1px solid rgba(51, 65, 85, 0.6);
+          background: var(--bg-primary);
+          border: 1px solid var(--border);
           border-radius: 10px;
-          color: #f1f5f9;
+          color: var(--text-primary);
           font-size: 14px;
           transition: all 0.25s ease;
           outline: none;
         }
         .auth-input:focus {
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15), 0 0 20px rgba(59, 130, 246, 0.08);
-          background: rgba(15, 23, 42, 0.8);
+          border-color: var(--accent);
+          box-shadow: 0 0 0 3px var(--accent-light);
+          background: var(--bg-secondary);
         }
         .auth-input.has-error {
-          border-color: #f87171;
-          box-shadow: 0 0 0 2px rgba(248, 113, 113, 0.18);
+          border-color: var(--danger);
+          box-shadow: 0 0 0 2px var(--danger-light);
         }
         .auth-input.has-error:focus {
-          box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.15);
+          box-shadow: 0 0 0 3px var(--danger-light);
         }
         .auth-input.has-success {
-          border-color: #22c55e;
-          box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.12);
+          border-color: var(--success);
+          box-shadow: 0 0 0 2px var(--success-light);
         }
         .auth-input.has-success:focus {
-          box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+          box-shadow: 0 0 0 3px var(--success-light);
         }
-        .auth-input::placeholder { color: #334155; }
+        .auth-input::placeholder { color: var(--text-muted); }
         .auth-field-error {
           color: #f87171; font-size: 12px; margin-top: 5px;
           font-weight: 500; display: flex; align-items: center; gap: 4px;
@@ -786,29 +786,29 @@ function AuthPageContent() {
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          color: #64748b;
+          color: var(--text-muted);
           font-size: 12px;
           font-weight: 600;
           text-decoration: none;
           letter-spacing: 0.02em;
           padding: 5px 12px 5px 9px;
           border-radius: 20px;
-          background: rgba(15, 23, 42, 0.5);
+          background: var(--glass-bg);
           backdrop-filter: blur(8px);
-          border: 1px solid rgba(51, 65, 85, 0.45);
+          border: 1px solid var(--border);
           transition: color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
         }
         .auth-back-link:hover {
-          color: #cbd5e1;
-          border-color: rgba(99, 102, 241, 0.45);
-          box-shadow: 0 0 12px rgba(99, 102, 241, 0.15);
+          color: var(--text-primary);
+          border-color: var(--accent);
+          box-shadow: 0 0 12px var(--accent-glow);
         }
         .auth-toggle-pw {
           position: absolute;
           right: 12px;
           background: none;
           border: none;
-          color: #475569;
+          color: var(--text-muted);
           cursor: pointer;
           padding: 4px;
           display: flex;
@@ -816,7 +816,7 @@ function AuthPageContent() {
           transition: color 0.2s ease;
         }
         .auth-toggle-pw:hover {
-          color: #94a3b8;
+          color: var(--text-secondary);
         }
 
         /* Submit Button */
@@ -881,14 +881,14 @@ function AuthPageContent() {
           text-align: center;
           margin-top: 20px;
           padding-top: 20px;
-          border-top: 1px solid rgba(51, 65, 85, 0.3);
+          border-top: 1px solid var(--border);
           font-size: 13px;
-          color: #64748b;
+          color: var(--text-muted);
         }
         .auth-switch {
           background: none;
           border: none;
-          color: #3b82f6;
+          color: var(--accent);
           font-weight: 600;
           cursor: pointer;
           margin-left: 4px;
@@ -896,7 +896,7 @@ function AuthPageContent() {
           transition: color 0.2s ease;
         }
         .auth-switch:hover {
-          color: #60a5fa;
+          color: var(--accent-hover);
           text-decoration: underline;
         }
 

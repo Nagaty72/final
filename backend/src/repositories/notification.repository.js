@@ -2,6 +2,19 @@ import { getSupabase } from '../config/supabase.js';
 
 export const NotificationRepository = {
   /**
+   * Fetch ALL notifications (admin view, no filtering).
+   */
+  async findAll() {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  /**
    * Fetch all notifications for a specific user, including targeted broadcasts.
    * Also resolves the `is_read` state for broadcasts using `notification_reads`.
    */
@@ -116,6 +129,18 @@ export const NotificationRepository = {
       .eq('is_read', false);
     
     if (error) throw error;
+  },
+
+  async update(id, data) {
+    const supabase = getSupabase();
+    const { data: result, error } = await supabase
+      .from('notifications')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return result;
   },
 
   async delete(id) {

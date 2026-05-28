@@ -42,7 +42,7 @@ export default function ChatInput({ onSend, disabled }) {
       className="flex items-end gap-3 p-4"
       style={{
         borderTop: '1px solid var(--border)',
-        background: 'rgba(15, 23, 42, 0.6)',
+        background: 'var(--glass-bg)',
         backdropFilter: 'blur(12px)',
       }}
     >
@@ -86,9 +86,9 @@ export default function ChatInput({ onSend, disabled }) {
           border: 'none',
           background:
             disabled || !value.trim()
-              ? 'rgba(59,130,246,0.2)'
-              : 'linear-gradient(135deg, #3b82f6, #2563eb)',
-          color: disabled || !value.trim() ? '#475569' : '#fff',
+              ? 'var(--accent-light)'
+              : 'linear-gradient(135deg, var(--accent), var(--accent-hover))',
+          color: disabled || !value.trim() ? 'var(--text-muted)' : '#fff',
           cursor: disabled || !value.trim() ? 'not-allowed' : 'pointer',
           display: 'flex',
           alignItems: 'center',
@@ -98,7 +98,7 @@ export default function ChatInput({ onSend, disabled }) {
           boxShadow:
             disabled || !value.trim()
               ? 'none'
-              : '0 4px 15px rgba(59,130,246,0.3)',
+              : '0 4px 15px var(--accent-glow)',
         }}
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"

@@ -8,22 +8,20 @@ import { ReportRepository } from '../repositories/report.repository.js';
 // ─── SETUP HELPERS FOR ES MODULES ─────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const require = createRequire(import.meta.url); // السر كله في السطر ده
+const require = createRequire(import.meta.url);
 
 // ─── BULLETPROOF ARABIC RESHAPER ──────────────────────────────────────────────
 let reshapeFunction = null;
 
 try {
-  // هنجرب نسحب المكتبة بأي طريقة كانت نازلة بيها عندك
   const pkg = require('arabic-persian-reshaper');
   reshapeFunction = pkg.reshape || pkg.convertArabic || pkg.ArabicShaper?.convertArabic || (typeof pkg === 'function' ? pkg : null);
-  
   if (!reshapeFunction) {
     const pkg2 = require('arabic-reshaper');
     reshapeFunction = pkg2.convertArabic || pkg2.reshape || (typeof pkg2 === 'function' ? pkg2 : null);
   }
 } catch (e) {
-  console.error("⚠️ فشل في استدعاء مكتبة التشكيل. اتأكد إنك عامل: npm install arabic-persian-reshaper");
+  console.warn('⚠️ Arabic reshaper not available — Arabic text will render without reshaping.');
 }
 
 // Dynamic import of jsPDF
@@ -33,7 +31,7 @@ async function getJsPdf() {
   return { jsPDF, autoTable };
 }
 
-// ─── Severity & Date helpers ──────────────────────────────────────────────────
+// ─── Severity & Date helpers ───────────────────────────────────────────────────
 const SEVERITY_LABELS = { 1: 'Mild', 2: 'Moderate', 3: 'Severe', 4: 'Critical', 5: 'Extreme' };
 const severityLabel = (n) => SEVERITY_LABELS[n] ?? `Level ${n}`;
 
@@ -48,46 +46,21 @@ function processArabicText(text) {
 
   if (reshapeFunction) {
     try {
-      // 1. تشبيك الحروف الأول
       let reshaped = reshapeFunction(String(text));
-      
-      // 2. إصلاح مشكلة الحروف والأرقام المعكوسة (Bidi Fix)
-      // نقسم النص، ونعكس الحروف للكلمات العربية فقط عشان jsPDF، ونسيب الأرقام والإنجليزي زي ما هما
       let words = reshaped.split(' ');
       let processedWords = words.map(word => {
         if (/[\u0600-\u06FF]/.test(word)) {
-          // التعامل مع الأقواس عشان متتعكسش غلط
           let w = word.replace('(', '\u0001').replace(')', '(').replace('\u0001', ')');
           return w.split('').reverse().join('');
         }
         return word;
       });
-      
       return processedWords.join(' ');
     } catch (e) {
-      console.error("⚠️ خطأ أثناء التشكيل:", e.message);
+      console.error('⚠️ Arabic reshaping error:', e.message);
     }
   }
-  
-  // لو الدالة مش موجودة
-  return String(text).split(' ').join(' '); // or simply String(text)
-}
-
-// ─── Common filter extraction ─────────────────────────────────────────────────
-function extractFilters(query) {
-  const { city, disease, gender, severity, outcome, dateFrom, dateTo, hospital } = query;
-  return {
-    city:     city     || null,
-    disease:  disease  || null,
-    gender:   gender   || null,
-    severity: severity || null,
-    outcome:  outcome  || null,
-    dateFrom: dateFrom || null,
-    dateTo:   dateTo   || null,
-    hospital: hospital || null,
-    limit:    Math.min(parseInt(query.limit || '2000', 10), 5000),
-    offset:   parseInt(query.offset || '0', 10),
-  };
+  return String(text);
 }
 
 // ─── Build filter summary string ──────────────────────────────────────────────
@@ -104,62 +77,7 @@ function buildFilterSummary(filters) {
   return parts.length ? parts.join('  |  ') : 'No filters applied — all data';
 }
 
-// ─── Controllers ──────────────────────────────────────────────────────────────
-export const ReportController = {
-  getTemplates(req, res) {
-    try {
-      const templates = ReportService.getTemplates();
-      res.json({ success: true, data: templates });
-    } catch (e) {
-      res.status(500).json({ success: false, error: e.message });
-    }
-  },
-
-  async getFilterOptions(req, res, next) {
-    try {
-      const data = await ReportService.getFilterOptions();
-      res.json({ success: true, data });
-    } catch (e) { next(e); }
-  },
-
-  async preview(req, res, next) {
-    try {
-      const { templateId, filters = {} } = req.body;
-      if (!templateId) {
-        return res.status(400).json({ success: false, error: 'templateId is required.' });
-      }
-      const data = await ReportService.generatePreview(templateId, filters);
-      res.json({ success: true, data });
-    } catch (e) { next(e); }
-  },
-
-  async exportReport(req, res, next) {
-    try {
-      const { templateId, filters = {}, format = 'pdf' } = req.body;
-      if (!templateId) {
-        return res.status(400).json({ success: false, error: 'templateId is required.' });
-      }
-      if (!['pdf', 'excel'].includes(format)) {
-        return res.status(400).json({ success: false, error: 'format must be "pdf" or "excel".' });
-      }
-
-      const { buffer, filename, contentType } = await ReportService.generateExport(templateId, filters, format);
-
-      res.set({
-        'Content-Type':        contentType,
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        'Content-Length':      buffer.length,
-        'Cache-Control':       'no-store',
-      });
-      res.send(buffer);
-    } catch (e) { 
-      console.error('❌ [ERROR] Export failed:', e.message);
-      res.status(500).json({ success: false, error: e.message });
-    }
-  },
-};
-
-// ─── EXCEL generator ──────────────────────────────────────────────────────────
+// ─── EXCEL generator (tables + KPIs only — no charts) ────────────────────────
 async function buildExcel({ title, headers, rows, kpis, filterSummary, sheetName = 'Report Data' }) {
   const wb = new ExcelJS.Workbook();
   wb.creator  = 'Epicare Health Platform';
@@ -216,8 +134,9 @@ async function buildExcel({ title, headers, rows, kpis, filterSummary, sheetName
     col.width = Math.min(Math.max(maxLen + 4, 12), 40);
   });
 
-  const wsMeta = wb.addWorksheet('Report Metadata');
-  wsMeta.addRow(['EPICARE Report Metadata']).font = { bold: true, size: 12 };
+  // ─── KPI Summary sheet ──────────────────────────────────────────────────────
+  const wsMeta = wb.addWorksheet('Report Summary');
+  wsMeta.addRow(['EPICARE Report Summary']).font = { bold: true, size: 12 };
   wsMeta.addRow([]);
   wsMeta.addRow(['Report Title', title]);
   wsMeta.addRow(['Generated At', nowStr()]);
@@ -232,11 +151,11 @@ async function buildExcel({ title, headers, rows, kpis, filterSummary, sheetName
   if (kpis) {
     wsMeta.addRow([]);
     wsMeta.addRow(['KPI Summary']);
-    if (kpis.total_cases   != null) wsMeta.addRow(['Total Cases',    kpis.total_cases]);
-    if (kpis.active_cases  != null) wsMeta.addRow(['Active Cases',   kpis.active_cases]);
-    if (kpis.recovered     != null) wsMeta.addRow(['Recovered',      kpis.recovered]);
-    if (kpis.deceased      != null) wsMeta.addRow(['Deceased',       kpis.deceased]);
-    if (kpis.hospitals_affected != null) wsMeta.addRow(['Hospitals Affected', kpis.hospitals_affected]);
+    if (kpis.total_cases        != null) wsMeta.addRow(['Total Cases',         kpis.total_cases]);
+    if (kpis.active_cases       != null) wsMeta.addRow(['Active Cases',        kpis.active_cases]);
+    if (kpis.recovered          != null) wsMeta.addRow(['Recovered',           kpis.recovered]);
+    if (kpis.deceased           != null) wsMeta.addRow(['Deceased',            kpis.deceased]);
+    if (kpis.hospitals_affected != null) wsMeta.addRow(['Hospitals Affected',  kpis.hospitals_affected]);
   }
   wsMeta.getColumn(1).width = 22;
   wsMeta.getColumn(2).width = 32;
@@ -244,17 +163,17 @@ async function buildExcel({ title, headers, rows, kpis, filterSummary, sheetName
   return await wb.xlsx.writeBuffer();
 }
 
-// ─── PDF generator (With Dynamic Font Loading) ────────────────────────────────
+// ─── PDF generator (tables + KPIs only — no charts) ──────────────────────────
 async function buildPdf({ title, headers, rows, kpis, filterSummary }) {
   const { jsPDF, autoTable } = await getJsPdf();
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   let y = 10;
 
-  // ── 1. Read Font Dynamically (With Safety Net) ──
+  // ── 1. Read Font Dynamically ──
   let fontBase64 = '';
   try {
-    const fontPath = path.join(__dirname, '../fonts/Amiri-Regular.ttf'); 
+    const fontPath = path.join(__dirname, '../fonts/Amiri-Regular.ttf');
     fontBase64 = fs.readFileSync(fontPath).toString('base64');
   } catch (err) {
     console.error('❌ [FATAL] Cannot read Arabic font file:', err.message);
@@ -264,8 +183,8 @@ async function buildPdf({ title, headers, rows, kpis, filterSummary }) {
   // ── 2. Register Custom Arabic Font ──
   doc.addFileToVFS('Amiri-Regular.ttf', fontBase64);
   doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
-  doc.addFont('Amiri-Regular.ttf', 'Amiri', 'bold'); 
-  
+  doc.addFont('Amiri-Regular.ttf', 'Amiri', 'bold');
+
   const setPdfFont = (fontStyle = 'normal') => {
     doc.setFont('Amiri', fontStyle);
   };
@@ -297,7 +216,7 @@ async function buildPdf({ title, headers, rows, kpis, filterSummary }) {
   doc.text(processArabicText(`Filters: ${filterSummary}`), 15, y + 5.5);
   y += 12;
 
-  // KPI cards row
+  // KPI cards row (statistics only — no charts)
   if (kpis && typeof kpis === 'object') {
     const kpiItems = [
       { label: 'Total Cases',        value: kpis.total_cases ?? '—' },
@@ -308,8 +227,8 @@ async function buildPdf({ title, headers, rows, kpis, filterSummary }) {
     ].filter(k => k.value !== '—');
 
     if (kpiItems.length > 0) {
-      const cardW   = (pageW - 28 - (kpiItems.length - 1) * 4) / kpiItems.length;
-      const cardH   = 18;
+      const cardW = (pageW - 28 - (kpiItems.length - 1) * 4) / kpiItems.length;
+      const cardH = 18;
       kpiItems.forEach((k, i) => {
         const cx = 14 + i * (cardW + 4);
         doc.setFillColor(238, 242, 255);
@@ -327,10 +246,10 @@ async function buildPdf({ title, headers, rows, kpis, filterSummary }) {
     }
   }
 
-  // Data table
+  // Data table (no charts — data only)
   if (rows.length > 0) {
-    const colDefs    = headers.map(h => ({ header: processArabicText(h.label), dataKey: h.key }));
-    const tableRows  = rows.map(r => {
+    const colDefs   = headers.map(h => ({ header: processArabicText(h.label), dataKey: h.key }));
+    const tableRows = rows.map(r => {
       const obj = {};
       headers.forEach(h => { obj[h.key] = processArabicText(String(r[h.key] ?? '')); });
       return obj;
@@ -351,7 +270,6 @@ async function buildPdf({ title, headers, rows, kpis, filterSummary }) {
       },
       alternateRowStyles: { fillColor: [249, 250, 251] },
       didDrawPage: (data) => {
-        const pn = doc.internal.getNumberOfPages();
         doc.setFontSize(8);
         doc.setTextColor(156, 163, 175);
         setPdfFont('normal');
@@ -454,11 +372,10 @@ export const ReportService = {
       title:   result.title,
       filters: buildFilterSummary(filters),
       kpis:    result.kpis,
-      rows:    result.rows.slice(0, 50),       
+      rows:    result.rows.slice(0, 50),
       total:   result.rows.length,
-      trends:  result.trends || [],
-      breakdown: result.breakdown || [],
-      severity:  result.severity || [],
+      // NOTE: trends/breakdown/severity chart data intentionally omitted from preview
+      // to keep preview data-only (no charts)
     };
   },
 
@@ -489,16 +406,13 @@ export const ReportService = {
   },
 
   async _fetchReportData(templateId, filters) {
-    const dateTag  = new Date().toISOString().split('T')[0];
+    const dateTag = new Date().toISOString().split('T')[0];
 
     switch (templateId) {
       case 'disease_statistics': {
-        const [rawData, kpisRaw, trends, breakdown, severity] = await Promise.all([
+        const [rawData, kpisRaw] = await Promise.all([
           ReportRepository.getDiseaseStats(filters),
           ReportRepository.getReportKpis(filters),
-          ReportRepository.getReportTrends(filters),
-          ReportRepository.getDiseaseBreakdown(filters),
-          ReportRepository.getSeverityDistribution(filters),
         ]);
         const rows = rawData.data.map(r => ({
           record_id: `MR-${r.id.substring(0, 8).toUpperCase()}`,
@@ -511,12 +425,13 @@ export const ReportService = {
           city:      r.patients?.city || r.hospitals?.city || 'N/A',
           hospital:  r.hospitals?.name || 'N/A',
         }));
-        const kpis = Array.isArray(kpisRaw) ? kpisRaw[0] : kpisRaw;
+        const kpis = kpisRaw ? (Array.isArray(kpisRaw) ? kpisRaw[0] : kpisRaw) : null;
         return {
           title: 'Disease Statistics Report',
           filename: `Epicare_Disease_Statistics_${dateTag}`,
           headers: ReportService.getTemplates().find(t => t.id === 'disease_statistics').columns,
-          rows, kpis, trends, breakdown, severity,
+          rows,
+          kpis,
         };
       }
 
@@ -533,16 +448,17 @@ export const ReportService = {
           top_disease:   h.top_disease || 'N/A',
         }));
         const kpis = {
-          total_cases:         rows.reduce((s, r) => s + (r.total_cases || 0), 0),
-          hospitals_affected:  rows.length,
-          recovered:           rows.reduce((s, r) => s + (r.recovered || 0), 0),
-          deceased:            rows.reduce((s, r) => s + (r.deceased || 0), 0),
+          total_cases:        rows.reduce((s, r) => s + (r.total_cases || 0), 0),
+          hospitals_affected: rows.length,
+          recovered:          rows.reduce((s, r) => s + (r.recovered || 0), 0),
+          deceased:           rows.reduce((s, r) => s + (r.deceased || 0), 0),
         };
         return {
           title: 'Hospital Performance Report',
           filename: `Epicare_Hospital_Performance_${dateTag}`,
           headers: ReportService.getTemplates().find(t => t.id === 'hospital_performance').columns,
-          rows, kpis,
+          rows,
+          kpis,
         };
       }
 
@@ -561,12 +477,13 @@ export const ReportService = {
           city:      r.patients?.city || 'N/A',
           hospital:  r.hospitals?.name || 'N/A',
         }));
-        const kpis = Array.isArray(kpisRaw) ? kpisRaw[0] : kpisRaw;
+        const kpis = kpisRaw ? (Array.isArray(kpisRaw) ? kpisRaw[0] : kpisRaw) : null;
         return {
           title: 'Active Cases Summary',
           filename: `Epicare_Active_Cases_${dateTag}`,
           headers: ReportService.getTemplates().find(t => t.id === 'active_cases').columns,
-          rows, kpis,
+          rows,
+          kpis,
         };
       }
 
@@ -582,7 +499,7 @@ export const ReportService = {
           avg_severity: r.avg_severity ? Number(r.avg_severity).toFixed(1) : 'N/A',
         }));
         const kpis = {
-          total_cases: rows.reduce((s, r) => s + (r.total_cases || 0), 0),
+          total_cases:  rows.reduce((s, r) => s + (r.total_cases || 0), 0),
           active_cases: rows.reduce((s, r) => s + (r.active_cases || 0), 0),
           recovered:    rows.reduce((s, r) => s + (r.recovered || 0), 0),
           deceased:     rows.reduce((s, r) => s + (r.deceased || 0), 0),
@@ -591,7 +508,8 @@ export const ReportService = {
           title: 'Governorate Outbreak Report',
           filename: `Epicare_Governorate_Outbreak_${dateTag}`,
           headers: ReportService.getTemplates().find(t => t.id === 'governorate_outbreak').columns,
-          rows, kpis,
+          rows,
+          kpis,
         };
       }
 

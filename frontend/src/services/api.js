@@ -52,10 +52,15 @@ async function request(endpoint, options = {}, params = {}) {
         ...options,
       });
 
-      const data = await res.json();
+      if (res.status === 204) {
+        return null;
+      }
+      
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : null;
 
       if (!res.ok) {
-        throw new Error(data.error || data.message || `Request failed (${res.status})`);
+        throw new Error((data && (data.error || data.message)) || `Request failed (${res.status})`);
       }
 
       return data;

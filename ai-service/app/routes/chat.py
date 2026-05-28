@@ -7,52 +7,51 @@ healthcare analytics response via Google Gemini.
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from app.services.chat_service import generate_chat_response
+from typing import List, Dict, Optional
+from app.services.chat_service import generate_chat_response, generate_chat_title
 
 router = APIRouter()
 
-
-# ---------------------------------------------------------------------------
-# Request / Response schemas
-# ---------------------------------------------------------------------------
-
 class ChatRequest(BaseModel):
-    """Incoming chat message from the frontend."""
-    message: str = Field(
-        ...,
-        min_length=1,
-        max_length=5000,
-        description="The user's question or message (Arabic or English).",
-        examples=["What are the top diseases in Cairo?"],
-    )
-    history: list = Field(
-        default=[],
-        description="List of previous messages in the conversation for context.",
-    )
-
+    message: str = Field(..., min_length=1, max_length=5000)
+    history: List[Dict[str, str]] = Field(default_factory=list)
+    user_role: str = Field(default="normal_user")
 
 class ChatResponse(BaseModel):
-    """AI-generated response sent back to the frontend."""
-    response: str = Field(
-        ...,
-        description="The AI assistant's reply.",
-    )
+    response: str
+    intent: Optional[str] = None
+    data_source: Optional[str] = None
 
+class TitleRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=5000)
 
+class TitleResponse(BaseModel):
+    title: str = Field(...)
+
+# Endpoints
 # ---------------------------------------------------------------------------
-# Endpoint
+
+@router.post("/chat/title", response_model=TitleResponse)
+async def chat_title(request: TitleRequest):
+    """Generate a title from the first message."""
+    try:
+        title = await generate_chat_title(request.message)
+        return TitleResponse(title=title)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"AI title error: {str(exc)}",
+        )
+
 # ---------------------------------------------------------------------------
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """
     Healthcare AI Chat endpoint.
-
-    Accepts a user message and returns an AI-powered response
-    tailored for healthcare analytics and decision support.
     """
     try:
-        ai_response = await generate_chat_response(request.message, request.history)
+        ai_response = await generate_chat_response(request.message, request.history, request.user_role)
         return ChatResponse(response=ai_response)
     except Exception as exc:
         raise HTTPException(

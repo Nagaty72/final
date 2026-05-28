@@ -16,7 +16,7 @@ export const getReportFilterOptions = () =>
   api.get(`${BASE}/filter-options`);
 
 /**
- * Generate a live preview (JSON) — returns KPIs + sample rows + chart data.
+ * Generate a live preview (JSON) — returns KPIs, filter summary, and up to 50 sample rows.
  * @param {string} templateId
  * @param {object} filters
  */

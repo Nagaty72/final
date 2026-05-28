@@ -2,14 +2,9 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { getReportTemplates, getReportFilterOptions, previewReport, exportReport } from '@/services/report.service';
-import {
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, Legend
-} from 'recharts';
-import { FileText, Download, Eye, RefreshCw, Filter, AlertTriangle, CheckCircle, ChevronDown, X } from 'lucide-react';
+import { FileText, Download, Eye, RefreshCw, Filter, AlertTriangle, CheckCircle, X } from 'lucide-react';
 
 const ACCENT   = '#7C3AED';
-const PALETTE  = ['#7C3AED','#3B82F6','#10B981','#F59E0B','#EF4444','#EC4899','#06B6D4','#84CC16'];
 const SEVERITY = { 1:'Mild', 2:'Moderate', 3:'Severe', 4:'Critical', 5:'Extreme' };
 const OUTCOMES = ['recovered','active','deceased','under_treatment'];
 const GENDERS  = ['male','female'];
@@ -27,7 +22,7 @@ function Toast({ message, type, onClose }) {
   );
 }
 
-function KpiCard({ label, value, color = ACCENT, icon }) {
+function KpiCard({ label, value, color = ACCENT }) {
   return (
     <div style={{ background:'var(--bg-secondary)', border:'1px solid var(--border)', borderRadius:12, padding:'16px 20px', display:'flex', flexDirection:'column', gap:6, flex:1, minWidth:130 }}>
       <span style={{ fontSize:11, fontWeight:600, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>{label}</span>
@@ -49,7 +44,7 @@ function SelectField({ label, value, onChange, options, placeholder = 'All' }) {
 }
 
 function DataTable({ headers, rows }) {
-  if (!rows?.length) return <p style={{ color:'var(--text-muted)', textAlign:'center', padding:24 }}>No rows to display.</p>;
+  if (!rows?.length) return <p style={{ color:'var(--text-muted)', textAlign:'center', padding:24 }}>No data found for the selected filters.</p>;
   return (
     <div style={{ overflowX:'auto', borderRadius:8, border:'1px solid var(--border)' }}>
       <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
@@ -91,9 +86,9 @@ export default function ReportsPage() {
   const [selectedCols,   setSelectedCols]   = useState({});
   const [preview,        setPreview]        = useState(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
+  const [previewError,   setPreviewError]   = useState(null);
   const [exportLoading,  setExportLoading]  = useState({ pdf:false, excel:false });
   const [toast,          setToast]          = useState(null);
-  const [activeTab,      setActiveTab]      = useState('table');
   const mountedRef = useRef(true);
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
 
@@ -126,6 +121,7 @@ export default function ReportsPage() {
     selectedTpl.columns.forEach(c => { cols[c.key] = true; });
     setSelectedCols(cols);
     setPreview(null);
+    setPreviewError(null);
   }, [selectedTpl]);
 
   const activeFilters = useMemo(() => {
@@ -142,11 +138,22 @@ export default function ReportsPage() {
     if (!selectedTpl) return;
     setLoadingPreview(true);
     setPreview(null);
+    setPreviewError(null);
     try {
       const res = await previewReport(selectedTpl.id, activeFilters);
-      if (mountedRef.current && res?.data) setPreview(res.data);
+      if (mountedRef.current) {
+        if (res?.data) {
+          setPreview(res.data);
+        } else {
+          setPreviewError('No data returned — please adjust your filters.');
+        }
+      }
     } catch(e) {
-      showToast(e.message || 'Preview failed', 'error');
+      if (mountedRef.current) {
+        const msg = e.message || 'Preview failed';
+        setPreviewError(msg);
+        showToast(msg, 'error');
+      }
     } finally {
       if (mountedRef.current) setLoadingPreview(false);
     }
@@ -169,7 +176,11 @@ export default function ReportsPage() {
     }
   }, [selectedTpl, activeFilters, showToast]);
 
-  const resetFilters = () => setFilters({ city:'', disease:'', gender:'', severity:'', outcome:'', dateFrom:'', dateTo:'', hospital:'' });
+  const resetFilters = () => {
+    setFilters({ city:'', disease:'', gender:'', severity:'', outcome:'', dateFrom:'', dateTo:'', hospital:'' });
+    setPreview(null);
+    setPreviewError(null);
+  };
 
   const kpi = preview?.kpis;
   const activeFilterCount = Object.values(activeFilters).filter(Boolean).length;
@@ -287,7 +298,16 @@ export default function ReportsPage() {
         </section>
       )}
 
-      {/* Preview Panel */}
+      {/* Preview Error State */}
+      {previewError && !preview && (
+        <section style={{ background:'var(--bg-secondary)', border:'1px solid rgba(239,68,68,0.3)', borderRadius:16, padding:32, textAlign:'center' }}>
+          <AlertTriangle size={32} color="#EF4444" style={{ marginBottom:12 }}/>
+          <p style={{ color:'#EF4444', fontWeight:600, marginBottom:6 }}>Preview Failed</p>
+          <p style={{ color:'var(--text-muted)', fontSize:13 }}>{previewError}</p>
+        </section>
+      )}
+
+      {/* Preview Panel — Tables + KPIs only, no charts */}
       {preview && (
         <section style={{ background:'var(--bg-secondary)', border:'1px solid var(--border)', borderRadius:16, padding:24 }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
@@ -302,7 +322,7 @@ export default function ReportsPage() {
             </div>
           )}
 
-          {/* KPI cards */}
+          {/* KPI cards — statistics only */}
           {kpi && (
             <div style={{ display:'flex', gap:12, flexWrap:'wrap', marginBottom:24 }}>
               {kpi.total_cases        != null && <KpiCard label="Total Cases"        value={kpi.total_cases?.toLocaleString()}        color={ACCENT}/>}
@@ -313,65 +333,14 @@ export default function ReportsPage() {
             </div>
           )}
 
-          {/* Chart tabs */}
-          {(preview.trends?.length > 0 || preview.breakdown?.length > 0 || preview.severity?.length > 0) && (
-            <div style={{ marginBottom:24 }}>
-              <div style={{ display:'flex', gap:8, marginBottom:16 }}>
-                {[['table','Table'], ['trends','Trend Line'], ['breakdown','Disease Mix'], ['severity','Severity']].map(([id, label]) => {
-                  const has = id === 'table' ? true : id === 'trends' ? preview.trends?.length > 0 : id === 'breakdown' ? preview.breakdown?.length > 0 : preview.severity?.length > 0;
-                  if (!has) return null;
-                  return (
-                    <button key={id} onClick={() => setActiveTab(id)} style={{ padding:'6px 16px', borderRadius:8, border:'none', background: activeTab===id ? ACCENT : 'var(--bg-primary)', color: activeTab===id ? '#fff' : 'var(--text-secondary)', fontSize:13, fontWeight:600, cursor:'pointer', transition:'all 0.2s' }}>{label}</button>
-                  );
-                })}
-              </div>
-
-              {activeTab === 'trends' && preview.trends?.length > 0 && (
-                <div style={{ height:260 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={preview.trends}>
-                      <XAxis dataKey="month" tick={{ fontSize:11 }}/>
-                      <YAxis tick={{ fontSize:11 }}/>
-                      <Tooltip/>
-                      <Line type="monotone" dataKey="total_cases" stroke={ACCENT} strokeWidth={2} dot={false} name="Cases"/>
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-
-              {activeTab === 'breakdown' && preview.breakdown?.length > 0 && (
-                <div style={{ height:260 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={preview.breakdown.slice(0,10)} layout="vertical" margin={{ left:100 }}>
-                      <XAxis type="number" tick={{ fontSize:11 }}/>
-                      <YAxis type="category" dataKey="disease_name" tick={{ fontSize:11 }} width={95}/>
-                      <Tooltip/>
-                      <Bar dataKey="total_cases" name="Cases">
-                        {preview.breakdown.slice(0,10).map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]}/>)}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-
-              {activeTab === 'severity' && preview.severity?.length > 0 && (
-                <div style={{ height:260, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  <ResponsiveContainer width="60%" height="100%">
-                    <PieChart>
-                      <Pie data={preview.severity} dataKey="count" nameKey="severity_label" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} ${(percent*100).toFixed(0)}%`} labelLine={false}>
-                        {preview.severity.map((_, i) => <Cell key={i} fill={PALETTE[i % PALETTE.length]}/>)}
-                      </Pie>
-                      <Tooltip/>
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Data table */}
-          {(activeTab === 'table' || !preview.trends?.length) && (
+          {/* Data table — no charts */}
+          {preview.rows?.length > 0 ? (
             <DataTable headers={visibleHeaders} rows={preview.rows}/>
+          ) : (
+            <div style={{ textAlign:'center', padding:'40px 0' }}>
+              <p style={{ color:'var(--text-muted)', fontSize:14 }}>No data found for the selected filters.</p>
+              <p style={{ color:'var(--text-muted)', fontSize:12 }}>Try adjusting or clearing your filters.</p>
+            </div>
           )}
         </section>
       )}

@@ -3,6 +3,13 @@ import { UserRepository } from '../repositories/user.repository.js';
 
 export const NotificationService = {
   /**
+   * Gets ALL notifications (admin view, unfiltered).
+   */
+  async getAllNotifications() {
+    return await NotificationRepository.findAll();
+  },
+
+  /**
    * Gets all relevant notifications for a user, formatting and mapping role names.
    */
   async getUserNotifications(userId) {
@@ -89,6 +96,18 @@ export const NotificationService = {
     }
 
     return { success: true };
+  },
+
+  /**
+   * Updates a notification (Admin only)
+   */
+  async updateNotification(notificationId, payload) {
+    const notif = await NotificationRepository.getById(notificationId);
+    if (!notif) throw new Error('Notification not found');
+    const cleaned = Object.fromEntries(
+      Object.entries(payload).filter(([, v]) => v !== undefined && v !== null)
+    );
+    return await NotificationRepository.update(notificationId, cleaned);
   },
 
   /**

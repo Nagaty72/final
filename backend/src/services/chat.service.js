@@ -1,4 +1,4 @@
-import { supabase } from '../config/supabase.js';
+import { getSupabase } from '../config/supabase.js';
 
 /**
  * Chat Service
@@ -7,7 +7,7 @@ import { supabase } from '../config/supabase.js';
  */
 
 export const getConversations = async (userId) => {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('conversations')
     .select('*')
     .eq('user_id', userId)
@@ -18,7 +18,7 @@ export const getConversations = async (userId) => {
 };
 
 export const createConversation = async (userId, title = 'New Conversation') => {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('conversations')
     .insert([{ user_id: userId, title }])
     .select()
@@ -29,7 +29,7 @@ export const createConversation = async (userId, title = 'New Conversation') => 
 };
 
 export const updateConversationTitle = async (conversationId, userId, title) => {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('conversations')
     .update({ title })
     .eq('id', conversationId)
@@ -42,7 +42,7 @@ export const updateConversationTitle = async (conversationId, userId, title) => 
 };
 
 export const deleteConversation = async (conversationId, userId) => {
-  const { error } = await supabase
+  const { error } = await getSupabase()
     .from('conversations')
     .delete()
     .eq('id', conversationId)
@@ -54,7 +54,7 @@ export const deleteConversation = async (conversationId, userId) => {
 
 export const getMessages = async (conversationId, userId) => {
   // First verify conversation ownership
-  const { data: conv, error: convError } = await supabase
+  const { data: conv, error: convError } = await getSupabase()
     .from('conversations')
     .select('id')
     .eq('id', conversationId)
@@ -63,7 +63,7 @@ export const getMessages = async (conversationId, userId) => {
 
   if (convError || !conv) throw new Error('Conversation not found or unauthorized');
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('messages')
     .select('*')
     .eq('conversation_id', conversationId)
@@ -74,7 +74,7 @@ export const getMessages = async (conversationId, userId) => {
 };
 
 export const addMessage = async (conversationId, role, content) => {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from('messages')
     .insert([{ conversation_id: conversationId, role, content }])
     .select()
@@ -83,7 +83,7 @@ export const addMessage = async (conversationId, role, content) => {
   if (error) throw error;
 
   // Update conversation updated_at
-  await supabase
+  await getSupabase()
     .from('conversations')
     .update({ updated_at: new Date() })
     .eq('id', conversationId);
