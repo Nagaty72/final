@@ -86,10 +86,11 @@ export default function MapComponent({ hospitals, userLocation, activeHospitalId
 
   const center = getCenter();
 
-  const popupBg = isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)';
-  const popupBorder = isDark ? 'rgba(51, 65, 85, 0.8)' : 'rgba(226, 232, 240, 0.8)';
-  const popupTextPrimary = isDark ? '#f8fafc' : '#0f172a';
-  const popupTextSecondary = isDark ? '#94a3b8' : '#64748b';
+  const popupBg = 'var(--bg-card)';
+  const popupBorder = 'var(--border)';
+  const popupTextPrimary = 'var(--text-primary)';
+  const popupTextSecondary = 'var(--text-secondary)';
+  const accentColor = 'var(--accent, #3b82f6)';
 
   return (
     <div style={{ height: '100%', width: '100%', borderRadius: '12px', overflow: 'hidden' }}>
@@ -137,21 +138,46 @@ export default function MapComponent({ hospitals, userLocation, activeHospitalId
               }}
             >
               <Popup className="themed-popup">
-                <div style={{ padding: '8px', minWidth: '180px' }}>
-                  <h3 style={{ margin: '0 0 4px 0', fontSize: '15px', color: popupTextPrimary }}>{hospital.name}</h3>
-                  <p style={{ margin: '0 0 8px 0', fontSize: '12px', color: popupTextSecondary }}>
-                    {hospital.type || t('hospitals.hospital')} • {hospital.district_name || hospital.city}
-                  </p>
-                  {hospital.distance !== undefined && (
-                    <p style={{ margin: '0', fontSize: '13px', color: '#3b82f6', fontWeight: 'bold' }}>
-                      {(hospital.distance / 1000).toFixed(2)} {t('hospitals.km_away')}
+                <div style={{ padding: '4px 8px', minWidth: '220px' }}>
+                  <div style={{ marginBottom: '12px' }}>
+                    <h3 style={{ margin: '0 0 6px 0', fontSize: '16px', fontWeight: '700', color: accentColor, lineHeight: '1.3' }}>{hospital.name}</h3>
+                    <p style={{ margin: '0', fontSize: '13px', color: popupTextSecondary, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: isClinic ? '#10b981' : '#3b82f6' }}></span>
+                      {hospital.type || t('hospitals.hospital')} <span style={{ opacity: 0.4 }}>•</span> {hospital.district_name || hospital.city}
                     </p>
+                  </div>
+
+                  <div style={{ height: '1px', background: popupBorder, margin: '12px 0' }}></div>
+                  
+                  {hospital.capacity > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '12px 0', padding: '10px 14px', background: isDark ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.06)', borderRadius: '8px', border: `1px solid ${isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.15)'}` }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M2 4v16"></path>
+                          <path d="M2 8h18a2 2 0 0 1 2 2v10"></path>
+                          <path d="M2 17h20"></path>
+                          <path d="M6 8v9"></path>
+                        </svg>
+                        <span style={{ fontSize: '13px', fontWeight: '600', color: accentColor }}>{t('hospitals.capacity')}</span>
+                      </div>
+                      <span style={{ fontSize: '16px', fontWeight: '800', color: accentColor }}>{hospital.capacity}</span>
+                    </div>
                   )}
-                  {hospital.emergency_available && (
-                    <span style={{ display: 'inline-block', marginTop: '8px', padding: '2px 6px', background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', fontSize: '11px', borderRadius: '4px', fontWeight: 'bold' }}>
-                      {t('hospitals.emergency_247')}
-                    </span>
-                  )}
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '12px' }}>
+                    {hospital.distance !== undefined ? (
+                      <p style={{ margin: '0', fontSize: '13px', color: popupTextSecondary, fontWeight: '500' }}>
+                        <span style={{ color: accentColor, fontWeight: '700' }}>{(hospital.distance / 1000).toFixed(2)}</span> {t('hospitals.km_away')}
+                      </p>
+                    ) : <span />}
+
+                    {hospital.emergency_available && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 8px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#ef4444', fontSize: '11px', borderRadius: '6px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                        <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 6px #ef4444', animation: 'pulse-dot 2s infinite' }}></span>
+                        {t('hospitals.emergency_247')}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </Popup>
             </Marker>

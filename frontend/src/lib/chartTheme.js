@@ -18,85 +18,65 @@
  */
 
 // ── Core semantic palette ──────────────────────────────────────────────────────
-// Each token is: [main, light-bg (8%), hover-bg (15%), border (25%)]
 export const PALETTE = {
-  // Primary data color — calm healthcare blue
-  blue:       '#4B8EF0',
-  // Secondary data — rich teal (hospitals, clinical)
-  teal:       '#2CB5A0',
-  // Positive / recovered — muted healthcare green
-  green:      '#3DC48B',
-  // Warning / active / moderate — warm amber
-  amber:      '#E8963A',
-  // Danger / severe / critical — deep rose (not pure red)
-  rose:       '#E05472',
-  // Extreme severity — deep crimson, still readable
-  crimson:    '#B94060',
-  // Secondary datasets — muted periwinkle purple
-  purple:     '#8B7FD4',
-  // Tertiary / supplemental — dusty indigo
-  indigo:     '#6675C8',
-  // Neutral data category — slate
-  slate:      '#7B8FA8',
-  // Accent teal-blue for trends / line 5
-  cyan:       '#38B2C8',
-  // Warm salmon — disease category 8+
-  coral:      '#E07A60',
-  // Soft mauve — disease category 9+
-  mauve:      '#A87CC0',
+  blue:       '#3b82f6', // Respiratory
+  red:        '#ef4444', // Cardiovascular
+  purple:     '#a855f7', // Metabolic / Diabetes
+  orange:     '#f97316', // Liver
+  amber:      '#f59e0b', // Infectious
+  teal:       '#14b8a6', // Obesity
+  yellowOrg:  '#eab308', // Typhoid
+  deepOrg:    '#ea580c', // Tuberculosis
 };
 
 // ── Disease keyword → semantic color mapping ───────────────────────────────────
-// Intentionally avoids pure saturated primaries. Each color is a curated
-// mid-tone that reads well on both dark and light dashboard backgrounds.
 export const DISEASE_KEYWORDS = [
-  // Respiratory / viral
-  ['covid',        PALETTE.rose],
-  ['influenza',    PALETTE.cyan],
-  ['flu',          PALETTE.cyan],
-  ['pneumonia',    PALETTE.teal],
-  ['tuberculosis', PALETTE.amber],
-  ['tb',           PALETTE.amber],
-  // Chronic / metabolic
-  ['diabetes',     PALETTE.blue],
-  ['hypertension', PALETTE.purple],
-  ['kidney',       PALETTE.slate],
-  ['stroke',       PALETTE.crimson],
+  // Respiratory
+  ['covid',        PALETTE.blue],
+  ['influenza',    PALETTE.blue],
+  ['flu',          PALETTE.blue],
+  ['pneumonia',    PALETTE.blue],
   // Cardiovascular
-  ['heart',        PALETTE.indigo],
-  // Parasitic / tropical
-  ['malaria',      PALETTE.green],
-  ['dengue',       PALETTE.coral],
-  ['hepatitis',    PALETTE.mauve],
-  // Oncological
-  ['cancer',       '#7C6DB0'],
+  ['heart',        PALETTE.red],
+  ['stroke',       PALETTE.red],
+  // Metabolic
+  ['diabetes',     PALETTE.purple],
+  ['kidney',       PALETTE.purple],
+  // Liver
+  ['liver',        PALETTE.orange],
+  ['hepatitis',    PALETTE.orange],
+  // Infectious
+  ['malaria',      PALETTE.amber],
+  ['dengue',       PALETTE.amber],
+  ['cholera',      PALETTE.amber],
+  // Specific
+  ['obesity',      PALETTE.teal],
+  ['typhoid',      PALETTE.yellowOrg],
+  ['tuberculosis', PALETTE.deepOrg],
+  ['tb',           PALETTE.deepOrg],
 ];
 
-// ── Fallback palette for unknown diseases (ordered for visual distinction) ─────
-// 15 distinct, professionally balanced colors — no two adjacent are similar hue
-export const PALETTE_FALLBACKS = [
-  PALETTE.blue,
-  PALETTE.teal,
-  PALETTE.rose,
-  PALETTE.green,
-  PALETTE.amber,
-  PALETTE.purple,
-  PALETTE.cyan,
-  PALETTE.indigo,
-  PALETTE.coral,
-  PALETTE.mauve,
-  PALETTE.crimson,
-  PALETTE.slate,
-  '#5B9BD4',  // softer sky blue
-  '#6AB89A',  // muted mint
-  '#C8845A',  // terracotta
+// ── Top Diseases Palette (Rank-based Red Intensity) ───────────────────────────
+// Darkest red for Rank #1, progressively lighter.
+export const TOP_DISEASES_PALETTE = [
+  '#7F1D1D', // #1: Darkest red
+  '#991B1B', // #2
+  '#B91C1C', // #3
+  '#DC2626', // #4
+  '#EF4444', // #5
+  '#F87171', // #6
+  '#FCA5A5', // #7
+  '#FECACA', // #8: Lightest red
 ];
+
+// ── Fallback palette for unknown diseases ─────────────────────────────────────
+export const PALETTE_FALLBACKS = TOP_DISEASES_PALETTE;
 
 /**
  * Get a semantic color for a disease name.
  * Keyword-matches first, falls back to palette by index.
  */
-export function getDiseaseColor(name, idx) {
+export function getDiseaseColor(name, idx = 0) {
   const lc = (name ?? '').toLowerCase();
   for (const [kw, color] of DISEASE_KEYWORDS) {
     if (lc.includes(kw)) return color;
@@ -105,42 +85,33 @@ export function getDiseaseColor(name, idx) {
 }
 
 // ── Severity palette — clinical severity level colors ─────────────────────────
-// Ordered Mild → Extreme with a clear perceptual ramp.
-// Each value is carefully chosen to remain readable at fill opacity AND as text.
+// Strictly semantic progression
 export const SEVERITY_PALETTE = {
-  Mild:     '#3DC48B',   // muted green  — good/safe signal
-  Moderate: '#E8963A',   // warm amber   — caution
-  Severe:   '#E05472',   // rose red     — high alert
-  Critical: '#8B7FD4',   // deep purple  — critical
-  Extreme:  '#B94060',   // deep crimson — maximum severity
+  Mild:     '#22c55e',   // Green
+  Moderate: '#f59e0b',   // Yellow/Amber
+  Severe:   '#f97316',   // Orange
+  Critical: '#ef4444',   // Red
+  Extreme:  '#991b1bff',   // Dark Red
 };
 
 // ── KPI card colors — each key maps to: { color, bg, border } ─────────────────
 export const KPI_PALETTE = {
-  total_cases:     { color: '#4B8EF0', bg: 'rgba(75,142,240,0.10)',  border: 'rgba(75,142,240,0.22)' },
-  active_cases:    { color: '#E8963A', bg: 'rgba(232,150,58,0.10)',  border: 'rgba(232,150,58,0.22)' },
-  recovered:       { color: '#3DC48B', bg: 'rgba(61,196,139,0.10)',  border: 'rgba(61,196,139,0.22)' },
-  severe_cases:    { color: '#E05472', bg: 'rgba(224,84,114,0.10)',  border: 'rgba(224,84,114,0.22)' },
-  total_patients:  { color: '#8B7FD4', bg: 'rgba(139,127,212,0.10)', border: 'rgba(139,127,212,0.22)' },
-  total_hospitals: { color: '#2CB5A0', bg: 'rgba(44,181,160,0.10)',  border: 'rgba(44,181,160,0.22)' },
+  total_cases:     { color: '#3b82f6', bg: 'rgba(59,130,246,0.10)',  border: 'rgba(59,130,246,0.22)' },
+  active_cases:    { color: '#f59e0b', bg: 'rgba(245,158,11,0.10)',  border: 'rgba(245,158,11,0.22)' },
+  recovered:       { color: '#22c55e', bg: 'rgba(34,197,94,0.10)',   border: 'rgba(34,197,94,0.22)' },
+  severe_cases:    { color: '#ef4444', bg: 'rgba(239,68,68,0.10)',   border: 'rgba(239,68,68,0.22)' },
+  total_patients:  { color: '#a855f7', bg: 'rgba(168,85,247,0.10)',  border: 'rgba(168,85,247,0.22)' },
+  total_hospitals: { color: '#14b8a6', bg: 'rgba(20,184,166,0.10)',  border: 'rgba(20,184,166,0.22)' },
 };
 
 // ── TrendsChart bar palette — used for monthly case volume bars ────────────────
-// A single coherent blue-teal gradient ramp: avoids rainbow chaos.
-// Each step is +10° hue shift for perceptual progression.
+// A data-driven blue intensity scale: Very low to Highest
 export const TRENDS_BAR_PALETTE = [
-  '#4B8EF0',  // #1 — primary blue
-  '#3A8FE0',  // #2
-  '#2C9DD4',  // #3
-  '#22AABF',  // #4
-  '#2CB5A0',  // #5 — teal
-  '#35BF8E',  // #6
-  '#3DC48B',  // #7 — green-teal
-  '#52C47E',  // #8
-  '#68C472',  // #9
-  '#84C468',  // #10
-  '#6070C8',  // #11 — cycle back to indigo for visual interest
-  '#7060C0',  // #12
+  '#BFDBFE', // Very low
+  '#60A5FA', // Low
+  '#3B82F6', // Medium
+  '#2563EB', // High
+  '#1E3A8A', // Highest months
 ];
 
 // ── Shared chart grid style ────────────────────────────────────────────────────
@@ -188,14 +159,15 @@ export const HEAT_GRADIENT = {
 };
 
 // ── Disease breakdown bar colors (ordered) ────────────────────────────────────
-// For the horizontal BarChart — 8 visually distinct, non-neon colors.
+// For the horizontal BarChart — 8 warm, premium healthcare colors.
+// Progressively transitioning from highest to lowest intensity.
 export const DISEASE_BAR_PALETTE = [
-  PALETTE.blue,
-  PALETTE.purple,
-  PALETTE.teal,
-  PALETTE.amber,
-  PALETTE.rose,
-  PALETTE.cyan,
-  PALETTE.coral,
-  PALETTE.indigo,
+  '#F59E0B', // 1st: Amber
+  '#FB923C', // 2nd: Orange
+  '#F97316', // 3rd: Deep Orange
+  '#EF4444', // 4th: Soft Red
+  '#FCA5A5', // 5th: Warm Coral
+  '#FDA4AF', // 6th: Soft Rose
+  '#FDBA74', // 7th: Peach
+  '#FED7AA', // 8th: Soft Peach
 ];

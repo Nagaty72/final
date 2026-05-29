@@ -49,11 +49,15 @@ export default function HospitalCard({ hospital, isActive, onClick }) {
       </div>
 
       <div className="card-footer">
-        {hospital.emergency_available ? (
+        {hospital.emergency_available && (
           <span className="emergency-badge">{t('hospitals.emergency_247')}</span>
-        ) : (
-          <span className="capacity-text">{t('hospitals.capacity')}: {hospital.capacity || 'N/A'} {t('hospitals.beds')}</span>
         )}
+        <div className="capacity-info">
+          <div className="capacity-item total" style={{ flex: 1 }}>
+            <span className="label">Capacity</span>
+            <span className="value">{hospital.capacity || 'N/A'}</span>
+          </div>
+        </div>
       </div>
 
       <style jsx>{`
@@ -135,26 +139,60 @@ export default function HospitalCard({ hospital, isActive, onClick }) {
         }
         .card-footer {
           margin-top: auto;
-          padding-top: 8px;
+          padding-top: 12px;
           border-top: 1px solid var(--border);
           display: flex;
-          justify-content: space-between;
-          align-items: center;
+          flex-direction: column;
+          gap: 12px;
         }
         .emergency-badge {
           background: var(--danger-light);
           color: var(--danger);
-          padding: 3px 8px;
+          padding: 4px 8px;
           border-radius: 4px;
           font-size: 11px;
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 0.5px;
+          align-self: flex-start;
         }
         .capacity-text {
           font-size: 12px;
           color: var(--text-muted);
           font-weight: 500;
+        }
+        .capacity-info {
+          display: flex;
+          gap: 8px;
+          width: 100%;
+        }
+        .capacity-item {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          background: rgba(0,0,0,0.03);
+          padding: 6px;
+          border-radius: 6px;
+          border: 1px solid var(--border);
+        }
+        :global(.dark) .capacity-item {
+          background: rgba(255,255,255,0.03);
+        }
+        .capacity-item.total {
+          border-color: var(--border);
+        }
+        .capacity-item .label {
+          font-size: 10px;
+          color: var(--text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 2px;
+        }
+        .capacity-item .value {
+          font-size: 14px;
+          font-weight: 700;
+          color: var(--text-primary);
         }
       `}</style>
     </div>

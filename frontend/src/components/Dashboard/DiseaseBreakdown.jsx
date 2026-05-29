@@ -8,7 +8,7 @@ import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
 import { useShallow } from 'zustand/react/shallow';
 import { getDashboardDiseaseBreakdown } from '@/services/analytics.service';
 import { Activity } from 'lucide-react';
-import { DISEASE_BAR_PALETTE, tooltipStyle, gridStyle, axisTick, tooltipCursorBar } from '@/lib/chartTheme';
+import { TOP_DISEASES_PALETTE, tooltipStyle, gridStyle, axisTick, tooltipCursorBar } from '@/lib/chartTheme';
 
 function BreakdownSkeleton() {
   return (
@@ -78,7 +78,7 @@ function normalizeBreakdown(responseData) {
     name:  r.name,
     cases: r.count,
     pct:   Math.round((r.count / total) * 100),
-    color: DISEASE_BAR_PALETTE[i % DISEASE_BAR_PALETTE.length],
+    color: TOP_DISEASES_PALETTE[i % TOP_DISEASES_PALETTE.length],
   }));
 }
 

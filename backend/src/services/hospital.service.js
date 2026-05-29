@@ -1,4 +1,5 @@
 import { HospitalRepository } from '../repositories/hospital.repository.js';
+import { getSupabase } from '../config/supabase.js';
 
 export const HospitalService = {
   getAll: (filters) => HospitalRepository.findAll(filters),

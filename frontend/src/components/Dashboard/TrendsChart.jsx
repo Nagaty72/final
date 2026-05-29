@@ -29,7 +29,7 @@ function TrendsSkeleton() {
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
-  const barColor = TRENDS_BAR_PALETTE[0];
+  const barColor = '#4F83F1';
   return (
     <div style={tooltipStyle()}>
       <div style={{ fontWeight: 700, fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>{label}</div>
@@ -135,7 +135,15 @@ export default function TrendsChart() {
       ) : (
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={data} margin={{ top: 10, right: 8, left: -20, bottom: 0 }} barCategoryGap="25%">
-            <CartesianGrid {...gridStyle} vertical={false} />
+            <defs>
+              <linearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#4F83F1" />
+                <stop offset="40%" stopColor="#6F9BF5" />
+                <stop offset="70%" stopColor="#A9C0FA" />
+                <stop offset="100%" stopColor="#DCE8FF" />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} stroke="var(--border)" strokeOpacity={0.2} strokeDasharray="3 3" />
             <XAxis
               dataKey="label"
               tick={axisTick}
@@ -144,11 +152,7 @@ export default function TrendsChart() {
             />
             <YAxis tick={axisTick} axisLine={false} tickLine={false} />
             <Tooltip content={<CustomTooltip />} cursor={tooltipCursorBar} />
-            <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={48} isAnimationActive={false}>
-              {data.map((_, i) => (
-                <Cell key={i} fill={TRENDS_BAR_PALETTE[i % TRENDS_BAR_PALETTE.length]} />
-              ))}
-            </Bar>
+            <Bar dataKey="count" fill="url(#blueGradient)" radius={[6, 6, 0, 0]} maxBarSize={48} isAnimationActive={false} />
           </BarChart>
         </ResponsiveContainer>
       )}
