@@ -24,6 +24,7 @@ import dynamic from 'next/dynamic';
 import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
 import { useShallow }              from 'zustand/react/shallow';
 import { getDashboardBubble }      from '@/services/analytics.service';
+import { getDiseaseColor }         from '@/lib/chartTheme';
 
 // ── Dynamic SSR-safe import — mirrors original MapWrapper pattern ──────────────
 const EgyptMapLeaflet = dynamic(
@@ -34,32 +35,7 @@ const EgyptMapLeaflet = dynamic(
   }
 );
 
-// ── Disease colour palette ─────────────────────────────────────────────────────
-const DISEASE_KEYWORDS = [
-  ['covid',        '#ef4444'],
-  ['diabetes',     '#3b82f6'],
-  ['heart',        '#a855f7'],
-  ['tuberculosis', '#f97316'], ['tb', '#f97316'],
-  ['malaria',      '#22c55e'],
-  ['influenza',    '#06b6d4'], ['flu', '#06b6d4'],
-  ['hepatitis',    '#eab308'],
-  ['dengue',       '#ec4899'],
-  ['hypertension', '#8b5cf6'],
-  ['pneumonia',    '#14b8a6'],
-  ['cancer',       '#6366f1'],
-  ['stroke',       '#dc2626'],
-  ['kidney',       '#64748b'],
-];
-const PALETTE_FALLBACKS = [
-  '#ef4444','#3b82f6','#a855f7','#22c55e','#f59e0b',
-  '#06b6d4','#ec4899','#8b5cf6','#14b8a6','#f97316',
-  '#84cc16','#e11d48','#0ea5e9','#d946ef','#10b981',
-];
-function getDiseaseColor(name, idx) {
-  const lc = (name ?? '').toLowerCase();
-  for (const [kw, color] of DISEASE_KEYWORDS) { if (lc.includes(kw)) return color; }
-  return PALETTE_FALLBACKS[idx % PALETTE_FALLBACKS.length];
-}
+
 
 // ── Governorate coordinates (mirrored from EgyptMapLeaflet for heatPoints) ────
 const GOVERNORATE_COORDS = {

@@ -10,8 +10,7 @@ ALLOWED_TABLES = {
     "diseases", 
     "hospitals", 
     "districts", 
-    "patients", 
-    "disease_predictions"
+    "patients"
 }
 
 FORBIDDEN_KEYWORDS = {

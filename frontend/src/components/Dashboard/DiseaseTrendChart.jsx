@@ -27,28 +27,7 @@ import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
 import { useShallow }              from 'zustand/react/shallow';
 import { getDashboardTrends, getDashboardDiseaseBreakdown } from '@/services/analytics.service';
 import { TrendingUp } from 'lucide-react';
-
-// ── Disease colour palette — same as rest of dashboard ─────────────────────
-const DISEASE_KEYWORDS = [
-  ['covid',        '#ef4444'], ['diabetes',     '#3b82f6'],
-  ['heart',        '#a855f7'], ['tuberculosis', '#f97316'],
-  ['tb',           '#f97316'], ['malaria',      '#22c55e'],
-  ['influenza',    '#06b6d4'], ['flu',          '#06b6d4'],
-  ['hepatitis',    '#eab308'], ['dengue',       '#ec4899'],
-  ['hypertension', '#8b5cf6'], ['pneumonia',    '#14b8a6'],
-  ['cancer',       '#6366f1'], ['stroke',       '#dc2626'],
-  ['kidney',       '#64748b'],
-];
-const PALETTE_FALLBACKS = [
-  '#ef4444','#3b82f6','#a855f7','#22c55e','#f59e0b',
-  '#06b6d4','#ec4899','#8b5cf6','#14b8a6','#f97316',
-  '#84cc16','#e11d48','#0ea5e9','#d946ef','#10b981',
-];
-function getDiseaseColor(name, idx) {
-  const lc = (name ?? '').toLowerCase();
-  for (const [kw, color] of DISEASE_KEYWORDS) { if (lc.includes(kw)) return color; }
-  return PALETTE_FALLBACKS[idx % PALETTE_FALLBACKS.length];
-}
+import { getDiseaseColor, tooltipStyle, gridStyle, axisTick, tooltipCursorLine } from '@/lib/chartTheme';
 
 // ── MONTH ORDER for proper X-axis sorting ─────────────────────────────────
 const MONTH_ORDER = { Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12 };
@@ -163,20 +142,11 @@ const CustomTooltip = ({ active, payload, label, colorMap }) => {
   if (!active || !payload?.length) return null;
   const total = payload.reduce((s, p) => s + (p.value ?? 0), 0);
   return (
-    <div style={{
-      background: 'var(--bg-secondary)',
-      border: '1px solid var(--border)',
-      borderRadius: 12,
-      padding: '12px 16px',
-      fontSize: 12,
-      boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-      minWidth: 200,
-      maxWidth: 280,
-    }}>
-      <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)', marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
-        📅 {label}
+    <div style={tooltipStyle({ minWidth: 200, maxWidth: 280 })}>
+      <div style={{ fontWeight: 700, fontSize: 12, color: 'var(--text-muted)', marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
+        {label}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
         {payload
           .slice()
           .sort((a, b) => (b.value ?? 0) - (a.value ?? 0))
@@ -384,19 +354,18 @@ export default function DiseaseTrendChart() {
                 margin={{ top: 8, right: 12, left: -8, bottom: 0 }}
               >
                 <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="rgba(148,163,184,0.08)"
+                  {...gridStyle}
                   vertical={false}
                 />
                 <XAxis
                   dataKey="period"
-                  tick={{ fontSize: 10, fill: 'var(--text-muted)', fontWeight: 500 }}
+                  tick={axisTick}
                   axisLine={false}
                   tickLine={false}
                   interval={chartRows.length > 20 ? Math.floor(chartRows.length / 12) : 0}
                 />
                 <YAxis
-                  tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+                  tick={axisTick}
                   axisLine={false}
                   tickLine={false}
                   tickFormatter={yTickFmt}
@@ -404,7 +373,7 @@ export default function DiseaseTrendChart() {
                 />
                 <Tooltip
                   content={<CustomTooltip colorMap={colorMap} />}
-                  cursor={{ stroke: 'rgba(148,163,184,0.15)', strokeWidth: 1 }}
+                  cursor={tooltipCursorLine}
                 />
                 {diseases.map((d, i) => (
                   <Line
@@ -412,9 +381,9 @@ export default function DiseaseTrendChart() {
                     type="monotone"
                     dataKey={d.name}
                     stroke={d.color}
-                    strokeWidth={hiddenLines.has(d.name) ? 0 : 2}
-                    dot={showDots ? { r: 3, fill: d.color, strokeWidth: 0 } : false}
-                    activeDot={{ r: 5, fill: d.color, stroke: 'var(--bg-secondary)', strokeWidth: 2 }}
+                    strokeWidth={hiddenLines.has(d.name) ? 0 : 2.5}
+                    dot={showDots ? { r: 3.5, fill: d.color, strokeWidth: 0 } : false}
+                    activeDot={{ r: 6, fill: d.color, stroke: 'var(--bg-secondary)', strokeWidth: 2.5 }}
                     isAnimationActive={false}
                     hide={hiddenLines.has(d.name)}
                     connectNulls
@@ -434,20 +403,20 @@ export default function DiseaseTrendChart() {
                     style={{
                       display: 'flex', alignItems: 'center', gap: 6,
                       padding: '4px 10px', borderRadius: 20,
-                      border: `1px solid ${hidden ? 'var(--border)' : `${d.color}44`}`,
+                      border: `1px solid ${hidden ? 'var(--border)' : `${d.color}55`}`,
                       background: hidden ? 'transparent' : `${d.color}12`,
                       cursor: 'pointer', outline: 'none',
-                      opacity: hidden ? 0.45 : 1,
-                      transition: 'all 0.18s ease',
+                      opacity: hidden ? 0.4 : 1,
+                      transition: 'all 0.15s ease',
                     }}
                   >
                     <span style={{
-                      width: 20, height: 2.5, borderRadius: 2, flexShrink: 0,
+                      width: 20, height: 3, borderRadius: 2, flexShrink: 0,
                       background: hidden ? 'var(--text-muted)' : d.color,
                       display: 'inline-block',
                     }} />
                     <span style={{
-                      fontSize: 11, fontWeight: 500,
+                      fontSize: 11, fontWeight: 600,
                       color: hidden ? 'var(--text-muted)' : 'var(--text-secondary)',
                       textDecoration: hidden ? 'line-through' : 'none',
                       whiteSpace: 'nowrap',

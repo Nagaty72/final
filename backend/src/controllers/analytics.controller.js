@@ -106,15 +106,6 @@ export const AnalyticsController = {
     }
   },
 
-  async getPredictions(req, res, next) {
-    try {
-      const { diseaseId, districtId, limit } = req.query;
-      const data = await AnalyticsService.getPredictions({
-        diseaseId, districtId, limit: Number(limit) || 30,
-      });
-      res.json({ success: true, data });
-    } catch (e) { next(e); }
-  },
 
   async getDiseaseSummary(req, res, next) {
     try {

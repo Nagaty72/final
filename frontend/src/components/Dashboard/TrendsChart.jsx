@@ -8,12 +8,7 @@ import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
 import { useShallow } from 'zustand/react/shallow';
 import { getDashboardTrends } from '@/services/analytics.service';
 import { BarChart2 } from 'lucide-react';
-
-const BAR_COLORS = [
-  '#3b82f6','#60a5fa','#818cf8','#a78bfa','#c084fc',
-  '#e879f9','#f472b6','#fb7185','#f87171','#fbbf24',
-  '#34d399','#2dd4bf',
-];
+import { TRENDS_BAR_PALETTE, PALETTE, tooltipStyle, gridStyle, axisTick, tooltipCursorBar } from '@/lib/chartTheme';
 
 function TrendsSkeleton() {
   return (
@@ -34,10 +29,14 @@ function TrendsSkeleton() {
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
+  const barColor = TRENDS_BAR_PALETTE[0];
   return (
-    <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 13, boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
-      <div style={{ fontWeight: 600, marginBottom: 4, color: 'var(--text-primary)' }}>{label}</div>
-      <div style={{ color: '#60a5fa' }}>Cases: <strong>{Number(payload[0]?.value ?? 0).toLocaleString()}</strong></div>
+    <div style={tooltipStyle()}>
+      <div style={{ fontWeight: 700, fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>{label}</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, color: 'var(--text-secondary)' }}>
+        <span>Cases</span>
+        <strong style={{ color: barColor }}>{Number(payload[0]?.value ?? 0).toLocaleString()}</strong>
+      </div>
     </div>
   );
 };
@@ -136,18 +135,18 @@ export default function TrendsChart() {
       ) : (
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={data} margin={{ top: 10, right: 8, left: -20, bottom: 0 }} barCategoryGap="25%">
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+            <CartesianGrid {...gridStyle} vertical={false} />
             <XAxis
               dataKey="label"
-              tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+              tick={axisTick}
               axisLine={false} tickLine={false}
               interval={data.length > 14 ? Math.floor(data.length / 10) : 0}
             />
-            <YAxis tick={{ fontSize: 10, fill: 'var(--text-muted)' }} axisLine={false} tickLine={false} />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+            <YAxis tick={axisTick} axisLine={false} tickLine={false} />
+            <Tooltip content={<CustomTooltip />} cursor={tooltipCursorBar} />
             <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={48} isAnimationActive={false}>
               {data.map((_, i) => (
-                <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
+                <Cell key={i} fill={TRENDS_BAR_PALETTE[i % TRENDS_BAR_PALETTE.length]} />
               ))}
             </Bar>
           </BarChart>

@@ -4,14 +4,15 @@ import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
 import { useShallow } from 'zustand/react/shallow';
 import { getDashboardKpis } from '@/services/analytics.service';
 import { Activity, Users, Hospital, TrendingUp, AlertTriangle, HeartPulse } from 'lucide-react';
+import { KPI_PALETTE } from '@/lib/chartTheme';
 
 const KPI_CONFIG = [
-  { key: 'total_cases',     label: 'Total Cases',       icon: Activity,      color: '#3b82f6', bg: 'rgba(59,130,246,0.1)',  border: 'rgba(59,130,246,0.25)' },
-  { key: 'active_cases',    label: 'Active Cases',      icon: HeartPulse,    color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.25)' },
-  { key: 'recovered',       label: 'Recovered',         icon: TrendingUp,    color: '#22c55e', bg: 'rgba(34,197,94,0.1)',   border: 'rgba(34,197,94,0.25)'  },
-  { key: 'severe_cases',    label: 'Severe / Critical', icon: AlertTriangle, color: '#ef4444', bg: 'rgba(239,68,68,0.1)',   border: 'rgba(239,68,68,0.25)'  },
-  { key: 'total_patients',  label: 'Total Patients',    icon: Users,         color: '#a855f7', bg: 'rgba(168,85,247,0.1)',  border: 'rgba(168,85,247,0.25)' },
-  { key: 'total_hospitals', label: 'Hospitals',         icon: Hospital,      color: '#06b6d4', bg: 'rgba(6,182,212,0.1)',   border: 'rgba(6,182,212,0.25)'  },
+  { key: 'total_cases',     label: 'Total Cases',       icon: Activity,      ...KPI_PALETTE.total_cases     },
+  { key: 'active_cases',    label: 'Active Cases',      icon: HeartPulse,    ...KPI_PALETTE.active_cases    },
+  { key: 'recovered',       label: 'Recovered',         icon: TrendingUp,    ...KPI_PALETTE.recovered       },
+  { key: 'severe_cases',    label: 'Severe / Critical', icon: AlertTriangle, ...KPI_PALETTE.severe_cases    },
+  { key: 'total_patients',  label: 'Total Patients',    icon: Users,         ...KPI_PALETTE.total_patients  },
+  { key: 'total_hospitals', label: 'Hospitals',         icon: Hospital,      ...KPI_PALETTE.total_hospitals },
 ];
 
 function KpiSkeleton() {

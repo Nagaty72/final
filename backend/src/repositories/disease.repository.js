@@ -15,7 +15,11 @@ export const DiseaseRepository = {
     if (isChronic !== undefined) query = query.eq('is_chronic', isChronic);
 
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) {
+      console.error("SUPABASE ERROR:", JSON.stringify(error, null, 2));
+      import('fs').then(fs => fs.appendFileSync('disease_error.log', JSON.stringify(error, null, 2) + '\\n'));
+      throw error;
+    }
     return data;
   },
 
@@ -28,7 +32,11 @@ export const DiseaseRepository = {
   async create({ name, category, is_chronic }) {
     const { data, error } = await db().from('diseases')
       .insert({ name, category, is_chronic }).select().single();
-    if (error) throw error;
+    if (error) {
+      console.error("SUPABASE ERROR:", JSON.stringify(error, null, 2));
+      import('fs').then(fs => fs.appendFileSync('disease_error.log', JSON.stringify(error, null, 2) + '\\n'));
+      throw error;
+    }
     return data;
   },
 

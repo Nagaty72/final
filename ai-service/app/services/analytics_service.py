@@ -116,11 +116,3 @@ async def get_disease_trends(role: str = "normal_user") -> str:
         logger.error(f"Error in get_disease_trends: {e}")
         return "Failed to fetch disease trends."
 
-async def get_outbreak_predictions(role: str = "normal_user") -> str:
-    """Fetch outbreak predictions using PostgreSQL RPC."""
-    try:
-        data = await supabase_client.call_rpc("get_outbreak_predictions")
-        return _format_data(data, role)
-    except Exception as e:
-        logger.error(f"Error in get_outbreak_predictions: {e}")
-        return "Failed to fetch outbreak predictions."

@@ -26,6 +26,7 @@ import { getDashboardBubble, getDashboardKpis, getDiseaseList, getCityList } fro
 import MapFilterPanel from './MapFilterPanel';
 import MapLegend      from './MapLegend';
 import { normalizeGovName, GOVERNORATE_COORDS } from './IntelligenceMapView';
+import { getDiseaseColor } from '@/lib/chartTheme';
 
 // ── SSR-safe dynamic import ─────────────────────────────────────────────────
 const IntelligenceMapView = dynamic(
@@ -33,27 +34,7 @@ const IntelligenceMapView = dynamic(
   { ssr: false, loading: () => <MapLoadingSkeleton /> }
 );
 
-// ── Disease colour palette ──────────────────────────────────────────────────
-const DISEASE_KEYWORDS = [
-  ['covid',        '#ef4444'], ['diabetes',     '#3b82f6'],
-  ['heart',        '#a855f7'], ['tuberculosis', '#f97316'],
-  ['tb',           '#f97316'], ['malaria',      '#22c55e'],
-  ['influenza',    '#06b6d4'], ['flu',          '#06b6d4'],
-  ['hepatitis',    '#eab308'], ['dengue',       '#ec4899'],
-  ['hypertension', '#8b5cf6'], ['pneumonia',    '#14b8a6'],
-  ['cancer',       '#6366f1'], ['stroke',       '#dc2626'],
-  ['kidney',       '#64748b'],
-];
-const PALETTE_FALLBACKS = [
-  '#ef4444','#3b82f6','#a855f7','#22c55e','#f59e0b',
-  '#06b6d4','#ec4899','#8b5cf6','#14b8a6','#f97316',
-  '#84cc16','#e11d48','#0ea5e9','#d946ef','#10b981',
-];
-function getDiseaseColor(name, idx) {
-  const lc = (name ?? '').toLowerCase();
-  for (const [kw, color] of DISEASE_KEYWORDS) { if (lc.includes(kw)) return color; }
-  return PALETTE_FALLBACKS[idx % PALETTE_FALLBACKS.length];
-}
+
 
 // ── Normalise raw RPC rows ──────────────────────────────────────────────────
 function normalizeRows(res) {
@@ -240,10 +221,21 @@ export default function IntelligenceMapPage() {
         display: 'flex', flexDirection: 'column',
         height: 'calc(100vh - 32px)',
         background: 'var(--bg-primary)',
-        borderRadius: 16, overflow: 'hidden',
+        borderRadius: 16,
+        // overflow must NOT be 'hidden' here — that would clip fixed-position
+        // portal dropdowns by creating a containing block for them.
+        overflow: 'visible',
         border: '1px solid var(--border)',
+        // Fullscreen mode: fill the entire screen
+        ...(isFullscreen ? { height: '100vh', borderRadius: 0, border: 'none' } : {}),
       }}
     >
+      {/* Fullscreen compatibility styles */}
+      <style>{`
+        :fullscreen #intelligence-map-root,
+        :-webkit-full-screen #intelligence-map-root { height: 100vh !important; border-radius: 0 !important; }
+        :fullscreen > div, :-webkit-full-screen > div { display: flex; flex-direction: column; height: 100%; }
+      `}</style>
       {/* ── Top Toolbar ───────────────────────────────────────────────── */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 12,

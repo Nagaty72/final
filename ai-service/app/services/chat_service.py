@@ -150,7 +150,7 @@ Determine the primary intent from this list:
 - gender_analysis
 - age_analysis
 - disease_trends
-- outbreak_predictions
+
 - general_chat
 
 Respond ONLY with the exact intent name from the list above. No other text.
@@ -167,7 +167,7 @@ User Message: {message}"""
         valid_intents = [
             "top_diseases", "chronic_analysis", "compare_governorates", 
             "hospital_load", "emergency_analysis", "gender_analysis", 
-            "age_analysis", "disease_trends", "outbreak_predictions", "general_chat"
+            "age_analysis", "disease_trends", "general_chat"
         ]
         return intent if intent in valid_intents else "general_chat"
     except Exception as e:
@@ -217,8 +217,6 @@ async def generate_chat_response(message: str, history: list = None, user_role: 
             context_data = await analytics_service.get_age_group_analysis(user_role)
         elif intent == "disease_trends":
             context_data = await analytics_service.get_disease_trends(user_role)
-        elif intent == "outbreak_predictions":
-            context_data = await analytics_service.get_outbreak_predictions(user_role)
             
         # 3. Build Augmented Prompt
         augmented_prompt = message

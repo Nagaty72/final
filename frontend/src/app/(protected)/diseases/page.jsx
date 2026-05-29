@@ -5,12 +5,6 @@ import { diseaseService } from '@/services/disease.service';
 import { getDashboardDiseaseBreakdown } from '@/services/analytics.service';
 import { useAuth } from '@/context/AuthContext';
 
-const WEEKLY = [
-  { week: 'W1', influenza: 280, malaria: 190, dengue: 120 },
-  { week: 'W2', influenza: 320, malaria: 170, dengue: 150 },
-  { week: 'W3', influenza: 290, malaria: 200, dengue: 140 },
-  { week: 'W4', influenza: 350, malaria: 180, dengue: 160 },
-];
 
 export default function DiseasesPage() {
   const { user } = useAuth();
@@ -183,73 +177,49 @@ export default function DiseasesPage() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
-        {/* Diseases List CRUD Table */}
-        <div className="chart-container">
-          <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 16px' }}>Disease Directory</h2>
-          
-          {loading ? (
-            <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Loading diseases...</div>
-          ) : error ? (
-            <div style={{ padding: 20, textAlign: 'center', color: '#f87171' }}>{error}</div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Type</th>
-                    {user?.role === 'super_admin' && <th style={{ textAlign: 'right' }}>Actions</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {diseases.map((d) => (
-                    <tr key={d.id}>
-                      <td style={{ fontWeight: 600 }}>{d.name}</td>
-                      <td>{d.category || 'N/A'}</td>
-                      <td>
-                        <span className={`badge ${d.is_chronic ? 'red' : 'green'}`}>
-                          {d.is_chronic ? 'Chronic' : 'Acute'}
-                        </span>
-                      </td>
-                      {user?.role === 'super_admin' && (
-                        <td style={{ textAlign: 'right' }}>
-                          <button onClick={() => openModal(d)} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', marginRight: 10, fontSize: 14, fontWeight: 500 }}>Edit</button>
-                          <button onClick={() => handleDelete(d.id)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>Delete</button>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                  {diseases.length === 0 && (
-                    <tr><td colSpan={user?.role === 'super_admin' ? 4 : 3} style={{ textAlign: 'center', padding: 20 }}>No diseases found.</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+      <div className="chart-container">
+        <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 16px' }}>Disease Directory</h2>
 
-        {/* AI Predictions Sidebar */}
-        <div className="glass-card" style={{ padding: 24, borderColor: 'var(--purple)', alignSelf: 'start' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--purple-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>🤖</div>
-            <div>
-              <h3 style={{ fontSize: 15, fontWeight: 600, margin: 0 }}>AI Predictions</h3>
-              <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Forecasting trends</p>
-            </div>
+        {loading ? (
+          <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Loading diseases...</div>
+        ) : error ? (
+          <div style={{ padding: 20, textAlign: 'center', color: '#f87171' }}>{error}</div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Category</th>
+                  <th>Type</th>
+                  {user?.role === 'super_admin' && <th style={{ textAlign: 'right' }}>Actions</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {diseases.map((d) => (
+                  <tr key={d.id}>
+                    <td style={{ fontWeight: 600 }}>{d.name}</td>
+                    <td>{d.category || 'N/A'}</td>
+                    <td>
+                      <span className={`badge ${d.is_chronic ? 'red' : 'green'}`}>
+                        {d.is_chronic ? 'Chronic' : 'Acute'}
+                      </span>
+                    </td>
+                    {user?.role === 'super_admin' && (
+                      <td style={{ textAlign: 'right' }}>
+                        <button onClick={() => openModal(d)} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', marginRight: 10, fontSize: 14, fontWeight: 500 }}>Edit</button>
+                        <button onClick={() => handleDelete(d.id)} style={{ background: 'none', border: 'none', color: '#f87171', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>Delete</button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+                {diseases.length === 0 && (
+                  <tr><td colSpan={user?.role === 'super_admin' ? 4 : 3} style={{ textAlign: 'center', padding: 20 }}>No diseases found.</td></tr>
+                )}
+              </tbody>
+            </table>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 20 }}>
-            <div style={{ padding: 14, background: 'var(--bg-primary)', borderRadius: 8 }}>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Influenza (next 7d)</div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#f87171' }}>↑ +15%</div>
-            </div>
-            <div style={{ padding: 14, background: 'var(--bg-primary)', borderRadius: 8 }}>
-              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Malaria (next 7d)</div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: '#4ade80' }}>↓ -8%</div>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Disease Modal */}
@@ -314,3 +284,4 @@ export default function DiseasesPage() {
     </div>
   );
 }
+

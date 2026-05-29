@@ -4,16 +4,11 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
 import { useShallow } from 'zustand/react/shallow';
 import { getDashboardSeverity } from '@/services/analytics.service';
+import { SEVERITY_PALETTE as THEME_SEVERITY, tooltipStyle } from '@/lib/chartTheme';
 
-const SEVERITY_ORDER = ['Mild', 'Moderate', 'Severe', 'Critical', 'Extreme'];
-const SEVERITY_PALETTE = {
-  Mild:     '#22c55e',
-  Moderate: '#f59e0b',
-  Severe:   '#ef4444',
-  Critical: '#7c3aed',
-  Extreme:  '#450a0a',
-};
-const FALLBACK_COLOR = '#64748b';
+const SEVERITY_ORDER   = ['Mild', 'Moderate', 'Severe', 'Critical', 'Extreme'];
+const SEVERITY_PALETTE = THEME_SEVERITY;
+const FALLBACK_COLOR   = '#7B8FA8';
 
 function SeveritySkeleton() {
   return (
@@ -28,14 +23,18 @@ const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload?.length) return null;
   const d = payload[0];
   return (
-    <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 13, boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <div style={{ width: 10, height: 10, borderRadius: '50%', background: d.payload?.fill }} />
-        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{d.name}</span>
+    <div style={tooltipStyle()}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, paddingBottom: 8, borderBottom: '1px solid var(--border)' }}>
+        <div style={{ width: 10, height: 10, borderRadius: '50%', background: d.payload?.fill, flexShrink: 0 }} />
+        <span style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)' }}>{d.name}</span>
       </div>
-      <div style={{ color: 'var(--text-secondary)', marginTop: 4 }}>
-        Cases: <strong style={{ color: 'var(--text-primary)' }}>{Number(d.value).toLocaleString()}</strong>
-        <span style={{ marginLeft: 8, color: 'var(--text-muted)' }}>({d.payload?.pct}%)</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, color: 'var(--text-secondary)', fontSize: 12 }}>
+        <span>Cases</span>
+        <strong style={{ color: 'var(--text-primary)' }}>{Number(d.value).toLocaleString()}</strong>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, color: 'var(--text-muted)', fontSize: 11, marginTop: 3 }}>
+        <span>Share</span>
+        <span>{d.payload?.pct}%</span>
       </div>
     </div>
   );
@@ -169,13 +168,13 @@ export default function SeverityChart() {
             <PieChart>
               <Pie
                 data={data} cx="50%" cy="50%"
-                innerRadius={55} outerRadius={90}
-                paddingAngle={3} dataKey="value"
+                innerRadius={58} outerRadius={92}
+                paddingAngle={2} dataKey="value"
                 labelLine={false} label={renderCustomLabel}
                 isAnimationActive={false}
               >
                 {data.map((entry, i) => (
-                  <Cell key={i} fill={entry.fill} stroke={entry.fill} strokeWidth={0.5} />
+                  <Cell key={i} fill={entry.fill} stroke="var(--bg-secondary)" strokeWidth={2} />
                 ))}
               </Pie>
               <Tooltip content={<CustomTooltip />} />
@@ -184,9 +183,9 @@ export default function SeverityChart() {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 8, justifyContent: 'center' }}>
             {data.map((d, i) => (
               <div key={`sev-${d.name}-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-secondary)' }}>
-                <div style={{ width: 10, height: 10, borderRadius: 2, background: d.fill }} />
-                <span>{d.name}</span>
-                <span style={{ color: d.fill, fontWeight: 600 }}>{d.pct}%</span>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: d.fill, flexShrink: 0 }} />
+                <span style={{ fontWeight: 500 }}>{d.name}</span>
+                <span style={{ color: d.fill, fontWeight: 700 }}>{d.pct}%</span>
               </div>
             ))}
           </div>

@@ -714,7 +714,7 @@ export default function HospitalsPage() {
         .filter-select { 
           flex: 1; 
           background: var(--bg-primary); 
-          color: white; 
+          color: var(--text-primary); 
         }
         .filter-select:disabled { opacity: 0.5; cursor: not-allowed; }
         .location-active-badge {

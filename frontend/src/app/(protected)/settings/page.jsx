@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from 'next-themes';
 import { getPreferences, updatePreferences } from '@/services/preferences.service';
 import { supabase } from '@/lib/supabase';
+import { validatePassword, getPasswordValidationRules } from '@/lib/validators';
 
 export default function SettingsPage() {
   const { user, updateUser } = useAuth();
@@ -116,8 +117,9 @@ export default function SettingsPage() {
     setError('');
 
     // 1. Basic Validation
-    if (passwordData.newPassword.length < 8) {
-      setError(t('settings.password_too_short'));
+    const pErr = validatePassword(passwordData.newPassword);
+    if (pErr) {
+      setError(pErr);
       setLoading(false);
       return;
     }
@@ -340,7 +342,26 @@ export default function SettingsPage() {
                           )}
                         </button>
                       </div>
-                      <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>{t('settings.password_min_length')}</p>
+                      {passwordData.newPassword && (
+                        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {Object.entries({
+                            length: 'At least 8 characters',
+                            uppercase: 'One uppercase letter',
+                            number: 'One number',
+                            special: 'One special character'
+                          }).map(([key, label]) => {
+                            const isValid = getPasswordValidationRules(passwordData.newPassword)[key];
+                            return (
+                              <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: isValid ? '#22c55e' : 'var(--text-muted)' }}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                  {isValid ? <polyline points="20 6 9 17 4 12" /> : <circle cx="12" cy="12" r="10" />}
+                                </svg>
+                                <span>{label}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
 
                     {/* Confirm New Password */}

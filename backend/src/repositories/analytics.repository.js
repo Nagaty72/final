@@ -15,12 +15,6 @@ export const AnalyticsRepository = {
   async upsertDailyStat({ disease_id, district_id, date, total_cases }) {
     return null;
   },
-  async getPredictions({ diseaseId, districtId, limit = 30 }) {
-    return [];
-  },
-  async insertPrediction({ disease_id, district_id, prediction_date, predicted_cases, model_version }) {
-    return null;
-  },
   async getDiseaseSummary() {
     return [];
   },

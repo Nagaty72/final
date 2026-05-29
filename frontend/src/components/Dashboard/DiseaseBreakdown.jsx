@@ -8,8 +8,7 @@ import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
 import { useShallow } from 'zustand/react/shallow';
 import { getDashboardDiseaseBreakdown } from '@/services/analytics.service';
 import { Activity } from 'lucide-react';
-
-const DISEASE_COLORS = ['#3b82f6','#a855f7','#22c55e','#f59e0b','#ef4444','#06b6d4','#ec4899','#8b5cf6'];
+import { DISEASE_BAR_PALETTE, tooltipStyle, gridStyle, axisTick, tooltipCursorBar } from '@/lib/chartTheme';
 
 function BreakdownSkeleton() {
   return (
@@ -29,10 +28,18 @@ const CustomTooltip = ({ active, payload }) => {
   if (!active || !payload?.length) return null;
   const d = payload[0];
   return (
-    <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 10, padding: '10px 14px', fontSize: 13, boxShadow: '0 8px 24px rgba(0,0,0,0.3)' }}>
-      <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>{d.payload?.name}</div>
-      <div style={{ color: d.fill }}>Cases: <strong>{Number(d.value).toLocaleString()}</strong></div>
-      <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>{d.payload?.pct}% of filtered total</div>
+    <div style={tooltipStyle()}>
+      <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--text-primary)', marginBottom: 6, paddingBottom: 6, borderBottom: '1px solid var(--border)' }}>
+        {d.payload?.name}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, color: 'var(--text-secondary)', fontSize: 12 }}>
+        <span>Cases</span>
+        <strong style={{ color: d.fill }}>{Number(d.value).toLocaleString()}</strong>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, color: 'var(--text-muted)', fontSize: 11, marginTop: 3 }}>
+        <span>Share</span>
+        <span>{d.payload?.pct}% of total</span>
+      </div>
     </div>
   );
 };
@@ -71,7 +78,7 @@ function normalizeBreakdown(responseData) {
     name:  r.name,
     cases: r.count,
     pct:   Math.round((r.count / total) * 100),
-    color: DISEASE_COLORS[i % DISEASE_COLORS.length],
+    color: DISEASE_BAR_PALETTE[i % DISEASE_BAR_PALETTE.length],
   }));
 }
 
@@ -150,9 +157,9 @@ export default function DiseaseBreakdown() {
       ) : (
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={data} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }} barCategoryGap="20%">
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" horizontal={false} />
+            <CartesianGrid {...gridStyle} horizontal={false} />
             <XAxis
-              type="number" tick={{ fontSize: 10, fill: 'var(--text-muted)' }}
+              type="number" tick={axisTick}
               axisLine={false} tickLine={false}
               tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}
             />
@@ -161,10 +168,10 @@ export default function DiseaseBreakdown() {
               tick={{ fontSize: 11, fill: 'var(--text-secondary)', fontWeight: 500 }}
               axisLine={false} tickLine={false}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-            <Bar dataKey="cases" radius={[0, 6, 6, 0]} maxBarSize={22} isAnimationActive={false}>
-              {data.map((_, i) => (
-                <Cell key={i} fill={DISEASE_COLORS[i % DISEASE_COLORS.length]} />
+            <Tooltip content={<CustomTooltip />} cursor={tooltipCursorBar} />
+            <Bar dataKey="cases" radius={[0, 7, 7, 0]} maxBarSize={22} isAnimationActive={false}>
+              {data.map((entry, i) => (
+                <Cell key={i} fill={entry.color} />
               ))}
             </Bar>
           </BarChart>

@@ -22,8 +22,6 @@ export const AnalyticsService = {
     AnalyticsAlertService.evaluateDailyStats(data || {}).catch(e => console.error('[AnalyticsService] evaluateDailyStats threw an error:', e));
     return result;
   },
-  getPredictions:   (filters) => AnalyticsRepository.getPredictions(filters),
-  insertPrediction: (data)    => AnalyticsRepository.insertPrediction(data),
   getDiseaseSummary:()        => AnalyticsRepository.getDiseaseSummary(),
   getReports:       (filters) => AnalyticsRepository.getReports(filters),
   createReport:     (data)    => AnalyticsRepository.createReport(data),

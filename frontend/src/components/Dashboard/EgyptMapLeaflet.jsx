@@ -34,6 +34,7 @@ import {
 } from 'react-leaflet';
 import L from 'leaflet';
 import { useTheme } from 'next-themes';
+import { getDiseaseColor, HEAT_GRADIENT } from '@/lib/chartTheme';
 
 // ── Heat layer bootstrap (mirrors original HeatmapComponent exactly) ──────────
 if (typeof window !== 'undefined') {
@@ -180,32 +181,6 @@ function normalizeGovName(city) {
   return GOV_ALIASES[key] ?? city;
 }
 
-// ── Disease colour palette ─────────────────────────────────────────────────────
-const DISEASE_KEYWORDS = [
-  ['covid',        '#ef4444'],
-  ['diabetes',     '#3b82f6'],
-  ['heart',        '#a855f7'],
-  ['tuberculosis', '#f97316'], ['tb', '#f97316'],
-  ['malaria',      '#22c55e'],
-  ['influenza',    '#06b6d4'], ['flu', '#06b6d4'],
-  ['hepatitis',    '#eab308'],
-  ['dengue',       '#ec4899'],
-  ['hypertension', '#8b5cf6'],
-  ['pneumonia',    '#14b8a6'],
-  ['cancer',       '#6366f1'],
-  ['stroke',       '#dc2626'],
-  ['kidney',       '#64748b'],
-];
-const PALETTE_FALLBACKS = [
-  '#ef4444','#3b82f6','#a855f7','#22c55e','#f59e0b',
-  '#06b6d4','#ec4899','#8b5cf6','#14b8a6','#f97316',
-  '#84cc16','#e11d48','#0ea5e9','#d946ef','#10b981',
-];
-function getDiseaseColor(name, idx) {
-  const lc = (name ?? '').toLowerCase();
-  for (const [kw, color] of DISEASE_KEYWORDS) { if (lc.includes(kw)) return color; }
-  return PALETTE_FALLBACKS[idx % PALETTE_FALLBACKS.length];
-}
 
 // ── Bubble radius (px, fixed regardless of zoom) ──────────────────────────────
 function bubbleRadius(cases, maxCases) {
@@ -235,9 +210,9 @@ function HeatLayer({ points }) {
     if (!map || !points || points.length === 0) return;
     const layer = L.heatLayer(points, {
       radius:  25,
-      blur:    15,
+      blur:    18,
       maxZoom: 10,
-      gradient: { 0.4: 'blue', 0.6: 'cyan', 0.7: 'lime', 0.8: 'yellow', 1.0: 'red' },
+      gradient: HEAT_GRADIENT,
     }).addTo(map);
     return () => { map.removeLayer(layer); };
   }, [map, points]);

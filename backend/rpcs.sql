@@ -120,14 +120,3 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 9. get_outbreak_predictions
-CREATE OR REPLACE FUNCTION get_outbreak_predictions()
-RETURNS TABLE(disease_name TEXT, prediction_date DATE, predicted_cases INT) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT d.name, p.prediction_date, p.predicted_cases
-    FROM disease_predictions p
-    JOIN diseases d ON p.disease_id = d.id
-    ORDER BY p.prediction_date ASC;
-END;
-$$ LANGUAGE plpgsql;

@@ -30,7 +30,6 @@ router.get('/city-list',         authorize('super_admin', 'decision_maker', 'nor
 
 // ── Super Admin + Decision Maker only ────────────────────────────────────
 router.get('/daily-stats',     authorize('super_admin', 'decision_maker'), AnalyticsController.getDailyStats);
-router.get('/predictions',     authorize('super_admin', 'decision_maker'), AnalyticsController.getPredictions);
 router.get('/disease-summary', authorize('super_admin', 'decision_maker'), AnalyticsController.getDiseaseSummary);
 router.get('/reports',         authorize('super_admin', 'decision_maker'), AnalyticsController.getReports);
 router.post('/reports',        authorize('super_admin', 'decision_maker'), AnalyticsController.createReport);

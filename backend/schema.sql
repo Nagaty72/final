@@ -147,27 +147,7 @@ CREATE TABLE disease_stats_daily (
 CREATE INDEX idx_stats_disease_date ON disease_stats_daily(disease_id, date);
 CREATE INDEX idx_stats_district ON disease_stats_daily(district_id);
 
--- =========================
--- AI PREDICTIONS
--- =========================
-CREATE TABLE disease_predictions (
-  id SERIAL PRIMARY KEY,
 
-  disease_id UUID NOT NULL,
-  district_id UUID,
-
-  prediction_date DATE NOT NULL,
-  predicted_cases INT,
-  model_version TEXT,
-
-  created_at TIMESTAMP DEFAULT NOW(),
-
-  CONSTRAINT fk_pred_disease FOREIGN KEY (disease_id) REFERENCES diseases(id),
-  CONSTRAINT fk_pred_district FOREIGN KEY (district_id) REFERENCES districts(id)
-);
-
-CREATE INDEX idx_predictions_disease_date ON disease_predictions(disease_id, prediction_date);
-CREATE INDEX idx_predictions_district ON disease_predictions(district_id);
 
 -- =========================
 -- REPORTS

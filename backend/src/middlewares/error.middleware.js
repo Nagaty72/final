@@ -5,8 +5,10 @@ import { ENV } from '../config/env.js';
  * Catches all unhandled errors and returns a consistent JSON response.
  * In development mode, the full stack trace is included.
  */
+import fs from 'fs';
 export const errorHandler = (err, req, res, _next) => {
   console.error('Unhandled error:', err);
+  fs.writeFileSync('error_dump.txt', String(err.stack || err) + '\n', { flag: 'a' });
 
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal server error';

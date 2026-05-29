@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { authService } from '@/services/auth.service';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { validateName, validateGmail, validatePassword, getPasswordValidationRules } from '@/lib/validators';
 
 function AuthPageContent() {
   const router = useRouter();
@@ -40,28 +41,7 @@ function AuthPageContent() {
   const [resendCooldown, setResendCooldown] = useState(0);
 
   // ── Validators ──────────────────────────────────────────────────────────
-  const validateName = (val) => {
-    const parts = val.trim().split(/\s+/);
-    if (parts.length < 2) return 'Please enter your first and last name.';
-    for (const p of parts) {
-      if (p.length < 3) return 'Each name must be at least 3 characters.';
-      if (p.length > 15) return 'Each name must be at most 15 characters.';
-    }
-    return '';
-  };
-
-  const validateGmail = (val) => {
-    if (!val) return '';
-    return val.toLowerCase().endsWith('@gmail.com') ? '' : 'Only Gmail addresses are allowed (@gmail.com).';
-  };
-
-  const validatePassword = (val) => {
-    if (val.length < 8) return 'Password must be at least 8 characters.';
-    if (!/[A-Z]/.test(val)) return 'Password must include at least one uppercase letter.';
-    if (!/[0-9]/.test(val)) return 'Password must include at least one number.';
-    if (!/[^A-Za-z0-9]/.test(val)) return 'Password must include at least one special character.';
-    return '';
-  };
+  // ── Validators are now imported from @/lib/validators ──
 
   useEffect(() => {
     setMounted(true);
@@ -473,6 +453,26 @@ function AuthPageContent() {
                 </button>
               </div>
               {mode === 'register' && passwordError && <div className="auth-field-error">{passwordError}</div>}
+              {mode === 'register' && password && (
+                <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {Object.entries({
+                    length: 'At least 8 characters',
+                    uppercase: 'One uppercase letter',
+                    number: 'One number',
+                    special: 'One special character'
+                  }).map(([key, label]) => {
+                    const isValid = getPasswordValidationRules(password)[key];
+                    return (
+                      <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: isValid ? '#22c55e' : 'var(--text-muted)' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          {isValid ? <polyline points="20 6 9 17 4 12" /> : <circle cx="12" cy="12" r="10" />}
+                        </svg>
+                        <span>{label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
               {mode === 'login' && (
                 <div style={{ textAlign: 'right', marginTop: '8px' }}>
                   <Link href="/forgot-password" style={{ color: '#3b82f6', fontSize: '13px', textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s ease' }}>

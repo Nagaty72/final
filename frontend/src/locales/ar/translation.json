@@ -159,6 +159,7 @@
     "confirm_new_password": "تأكيد كلمة المرور الجديدة",
     "password_mismatch": "كلمات المرور غير متطابقة.",
     "password_too_short": "يجب أن تكون كلمة المرور ٨ أحرف على الأقل.",
+    "password_min_length": "يجب أن تكون كلمة المرور ٨ أحرف على الأقل.",
     "password_incorrect": "كلمة المرور الحالية غير صحيحة.",
     "password_update_success": "تم تحديث كلمة المرور بنجاح.",
     "password_update_error": "فشل تحديث كلمة المرور.",
