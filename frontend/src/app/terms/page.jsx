@@ -92,14 +92,14 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-3">6. Limitation of Liability</h2>
             <p>
-              The platform is provided "as is." The operating authority makes no warranty — express or implied — regarding the accuracy, completeness, or fitness for purpose of any data or forecast. To the fullest extent permitted by law, we disclaim liability for decisions made based on platform outputs.
+              The platform is provided &quot;as is.&quot; The operating authority makes no warranty — express or implied — regarding the accuracy, completeness, or fitness for purpose of any data or forecast. To the fullest extent permitted by law, we disclaim liability for decisions made based on platform outputs.
             </p>
           </section>
 
           <section>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-3">7. Amendments</h2>
             <p>
-              These terms may be updated periodically. Continued use of the platform following notification of changes constitutes acceptance of the revised terms. Significant changes will be communicated via the platform's administrative notification system.
+              These terms may be updated periodically. Continued use of the platform following notification of changes constitutes acceptance of the revised terms. Significant changes will be communicated via the platform&apos;s administrative notification system.
             </p>
           </section>
 

@@ -96,9 +96,7 @@ export default function ForgotPasswordPage() {
         {/* Header */}
         <div className="auth-header">
           <div className="auth-logo">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-            </svg>
+            <img src="/logo.jpeg" alt="Epicare Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
           <h1 className="auth-title">Reset Password</h1>
           <p className="auth-subtitle">
@@ -245,17 +243,27 @@ export default function ForgotPasswordPage() {
           margin-bottom: 28px;
         }
         .auth-logo {
-          width: 56px;
-          height: 56px;
-          border-radius: 16px;
-          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+          width: 100px;
+          height: 100px;
+          border-radius: 24px;
+          background: var(--bg-primary, rgba(255, 255, 255, 0.05));
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          color: #fff;
-          margin-bottom: 16px;
-          box-shadow: 0 8px 32px rgba(59, 130, 246, 0.35), 0 0 0 1px rgba(255,255,255,0.05);
+          margin-bottom: 20px;
+          box-shadow: 0 8px 32px rgba(59, 130, 246, 0.25), 0 0 0 1px rgba(255,255,255,0.1);
           animation: pulse-glow 3s ease-in-out infinite;
+          overflow: hidden;
+          transition: all 0.3s ease;
+        }
+        .auth-logo img {
+          filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.2));
+        }
+        :global(.dark) .auth-logo img {
+          filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.5));
+        }
+        :global(.dark) .auth-logo {
+          box-shadow: 0 8px 32px rgba(255, 255, 255, 0.15), 0 0 0 1px rgba(255,255,255,0.1);
         }
         @keyframes pulse-glow {
           0%, 100% { box-shadow: 0 8px 32px rgba(59, 130, 246, 0.35), 0 0 0 1px rgba(255,255,255,0.05); }

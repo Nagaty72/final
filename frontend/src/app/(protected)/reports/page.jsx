@@ -68,16 +68,6 @@ function DataTable({ headers, rows }) {
 export default function ReportsPage() {
   const { user } = useAuth();
 
-  // RBAC guard
-  if (user && user.role === 'normal_user') {
-    return (
-      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:'60vh', gap:16 }}>
-        <AlertTriangle size={48} color="#EF4444"/>
-        <h2 style={{ fontSize:20, fontWeight:700, color:'var(--text-primary)' }}>Access Denied</h2>
-        <p style={{ color:'var(--text-muted)' }}>Report Builder is available to Admins and Decision Makers only.</p>
-      </div>
-    );
-  }
 
   const [templates,      setTemplates]      = useState([]);
   const [filterOptions,  setFilterOptions]  = useState({ diseases:[], cities:[], hospitals:[] });
@@ -184,6 +174,17 @@ export default function ReportsPage() {
 
   const kpi = preview?.kpis;
   const activeFilterCount = Object.values(activeFilters).filter(Boolean).length;
+
+  // RBAC guard
+  if (user && user.role === 'normal_user') {
+    return (
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:'60vh', gap:16 }}>
+        <AlertTriangle size={48} color="#EF4444"/>
+        <h2 style={{ fontSize:20, fontWeight:700, color:'var(--text-primary)' }}>Access Denied</h2>
+        <p style={{ color:'var(--text-muted)' }}>Report Builder is available to Admins and Decision Makers only.</p>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth:1100, margin:'0 auto' }}>

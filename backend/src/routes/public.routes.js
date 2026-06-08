@@ -10,10 +10,14 @@ const cache = new NodeCache({ stdTTL: 120, checkperiod: 60 }); // 2-min cache
  * No authentication required — returns aggregate platform metrics for the landing page.
  */
 router.get('/stats', async (req, res) => {
+  console.log('[BACKEND REQUEST RECEIVED] GET /api/v1/public/stats');
   const CACHE_KEY = 'public_landing_stats';
 
   const cached = cache.get(CACHE_KEY);
-  if (cached) return res.json({ success: true, data: cached, cached: true });
+  if (cached) {
+    console.log('[BACKEND CACHE HIT]', JSON.stringify(cached));
+    return res.json({ success: true, data: cached, cached: true });
+  }
 
   const db = getSupabase();
   if (!db) {
@@ -24,23 +28,43 @@ router.get('/stats', async (req, res) => {
   }
 
   try {
-    const [
-      kpiResult,
-      diseasesResult,
-      governoratesResult,
-      breakdownResult,
-    ] = await Promise.all([
-      db.rpc('get_dashboard_kpis', {
-        p_city: null, p_disease: null, p_gender: null,
-        p_severity: null, p_start_date: null, p_end_date: null,
-      }),
-      db.from('diseases').select('id', { count: 'exact', head: true }),
-      db.from('districts').select('city').order('city'),
-      db.rpc('get_dashboard_disease_breakdown', {
-        p_city: null, p_disease: null, p_gender: null,
-        p_severity: null, p_start_date: null, p_end_date: null,
-      })
-    ]);
+    let kpiResult, diseasesResult, governoratesResult, breakdownResult;
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (attempts < maxAttempts) {
+      [
+        kpiResult,
+        diseasesResult,
+        governoratesResult,
+        breakdownResult,
+      ] = await Promise.all([
+        db.rpc('get_dashboard_kpis', {
+          p_city: null, p_disease: null, p_gender: null,
+          p_severity: null, p_start_date: null, p_end_date: null,
+        }),
+        db.from('diseases').select('id', { count: 'exact', head: true }),
+        db.from('districts').select('city').order('city'),
+        db.rpc('get_dashboard_disease_breakdown', {
+          p_city: null, p_disease: null, p_gender: null,
+          p_severity: null, p_start_date: null, p_end_date: null,
+        })
+      ]);
+
+      const hasError = kpiResult.error || diseasesResult.error || governoratesResult.error || breakdownResult.error;
+      if (!hasError) break;
+      
+      attempts++;
+      if (attempts >= maxAttempts) break; // Will throw below
+      
+      console.warn(`[public/stats] Database query failed, retrying (${attempts}/${maxAttempts})...`);
+      await new Promise(res => setTimeout(res, 1500)); // wait 1.5s before retry
+    }
+
+    if (kpiResult.error) throw new Error(`KPI RPC Error: ${kpiResult.error.message}`);
+    if (diseasesResult.error) throw new Error(`Diseases Query Error: ${diseasesResult.error.message}`);
+    if (governoratesResult.error) throw new Error(`Districts Query Error: ${governoratesResult.error.message}`);
+    if (breakdownResult.error) throw new Error(`Breakdown RPC Error: ${breakdownResult.error.message}`);
 
     // Unique governorates
     const allCities = (governoratesResult.data || []).map(d => d.city).filter(Boolean);
@@ -61,7 +85,8 @@ router.get('/stats', async (req, res) => {
       });
     }
 
-    const kpiData = kpiResult.data ? (Array.isArray(kpiResult.data) ? kpiResult.data[0] : kpiResult.data) : {};
+    console.log('[BACKEND RPC RESULT] get_dashboard_kpis:', JSON.stringify(kpiResult));
+    const kpiData = Array.isArray(kpiResult.data) ? kpiResult.data[0] : (kpiResult.data || {});
 
     const stats = {
       totalPatients: kpiData.total_patients || 0,
@@ -74,6 +99,7 @@ router.get('/stats', async (req, res) => {
     };
 
     cache.set(CACHE_KEY, stats);
+    console.log('[BACKEND FINAL RESPONSE]', JSON.stringify(stats));
     return res.json({ success: true, data: stats });
   } catch (err) {
     console.error('[public/stats] Error:', err.message);

@@ -8,6 +8,7 @@ import { authService } from '@/services/auth.service';
 import { useAuth } from '@/context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { validateName, validateGmail, validatePassword, getPasswordValidationRules } from '@/lib/validators';
+import { Activity, Map as MapIcon, Bot, HeartPulse, TrendingUp, ShieldCheck } from 'lucide-react';
 
 function AuthPageContent() {
   const router = useRouter();
@@ -291,12 +292,9 @@ function AuthPageContent() {
 
   return (
     <div className="auth-page">
-      {/* Animated background orbs */}
-      <div className="auth-orb auth-orb-1" />
-      <div className="auth-orb auth-orb-2" />
-      <div className="auth-orb auth-orb-3" />
-
-      <div className="auth-container" style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(20px)' }}>
+      {/* ── LEFT SIDE: Authentication ── */}
+      <div className="auth-left">
+        <div className="auth-container" style={{ opacity: mounted ? 1 : 0, transform: mounted ? 'translateY(0)' : 'translateY(20px)' }}>
 
         {/* Back to Home — sits above the card, left-aligned */}
         <div style={{ marginBottom: 16 }}>
@@ -308,12 +306,10 @@ function AuthPageContent() {
           </Link>
         </div>
 
-        {/* Logo & Header */}
+        {/* Header */}
         <div className="auth-header">
-          <div className="auth-logo">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-            </svg>
+          <div className="auth-logo-mobile">
+            <img src="/logo.jpeg" alt="Epicare Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
           <h1 className="auth-title">{mode === 'login' ? t('auth.login') : t('auth.create_account')}</h1>
           <p className="auth-subtitle">
@@ -545,52 +541,132 @@ function AuthPageContent() {
           </div>
         </div>
       </div>
+      </div>
+
+      {/* ── RIGHT SIDE: Healthcare Intelligence Showcase ── */}
+      <div className="auth-right">
+        <div className="auth-orb auth-orb-1" />
+        <div className="auth-orb auth-orb-2" />
+        <div className="auth-orb auth-orb-3" />
+        <div className="auth-orb auth-orb-4" />
+
+        <div className="showcase-content">
+          <div className="showcase-header">
+            <div className="showcase-logo-wrap">
+              <img src="/logo.jpeg" alt="Epicare Logo" className="showcase-logo-img" />
+            </div>
+            <h2 className="showcase-title">Epicare</h2>
+          </div>
+          
+          <h3 className="showcase-tagline">AI-Powered Healthcare Intelligence Platform</h3>
+          <p className="showcase-desc">
+            Monitor disease trends, analyze outbreaks, visualize healthcare data, and generate intelligent health insights in real-time.
+          </p>
+
+          <div className="showcase-features">
+            <div className="feature-card">
+              <div className="fc-icon-wrap" style={{ color: '#3b82f6', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)' }}>
+                <TrendingUp size={20} />
+              </div>
+              <div className="fc-text">
+                <h4>Real-Time Disease Analytics</h4>
+                <p>Track epidemiological shifts instantly.</p>
+              </div>
+            </div>
+            <div className="feature-card">
+              <div className="fc-icon-wrap" style={{ color: '#8b5cf6', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.2)' }}>
+                <MapIcon size={20} />
+              </div>
+              <div className="fc-text">
+                <h4>GIS Intelligence Mapping</h4>
+                <p>Visualize regional outbreak densities.</p>
+              </div>
+            </div>
+            <div className="feature-card">
+              <div className="fc-icon-wrap" style={{ color: '#10b981', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                <Bot size={20} />
+              </div>
+              <div className="fc-text">
+                <h4>AI Healthcare Analyst</h4>
+                <p>Generate actionable intelligence reports.</p>
+              </div>
+            </div>
+            <div className="feature-card">
+              <div className="fc-icon-wrap" style={{ color: '#f59e0b', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                <Activity size={20} />
+              </div>
+              <div className="fc-text">
+                <h4>Smart Health Monitoring</h4>
+                <p>Proactive alerting and surveillance.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Mini Dashboard Visual Preview */}
+          <div className="showcase-dashboard">
+            <div className="sd-header">
+              <div className="sd-dot" style={{ background: '#ef4444' }} />
+              <div className="sd-dot" style={{ background: '#f59e0b' }} />
+              <div className="sd-dot" style={{ background: '#10b981' }} />
+            </div>
+            <div className="sd-body">
+              <div className="sd-kpi-row">
+                <div className="sd-kpi"><HeartPulse size={14} style={{ color: '#3b82f6', marginBottom: 6 }} /><div className="sd-bar" style={{ width: '40%' }} /><div className="sd-bar" style={{ width: '70%' }} /></div>
+                <div className="sd-kpi"><ShieldCheck size={14} style={{ color: '#10b981', marginBottom: 6 }} /><div className="sd-bar" style={{ width: '50%' }} /><div className="sd-bar" style={{ width: '80%' }} /></div>
+              </div>
+              <div className="sd-chart">
+                <div className="sd-chart-line" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <style jsx>{`
         .auth-page {
           min-height: 100vh;
           display: flex;
+          background: var(--bg-primary);
+        }
+        .auth-left {
+          flex: 1;
+          display: flex;
           align-items: center;
           justify-content: center;
+          padding: 40px 24px;
           background: var(--bg-primary);
           position: relative;
+          z-index: 10;
+        }
+        .auth-right {
+          flex: 1.2;
+          display: none;
+          background: #09090b; /* Very dark premium bg */
+          position: relative;
           overflow: hidden;
-          padding: 24px;
+          align-items: center;
+          justify-content: center;
+          border-left: 1px solid rgba(255,255,255,0.05);
+        }
+        @media (min-width: 1024px) {
+          .auth-right {
+            display: flex;
+          }
         }
 
-        /* Animated background orbs */
+        /* Animated background orbs for Showcase */
         .auth-orb {
           position: absolute;
           border-radius: 50%;
           filter: blur(80px);
-          opacity: 0.5;
+          opacity: 0.4;
           animation: float 8s ease-in-out infinite;
+          pointer-events: none;
         }
-        .auth-orb-1 {
-          width: 500px;
-          height: 500px;
-          background: radial-gradient(circle, rgba(59, 130, 246, 0.25), transparent 70%);
-          top: -150px;
-          right: -100px;
-          animation-delay: 0s;
-        }
-        .auth-orb-2 {
-          width: 400px;
-          height: 400px;
-          background: radial-gradient(circle, rgba(168, 85, 247, 0.2), transparent 70%);
-          bottom: -120px;
-          left: -80px;
-          animation-delay: -3s;
-        }
-        .auth-orb-3 {
-          width: 300px;
-          height: 300px;
-          background: radial-gradient(circle, rgba(34, 197, 94, 0.12), transparent 70%);
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          animation-delay: -5s;
-        }
+        .auth-orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(37, 99, 235, 0.2), transparent 70%); top: -100px; right: -100px; animation-delay: 0s; }
+        .auth-orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(139, 92, 246, 0.2), transparent 70%); bottom: -100px; left: -100px; animation-delay: -3s; }
+        .auth-orb-3 { width: 300px; height: 300px; background: radial-gradient(circle, rgba(16, 185, 129, 0.15), transparent 70%); top: 40%; left: 40%; animation-delay: -5s; }
+        .auth-orb-4 { width: 600px; height: 600px; background: radial-gradient(circle, rgba(6, 182, 212, 0.1), transparent 70%); bottom: 20%; right: -200px; animation-delay: -2s; }
 
         @keyframes float {
           0%, 100% { transform: translate(0, 0) scale(1); }
@@ -600,40 +676,31 @@ function AuthPageContent() {
 
         .auth-container {
           width: 100%;
-          max-width: 440px;
+          max-width: 420px;
           position: relative;
-          z-index: 1;
           transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         /* Header */
         .auth-header {
-          text-align: center;
+          text-align: left;
           margin-bottom: 28px;
         }
-        .auth-logo {
-          width: 56px;
-          height: 56px;
-          border-radius: 16px;
-          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          color: #fff;
-          margin-bottom: 16px;
-          box-shadow: 0 8px 32px rgba(59, 130, 246, 0.35), 0 0 0 1px rgba(255,255,255,0.05);
-          animation: pulse-glow 3s ease-in-out infinite;
+        .auth-logo-mobile {
+          width: 48px; height: 48px; border-radius: 12px;
+          background: #fff; display: none; align-items: center; justify-content: center;
+          margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden;
         }
-        @keyframes pulse-glow {
-          0%, 100% { box-shadow: 0 8px 32px rgba(59, 130, 246, 0.35), 0 0 0 1px rgba(255,255,255,0.05); }
-          50% { box-shadow: 0 8px 48px rgba(139, 92, 246, 0.45), 0 0 0 1px rgba(255,255,255,0.08); }
+        @media (max-width: 1023px) {
+          .auth-logo-mobile { display: flex; }
         }
         .auth-title {
-          font-size: 26px;
+          font-size: 28px;
           font-weight: 800;
           color: var(--text-primary);
-          margin: 0 0 6px;
-          letter-spacing: -0.02em;
+          margin: 0 0 8px;
+          letter-spacing: -0.03em;
+          font-family: var(--font-display);
         }
         .auth-subtitle {
           font-size: 14px;
@@ -682,12 +749,7 @@ function AuthPageContent() {
 
         /* Card */
         .auth-card {
-          background: var(--glass-bg);
-          backdrop-filter: blur(24px) saturate(1.5);
-          border: 1px solid var(--border);
-          border-radius: 20px;
-          padding: 32px;
-          box-shadow: 0 20px 60px var(--shadow-color);
+          background: var(--bg-primary);
         }
 
         /* Error */
@@ -902,14 +964,79 @@ function AuthPageContent() {
 
         /* Responsive */
         @media (max-width: 480px) {
-          .auth-card {
-            padding: 24px 20px;
-            border-radius: 16px;
-          }
-          .auth-title {
-            font-size: 22px;
-          }
+          .auth-title { font-size: 24px; }
         }
+
+        /* ── Showcase Styling ── */
+        .showcase-content {
+          position: relative;
+          z-index: 10;
+          max-width: 600px;
+          padding: 60px;
+          color: #fff;
+        }
+        .showcase-header {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin-bottom: 24px;
+        }
+        .showcase-logo-wrap {
+          width: 56px; height: 56px; border-radius: 14px;
+          background: #fff; display: flex; align-items: center; justify-content: center;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.3); overflow: hidden;
+        }
+        .showcase-logo-img {
+          width: 100%; height: 100%; object-fit: contain;
+        }
+        .showcase-title {
+          font-size: 32px; font-weight: 800; margin: 0; letter-spacing: -0.04em;
+          font-family: var(--font-display);
+          background: linear-gradient(135deg, #fff, #a1a1aa);
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .showcase-tagline {
+          font-size: 24px; font-weight: 700; margin: 0 0 16px; letter-spacing: -0.02em;
+          color: #e4e4e7; line-height: 1.3;
+        }
+        .showcase-desc {
+          font-size: 16px; color: #a1a1aa; line-height: 1.6; margin: 0 0 40px; max-width: 480px;
+        }
+        
+        .showcase-features {
+          display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px;
+        }
+        .feature-card {
+          background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 16px; padding: 16px; display: flex; align-items: flex-start; gap: 14px;
+          transition: all 0.3s ease; cursor: default;
+        }
+        .feature-card:hover {
+          background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15);
+          transform: translateY(-2px);
+        }
+        .fc-icon-wrap {
+          width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .fc-text h4 { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: #e4e4e7; }
+        .fc-text p { margin: 0; font-size: 13px; color: #a1a1aa; line-height: 1.4; }
+
+        .showcase-dashboard {
+          background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 12px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+          backdrop-filter: blur(12px);
+        }
+        .sd-header {
+          background: rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);
+          padding: 10px 14px; display: flex; gap: 6px;
+        }
+        .sd-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .sd-body { padding: 20px; }
+        .sd-kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .sd-kpi { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; }
+        .sd-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.1); margin-bottom: 8px; }
+        .sd-chart { height: 80px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; position: relative; overflow: hidden; }
+        .sd-chart-line { position: absolute; bottom: 0; left: 0; right: 0; height: 40px; background: linear-gradient(180deg, rgba(59,130,246,0.2) 0%, transparent 100%); border-top: 2px solid #3b82f6; clip-path: polygon(0 60%, 20% 30%, 40% 50%, 60% 10%, 80% 40%, 100% 20%, 100% 100%, 0 100%); }
       `}</style>
     </div>
   );

@@ -289,27 +289,37 @@ export default function DiseaseTrendChart() {
     <div style={{
       background:    'var(--bg-secondary)',
       border:        '1px solid var(--border)',
-      borderRadius:   16,
-      padding:        24,
-      height:         '100%',
-      display:        'flex',
-      flexDirection:  'column',
-    }}>
+      borderRadius:  'var(--radius-lg)',
+      padding:       '24px 28px',
+      height:        '100%',
+      display:       'flex',
+      flexDirection: 'column',
+      boxShadow:     'var(--shadow-sm)',
+      transition:    'box-shadow 0.25s ease',
+    }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; }}
+    >
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, gap: 12, flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, gap: 12, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
             width: 36, height: 36, borderRadius: 10,
-            background: 'rgba(59,130,246,0.1)',
+            background: 'rgba(37,99,235,0.1)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            boxShadow: '0 0 0 1px rgba(37,99,235,0.2)',
           }}>
-            <TrendingUp size={18} style={{ color: '#3b82f6' }} />
+            <TrendingUp size={18} style={{ color: '#2563eb' }} />
           </div>
           <div>
-            <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+            <h2 style={{
+              fontSize: 15, fontWeight: 700, margin: 0,
+              color: 'var(--text-primary)',
+              fontFamily: 'var(--font-display)', letterSpacing: '-0.01em',
+            }}>
               Disease Trend Over Time
             </h2>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>
               {hasData
                 ? `${diseases.length} disease${diseases.length > 1 ? 's' : ''} · ${chartRows.length} periods · proportional distribution`
                 : 'Monthly case volume by disease'}

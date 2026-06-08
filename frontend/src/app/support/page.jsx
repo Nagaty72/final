@@ -128,7 +128,7 @@ export default function SupportPage() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <p className="text-sm text-blue-700 dark:text-blue-300">
-            <strong>Response time:</strong> Support requests are typically addressed within 1–3 business days. For urgent operational issues affecting active public health surveillance, include <em>"URGENT"</em> in your subject line.
+            <strong>Response time:</strong> Support requests are typically addressed within 1–3 business days. For urgent operational issues affecting active public health surveillance, include <em>&quot;URGENT&quot;</em> in your subject line.
           </p>
         </div>
 

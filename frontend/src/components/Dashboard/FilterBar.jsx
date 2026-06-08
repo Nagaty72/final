@@ -310,22 +310,33 @@ export default function FilterBar() {
   return (
     <div style={{
       position: 'relative', zIndex: 999,
-      background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-      borderRadius: 16, padding: '16px 20px', marginBottom: 24,
-      boxShadow: '0 8px 32px rgba(0,0,0,0.1)', backdropFilter: 'blur(12px)',
+      background: 'var(--bg-secondary)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-lg)',
+      padding: '14px 20px',
+      boxShadow: 'var(--shadow-xs)',
+      backdropFilter: 'blur(12px)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(59,130,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <SlidersHorizontal size={16} style={{ color: '#3b82f6' }} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: 7,
+            background: 'var(--accent-light)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <SlidersHorizontal size={14} style={{ color: 'var(--accent)' }} />
           </div>
           <div>
-            <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Dashboard Filters</h3>
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>Global dataset controls</p>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Filters</span>
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 6 }}>Global dataset controls</span>
           </div>
           {activeFiltersCount > 0 && (
-            <span style={{ marginLeft: 8, background: '#3b82f6', color: 'white', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 12 }}>
-              {activeFiltersCount} Active
+            <span style={{
+              marginLeft: 4,
+              background: 'var(--accent)', color: 'white',
+              fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 100,
+            }}>
+              {activeFiltersCount}
             </span>
           )}
         </div>
@@ -366,7 +377,7 @@ export default function FilterBar() {
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <FilterSelect label="Governorate" value={uiCity}     onChange={(v) => setFilter('uiCity', v)}      options={cities.length ? cities : [{ value: '', label: 'Loading…' }]} />
         <MultiSelect  label="Disease"     selectedValues={uiDisease}  onChange={(v) => setFilter('uiDisease', v)}   options={diseases.length ? diseases : [{ value: '', label: 'Loading…' }]} />
         <FilterSelect label="Gender"      value={uiGender}   onChange={(v) => setFilter('uiGender', v)}    options={GENDERS} />

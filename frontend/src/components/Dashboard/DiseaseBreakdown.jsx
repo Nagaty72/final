@@ -134,14 +134,34 @@ export default function DiseaseBreakdown() {
   }, [filters.city, diseaseDep, filters.gender, filters.severity, filters.timeRange]);
 
   return (
-    <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, height: '100%' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(168,85,247,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Activity size={18} style={{ color: '#a855f7' }} />
+    <div style={{
+      background: 'var(--bg-secondary)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-lg)',
+      padding: '24px 28px',
+      height: '100%',
+      boxShadow: 'var(--shadow-sm)',
+      transition: 'box-shadow 0.25s ease',
+    }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 10,
+          background: 'rgba(124,58,237,0.1)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 0 0 1px rgba(124,58,237,0.2)',
+        }}>
+          <Activity size={18} style={{ color: '#7c3aed' }} />
         </div>
         <div>
-          <h2 style={{ fontSize: 15, fontWeight: 600, margin: 0, color: 'var(--text-primary)' }}>Top Diseases</h2>
-          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Ranked by case volume</p>
+          <h2 style={{
+            fontSize: 15, fontWeight: 700, margin: 0,
+            color: 'var(--text-primary)',
+            fontFamily: 'var(--font-display)', letterSpacing: '-0.01em',
+          }}>Top Diseases</h2>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '2px 0 0' }}>Ranked by case volume</p>
         </div>
       </div>
 

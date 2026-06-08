@@ -116,19 +116,46 @@ function renderMarkdown(text) {
     const line = lines[i];
 
     // Headers
-    if (line.startsWith('### ')) {
+    if (line.startsWith('### ') || line.startsWith('## ') || line.startsWith('# ')) {
       flushAll();
-      elements.push(<h4 key={i} style={{ fontSize: 14, fontWeight: 700, margin: '10px 0 4px', color: 'var(--text-primary)' }}>{formatInline(line.slice(4))}</h4>);
-      continue;
-    }
-    if (line.startsWith('## ')) {
-      flushAll();
-      elements.push(<h3 key={i} style={{ fontSize: 15, fontWeight: 700, margin: '12px 0 4px', color: 'var(--text-primary)' }}>{formatInline(line.slice(3))}</h3>);
-      continue;
-    }
-    if (line.startsWith('# ')) {
-      flushAll();
-      elements.push(<h2 key={i} style={{ fontSize: 16, fontWeight: 700, margin: '14px 0 6px', color: 'var(--text-primary)' }}>{formatInline(line.slice(2))}</h2>);
+      const level = line.startsWith('### ') ? 3 : line.startsWith('## ') ? 2 : 1;
+      const text = formatInline(line.replace(/^#+\s/, ''));
+      const rawText = line.replace(/^#+\s/, '').replace(/\*\*/g, '').trim();
+
+      // Check if it's one of the premium structured sections
+      const isPremiumSection = ['summary', 'key insights', 'recommendations', 'risk level'].some(k => rawText.toLowerCase().includes(k));
+
+      if (isPremiumSection) {
+        let icon = '◈';
+        let color = 'var(--accent)';
+        let bg = 'var(--accent-light)';
+        
+        if (rawText.toLowerCase().includes('insights')) { color = 'var(--purple)'; bg = 'rgba(124,58,237,0.1)'; icon = '💡'; }
+        if (rawText.toLowerCase().includes('recommendations')) { color = 'var(--success)'; bg = 'var(--success-light)'; icon = '✓'; }
+        if (rawText.toLowerCase().includes('risk')) { color = 'var(--danger)'; bg = 'var(--danger-light)'; icon = '⚠️'; }
+
+        elements.push(
+          <div key={`section-${i}`} style={{
+            marginTop: 24, marginBottom: 12, paddingBottom: 8,
+            borderBottom: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', gap: 8
+          }}>
+            <div style={{
+              width: 24, height: 24, borderRadius: 6, background: bg, color,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12
+            }}>
+              {icon}
+            </div>
+            <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {text}
+            </h3>
+          </div>
+        );
+      } else {
+        const fontSize = level === 1 ? 18 : level === 2 ? 16 : 14;
+        const margin = level === 1 ? '20px 0 10px' : level === 2 ? '16px 0 8px' : '12px 0 4px';
+        elements.push(<h4 key={i} style={{ fontSize, fontWeight: 700, margin, color: 'var(--text-primary)' }}>{text}</h4>);
+      }
       continue;
     }
 
@@ -169,7 +196,7 @@ function renderMarkdown(text) {
 
     // Regular paragraph
     elements.push(
-      <p key={i} style={{ margin: '2px 0', fontSize: 14, lineHeight: 1.7 }}>
+      <p key={i} style={{ margin: '4px 0', fontSize: 14, lineHeight: 1.75, color: 'var(--text-secondary)' }}>
         {formatInline(line)}
       </p>
     );
@@ -191,12 +218,13 @@ export default function MessageBubble({ message }) {
     >
       {/* Avatar */}
       <div
-        className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
+        className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center mt-1"
         style={{
           background: isUser
             ? 'var(--accent-light)'
             : 'linear-gradient(135deg, var(--accent), var(--purple))',
           border: isUser ? '1px solid rgba(59,130,246,0.3)' : 'none',
+          boxShadow: isUser ? 'none' : '0 4px 15px rgba(124,58,237,0.2)',
         }}
       >
         {isUser ? (
@@ -207,14 +235,14 @@ export default function MessageBubble({ message }) {
         ) : (
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"
             strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
           </svg>
         )}
       </div>
 
       {/* Bubble */}
       <div
-        className={`max-w-[75%] px-4 py-3 ${isUser ? 'rounded-2xl rounded-tr-sm' : 'rounded-2xl rounded-tl-sm'}`}
+        className={`max-w-[85%] px-5 py-4 ${isUser ? 'rounded-2xl rounded-tr-sm' : 'rounded-2xl rounded-tl-sm'}`}
         style={{
           background: isUser
             ? 'linear-gradient(135deg, var(--accent), var(--accent-hover))'
@@ -222,13 +250,13 @@ export default function MessageBubble({ message }) {
           border: isUser ? 'none' : '1px solid var(--border)',
           color: isUser ? '#fff' : 'var(--text-primary)',
           wordBreak: 'break-word',
-          boxShadow: isUser ? '0 4px 15px var(--accent-glow)' : 'none'
+          boxShadow: isUser ? '0 4px 15px var(--accent-glow)' : 'var(--shadow-sm)',
         }}
       >
         {isUser ? (
           <p style={{ margin: 0, fontSize: 14, lineHeight: 1.7 }}>{message.content}</p>
         ) : (
-          <div>{renderMarkdown(message.content)}</div>
+          <div className="ai-structured-response">{renderMarkdown(message.content)}</div>
         )}
 
         {/* Timestamp */}
@@ -242,6 +270,35 @@ export default function MessageBubble({ message }) {
         >
           {message.timestamp || (message.created_at ? new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '')}
         </div>
+
+        {/* Data Sources (AI Only) */}
+        {!isUser && (
+          <div style={{
+            marginTop: 16,
+            paddingTop: 12,
+            borderTop: '1px dashed var(--border)',
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+              Data Sources Used
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {['Disease Statistics', 'Medical Records', 'Hospital Database'].map((source, i) => (
+                <span key={i} style={{ 
+                  display: 'inline-flex', alignItems: 'center', gap: 5, 
+                  padding: '4px 8px', background: 'var(--bg-primary)', 
+                  border: '1px solid var(--border)', borderRadius: 6, 
+                  fontSize: 11, color: 'var(--text-secondary)',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                  {source}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

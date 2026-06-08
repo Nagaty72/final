@@ -54,14 +54,14 @@ export default function ChatInput({ onSend, disabled }) {
         onChange={(e) => { setValue(e.target.value); autoResize(); }}
         onKeyDown={handleKeyDown}
         disabled={disabled}
-        placeholder="Ask about healthcare analytics... | اسأل عن تحليلات الرعاية الصحية..."
+        placeholder="Ask the Healthcare Intelligence Analyst..."
         style={{
           flex: 1,
           resize: 'none',
-          padding: '12px 16px',
+          padding: '14px 20px',
           background: 'var(--bg-secondary)',
           border: '1px solid var(--border)',
-          borderRadius: 12,
+          borderRadius: 24,
           color: 'var(--text-primary)',
           fontSize: 14,
           lineHeight: 1.6,
@@ -80,9 +80,9 @@ export default function ChatInput({ onSend, disabled }) {
         onClick={handleSubmit}
         disabled={disabled || !value.trim()}
         style={{
-          width: 44,
-          height: 44,
-          borderRadius: 12,
+          width: 46,
+          height: 46,
+          borderRadius: 23,
           border: 'none',
           background:
             disabled || !value.trim()

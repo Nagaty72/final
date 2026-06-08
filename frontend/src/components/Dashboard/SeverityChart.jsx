@@ -147,9 +147,24 @@ export default function SeverityChart() {
   }, [filters.city, diseaseDep, filters.gender, filters.severity, filters.timeRange]);
 
   return (
-    <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 16, padding: 24, height: '100%' }}>
+    <div style={{
+      background: 'var(--bg-secondary)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-lg)',
+      padding: '24px 28px',
+      height: '100%',
+      boxShadow: 'var(--shadow-sm)',
+      transition: 'box-shadow 0.25s ease',
+    }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = 'var(--shadow-sm)'; }}
+    >
       <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 2px', color: 'var(--text-primary)' }}>Severity Distribution</h2>
+        <h2 style={{
+          fontSize: 15, fontWeight: 700, margin: '0 0 2px',
+          color: 'var(--text-primary)',
+          fontFamily: 'var(--font-display)', letterSpacing: '-0.01em',
+        }}>Severity Distribution</h2>
         <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>Case breakdown by clinical severity level</p>
       </div>
 
@@ -180,11 +195,17 @@ export default function SeverityChart() {
               <Tooltip content={<CustomTooltip />} />
             </PieChart>
           </ResponsiveContainer>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 8, justifyContent: 'center' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12, justifyContent: 'center' }}>
             {data.map((d, i) => (
-              <div key={`sev-${d.name}-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-secondary)' }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: d.fill, flexShrink: 0 }} />
-                <span style={{ fontWeight: 500 }}>{d.name}</span>
+              <div key={`sev-${d.name}-${i}`} style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                fontSize: 11, color: 'var(--text-secondary)',
+                background: 'var(--bg-card-hover)',
+                padding: '4px 10px', borderRadius: 100,
+                border: '1px solid var(--border)',
+              }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: d.fill, flexShrink: 0, boxShadow: `0 0 4px ${d.fill}88` }} />
+                <span style={{ fontWeight: 600 }}>{d.name}</span>
                 <span style={{ color: d.fill, fontWeight: 700 }}>{d.pct}%</span>
               </div>
             ))}

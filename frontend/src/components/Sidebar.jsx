@@ -25,7 +25,7 @@ const NAV_ITEMS = [
     key:  'dashboard',
     href: '/dashboard',
     icon: (
-      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
       </svg>
     ),
@@ -34,7 +34,7 @@ const NAV_ITEMS = [
     key:  'disease_map',
     href: '/intelligence-map',
     icon: (
-      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
@@ -43,7 +43,7 @@ const NAV_ITEMS = [
     key:  'hospitals',
     href: '/hospitals',
     icon: (
-      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0H5m14 0h2m-2 0a2 2 0 002-2M5 21H3m2 0a2 2 0 01-2-2m9-13h.01M12 12h.01M12 16h.01" />
       </svg>
     ),
@@ -52,7 +52,7 @@ const NAV_ITEMS = [
     key:  'chatbot',
     href: '/chatbot',
     icon: (
-      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
       </svg>
     ),
@@ -64,7 +64,7 @@ const NAV_ITEMS = [
     href:  '/diseases',
     roles: [ROLES.SUPER_ADMIN, ROLES.DECISION_MAKER],
     icon: (
-      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
       </svg>
     ),
@@ -74,7 +74,7 @@ const NAV_ITEMS = [
     href:  '/reports',
     roles: [ROLES.SUPER_ADMIN, ROLES.DECISION_MAKER],
     icon: (
-      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
       </svg>
     ),
@@ -86,7 +86,7 @@ const NAV_ITEMS = [
     href:  '/admin-panel',
     roles: [ROLES.SUPER_ADMIN],
     icon: (
-      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
       </svg>
     ),
@@ -102,16 +102,16 @@ function RoleBadge({ role, collapsed }) {
       width: 8, height: 8, borderRadius: '50%',
       background: color, flexShrink: 0,
       boxShadow: `0 0 5px ${color}88`,
-    }} />
+    }} title={label} />
   );
   return (
     <div style={{
-      fontSize: 10, fontWeight: 700,
-      background: `${color}18`, color,
-      border: `1px solid ${color}33`,
-      borderRadius: 6, padding: '2px 7px',
-      letterSpacing: '0.3px',
-      whiteSpace: 'nowrap',
+      fontSize: 10, fontWeight: 600,
+      background: `${color}10`, color,
+      border: `1px solid ${color}30`,
+      borderRadius: '4px', padding: '1px 6px',
+      letterSpacing: '0.04em', textTransform: 'uppercase',
+      whiteSpace: 'nowrap', display: 'inline-block'
     }}>
       {label}
     </div>
@@ -143,24 +143,27 @@ export default function Sidebar() {
   return (
     <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''}`}>
       {/* Logo / Header */}
-      <div style={{ padding: '24px 20px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ padding: '24px 20px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, overflow: 'hidden' }}>
           <div style={{
-            width: 36, height: 36, flexShrink: 0,
+            width: 32, height: 32, flexShrink: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'var(--accent)',
-          }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-            </svg>
+            overflow: 'hidden', borderRadius: '8px',
+            background: '#fff',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          }} className="dark:shadow-none transition-all">
+            <img src="/logo.jpeg" alt="Epicare Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
-          <div className="sidebar-header-text" style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
+          <div className="sidebar-header-text" style={{ flexShrink: 0, whiteSpace: 'nowrap', display: 'flex', flexDirection: 'column' }}>
             <div style={{
               fontWeight: 800, fontSize: 16, letterSpacing: '-0.02em',
-              background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              color: 'var(--text-primary)', fontFamily: 'var(--font-display)',
+              lineHeight: 1
             }}>
-              {t('sidebar.health_analytics')}
+              Epicare
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2, fontWeight: 500, letterSpacing: '0.02em' }}>
+              Intelligence Platform
             </div>
           </div>
         </div>
@@ -191,7 +194,7 @@ export default function Sidebar() {
 
       {/* Theme / Language / Notifications */}
       {!isCollapsed && (
-        <div style={{ padding: '0 16px 8px', display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ padding: '0 20px 16px', display: 'flex', gap: 12, alignItems: 'center' }}>
           <ThemeToggle />
           <LanguageSwitcher />
           <div style={{ marginLeft: 'auto' }}>
@@ -199,8 +202,6 @@ export default function Sidebar() {
           </div>
         </div>
       )}
-
-      <div style={{ height: 1, background: 'linear-gradient(90deg, transparent, var(--border), transparent)', margin: '4px 16px 20px' }} />
 
       {/* Navigation */}
       <nav style={{ flex: 1, padding: '0 12px', display: 'flex', flexDirection: 'column', gap: 4, overflowY: 'auto', overflowX: 'hidden' }}>
@@ -217,60 +218,51 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* User footer */}
-      <div style={{ padding: '16px', borderTop: '1px solid var(--border)', background: 'var(--sidebar-bg)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, overflow: 'hidden' }}>
+      {/* User footer (Vercel/Linear Style) */}
+      <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.05)', background: 'transparent' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: isCollapsed ? '6px' : '8px 12px',
+          borderRadius: 8, transition: 'all 0.2s',
+          cursor: 'pointer',
+          border: '1px solid transparent',
+        }}
+        className="sidebar-user-card hover:bg-[rgba(255,255,255,0.03)] hover:border-[rgba(255,255,255,0.05)]"
+        >
           {/* Avatar */}
           <div style={{
-            width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-            background: 'var(--accent-light)', border: '1px solid rgba(59,130,246,0.3)',
+            width: 32, height: 32, borderRadius: 6, flexShrink: 0,
+            background: 'linear-gradient(135deg, var(--accent), var(--purple))',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'var(--accent)', fontWeight: 700, fontSize: 14, textTransform: 'uppercase',
-          }}>
+            color: '#fff', fontWeight: 600, fontSize: 13, textTransform: 'uppercase',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.2)'
+          }} title={isCollapsed ? (user?.full_name || user?.name || 'User') : ''}>
             {(user?.full_name || user?.name || 'U').charAt(0)}
           </div>
 
           {/* Name + Role badge */}
-          <div className="sidebar-user-text" style={{ flex: 1, minWidth: 0, whiteSpace: 'nowrap' }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {user?.full_name || user?.name || 'User'}
+          {!isCollapsed && (
+            <div className="sidebar-user-text" style={{ flex: 1, minWidth: 0, whiteSpace: 'nowrap', display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '-0.01em' }}>
+                {user?.full_name || user?.name || 'User'}
+              </div>
+              <div>
+                <RoleBadge role={user?.role} collapsed={false} />
+              </div>
             </div>
-            <div style={{ marginTop: 3 }}>
-              <RoleBadge role={user?.role} collapsed={false} />
-            </div>
-          </div>
+          )}
 
           {/* Settings + Logout */}
           {!isCollapsed && (
-            <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-              <Link
-                href="/settings"
-                title={t('sidebar.settings')}
-                style={{
-                  background: 'var(--accent-light)', border: '1px solid rgba(59,130,246,0.2)',
-                  color: 'var(--accent)', padding: 8, borderRadius: 8, transition: '0.2s',
-                  display: 'flex', alignItems: 'center',
-                }}
-                onMouseOver={e => { e.currentTarget.style.background = 'rgba(59,130,246,0.2)'; }}
-                onMouseOut={e => { e.currentTarget.style.background = 'var(--accent-light)'; }}
-              >
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <div style={{ display: 'flex', gap: 4, flexShrink: 0, opacity: 0.6, transition: '0.2s' }} className="user-actions">
+              <Link href="/settings" title={t('sidebar.settings')} className="text-muted hover:text-accent p-1 transition-colors">
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </Link>
-              <button
-                onClick={logout}
-                title={t('sidebar.logout')}
-                style={{
-                  background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
-                  cursor: 'pointer', color: '#f87171', padding: 8, borderRadius: 8,
-                  transition: '0.2s', display: 'flex', alignItems: 'center',
-                }}
-                onMouseOver={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.2)'; }}
-                onMouseOut={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; }}
-              >
-                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <button onClick={logout} title={t('sidebar.logout')} className="text-muted hover:text-danger p-1 transition-colors">
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
               </button>
@@ -278,6 +270,9 @@ export default function Sidebar() {
           )}
         </div>
       </div>
+      <style jsx>{`
+        .sidebar-user-card:hover .user-actions { opacity: 1; }
+      `}</style>
     </aside>
   );
 }
