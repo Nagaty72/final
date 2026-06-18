@@ -121,6 +121,7 @@ function AuthPageContent() {
 
     try {
       if (mode === 'login') {
+        console.log('[RUNTIME] LOGIN_START for:', email);
         // Authenticate via Supabase
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email,
@@ -128,63 +129,90 @@ function AuthPageContent() {
         });
         
         if (signInError) {
-          if (signInError.message.includes('Email not confirmed')) {
-            setVerificationSent(true);
-            setMode('register');
-            throw new Error('Please verify your email before logging in.');
+          if (signInError.message.toLowerCase().includes('email not confirmed')) {
+            console.warn('[LOGIN] Unconfirmed email — redirecting to OTP verification');
+            
+            // Resend the signup OTP natively
+            try {
+              await supabase.auth.resend({
+                type: 'signup',
+                email
+              });
+            } catch (resendErr) {
+              console.error('Failed to resend signup OTP:', resendErr);
+            }
+            
+            setError('Please verify your email address before signing in. A new code has been sent.');
+            router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+            return;
           }
           throw signInError;
         }
         
         const { session, user } = data;
-        
-        // Manual verification check for safety
-        if (!user.email_confirmed_at) {
-          await supabase.auth.signOut();
-          setVerificationSent(true);
-          setMode('register');
-          throw new Error('Please verify your email before logging in.');
-        }
+        console.log('[RUNTIME] LOGIN_SUCCESS for auth user:', user?.id);
 
         if (session) {
-          // Temporarily set token to allow getMe() to use it
           localStorage.setItem('ha_token', session.access_token);
           
           let hydratedUser = user;
           try {
+            console.log('[RUNTIME] Fetching profile from /api/v1/auth/me...');
             const profileRes = await authService.getMe();
+            console.log('[RUNTIME] GET_ME_RESPONSE status:', profileRes ? 'Success' : 'Empty');
             if (profileRes?.data) {
               hydratedUser = profileRes.data;
+              console.log('[RUNTIME] USER_PROFILE hydrated from backend:', JSON.stringify(hydratedUser));
             }
           } catch (profileErr) {
-            console.error('Failed to hydrate role from backend:', profileErr);
-            // Fallback to supabase user with default role
+            console.error('[RUNTIME] GET_ME_RESPONSE Failed to hydrate role from backend:', profileErr);
             hydratedUser = { ...user, role: user.user_metadata?.role || 'normal_user' };
+            console.log('[RUNTIME] USER_PROFILE fallback generated:', JSON.stringify(hydratedUser));
           }
 
-          // Persist hydrated profile and update context
+          console.log('[RUNTIME] IS_VERIFIED_VALUE:', hydratedUser.is_verified);
+
+          if (!hydratedUser.is_verified) {
+            console.log('[RUNTIME] REDIRECT_TO_VERIFY_EMAIL (from Login page)');
+            await supabase.auth.signOut();
+            localStorage.removeItem('ha_token');
+            try {
+              await supabase.auth.resend({ type: 'signup', email });
+            } catch { /* ignore */ }
+            setError('Please verify your email address before signing in.');
+            router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+            return;
+          }
+
+          console.log('[LOGIN] Verified user signed in:', hydratedUser.email);
           setAuthContext(hydratedUser, session.access_token, session.refresh_token);
         }
 
         router.push('/dashboard');
       } else {
-        // Sign up via Supabase Auth
-        const { data, error: signUpError } = await supabase.auth.signUp({
+        // ── SIGNUP FLOW ────────────────────────────────────────────────────
+        // Step 1: Create the account.
+        // NOTE: With Supabase 'Confirm Email' ENABLED, signUp() automatically
+        // sends the Confirm Signup email containing the {{ .Token }} OTP.
+        console.log('[SIGNUP] Attempting account creation for:', email);
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
               full_name: fullName,
               role: 'normal_user'
-            },
-            emailRedirectTo: `${window.location.origin}/auth/callback`
+            }
           }
         });
 
         if (signUpError) throw signUpError;
-        
-        setVerificationSent(true);
-        setResendCooldown(60);
+        console.log('[SIGNUP] Account created and OTP sent automatically by Supabase for:', email);
+
+        // Step 2: Redirect to OTP entry screen
+        router.push(
+          `/verify-email?email=${encodeURIComponent(email)}&name=${encodeURIComponent(fullName)}`
+        );
       }
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');
@@ -639,14 +667,53 @@ function AuthPageContent() {
           z-index: 10;
         }
         .auth-right {
+          --panel-bg: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+          --panel-border: rgba(0,0,0,0.05);
+          --title-gradient: linear-gradient(135deg, #0f172a, #334155);
+          --tagline-color: #1e293b;
+          --desc-color: #475569;
+          --card-bg: rgba(255,255,255,0.6);
+          --card-border: rgba(255,255,255,0.8);
+          --card-hover-bg: rgba(255,255,255,0.9);
+          --card-hover-border: rgba(0,0,0,0.1);
+          --card-title: #0f172a;
+          --card-text: #475569;
+          --dash-bg: rgba(255,255,255,0.6);
+          --dash-border: rgba(0,0,0,0.05);
+          --dash-header: rgba(0,0,0,0.02);
+          --dash-kpi: rgba(255,255,255,0.8);
+          --dash-kpi-border: rgba(0,0,0,0.03);
+          --dash-bar: rgba(0,0,0,0.05);
+          --dash-chart: rgba(255,255,255,0.4);
+          
           flex: 1.2;
           display: none;
-          background: #09090b; /* Very dark premium bg */
+          background: var(--panel-bg);
           position: relative;
           overflow: hidden;
           align-items: center;
           justify-content: center;
-          border-left: 1px solid rgba(255,255,255,0.05);
+          border-left: 1px solid var(--panel-border);
+        }
+        :global(.dark) .auth-right {
+          --panel-bg: #09090b;
+          --panel-border: rgba(255,255,255,0.05);
+          --title-gradient: linear-gradient(135deg, #fff, #a1a1aa);
+          --tagline-color: #e4e4e7;
+          --desc-color: #a1a1aa;
+          --card-bg: rgba(255,255,255,0.03);
+          --card-border: rgba(255,255,255,0.08);
+          --card-hover-bg: rgba(255,255,255,0.06);
+          --card-hover-border: rgba(255,255,255,0.15);
+          --card-title: #e4e4e7;
+          --card-text: #a1a1aa;
+          --dash-bg: rgba(0,0,0,0.4);
+          --dash-border: rgba(255,255,255,0.1);
+          --dash-header: rgba(255,255,255,0.05);
+          --dash-kpi: rgba(255,255,255,0.03);
+          --dash-kpi-border: rgba(255,255,255,0.05);
+          --dash-bar: rgba(255,255,255,0.1);
+          --dash-chart: rgba(255,255,255,0.02);
         }
         @media (min-width: 1024px) {
           .auth-right {
@@ -973,7 +1040,6 @@ function AuthPageContent() {
           z-index: 10;
           max-width: 600px;
           padding: 60px;
-          color: #fff;
         }
         .showcase-header {
           display: flex;
@@ -984,7 +1050,7 @@ function AuthPageContent() {
         .showcase-logo-wrap {
           width: 56px; height: 56px; border-radius: 14px;
           background: #fff; display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 8px 24px rgba(0,0,0,0.3); overflow: hidden;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.15); overflow: hidden;
         }
         .showcase-logo-img {
           width: 100%; height: 100%; object-fit: contain;
@@ -992,50 +1058,54 @@ function AuthPageContent() {
         .showcase-title {
           font-size: 32px; font-weight: 800; margin: 0; letter-spacing: -0.04em;
           font-family: var(--font-display);
-          background: linear-gradient(135deg, #fff, #a1a1aa);
+          background: var(--title-gradient);
           -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
         .showcase-tagline {
           font-size: 24px; font-weight: 700; margin: 0 0 16px; letter-spacing: -0.02em;
-          color: #e4e4e7; line-height: 1.3;
+          color: var(--tagline-color); line-height: 1.3;
         }
         .showcase-desc {
-          font-size: 16px; color: #a1a1aa; line-height: 1.6; margin: 0 0 40px; max-width: 480px;
+          font-size: 16px; color: var(--desc-color); line-height: 1.6; margin: 0 0 40px; max-width: 480px;
         }
         
         .showcase-features {
           display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 48px;
         }
         .feature-card {
-          background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+          background: var(--card-bg); border: 1px solid var(--card-border);
           border-radius: 16px; padding: 16px; display: flex; align-items: flex-start; gap: 14px;
           transition: all 0.3s ease; cursor: default;
         }
         .feature-card:hover {
-          background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15);
+          background: var(--card-hover-bg); border-color: var(--card-hover-border);
           transform: translateY(-2px);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.05);
         }
         .fc-icon-wrap {
           width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
-        .fc-text h4 { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: #e4e4e7; }
-        .fc-text p { margin: 0; font-size: 13px; color: #a1a1aa; line-height: 1.4; }
+        .fc-text h4 { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: var(--card-title); }
+        .fc-text p { margin: 0; font-size: 13px; color: var(--card-text); line-height: 1.4; }
 
         .showcase-dashboard {
-          background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 12px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+          background: var(--dash-bg); border: 1px solid var(--dash-border);
+          border-radius: 12px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.1);
           backdrop-filter: blur(12px);
         }
+        :global(.dark) .showcase-dashboard {
+          box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
         .sd-header {
-          background: rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);
+          background: var(--dash-header); border-bottom: 1px solid var(--dash-border);
           padding: 10px 14px; display: flex; gap: 6px;
         }
         .sd-dot { width: 10px; height: 10px; border-radius: 50%; }
         .sd-body { padding: 20px; }
         .sd-kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-        .sd-kpi { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; }
-        .sd-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.1); margin-bottom: 8px; }
-        .sd-chart { height: 80px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; position: relative; overflow: hidden; }
+        .sd-kpi { background: var(--dash-kpi); border: 1px solid var(--dash-kpi-border); border-radius: 8px; padding: 12px; }
+        .sd-bar { height: 6px; border-radius: 3px; background: var(--dash-bar); margin-bottom: 8px; }
+        .sd-chart { height: 80px; background: var(--dash-chart); border: 1px solid var(--dash-border); border-radius: 8px; position: relative; overflow: hidden; }
         .sd-chart-line { position: absolute; bottom: 0; left: 0; right: 0; height: 40px; background: linear-gradient(180deg, rgba(59,130,246,0.2) 0%, transparent 100%); border-top: 2px solid #3b82f6; clip-path: polygon(0 60%, 20% 30%, 40% 50%, 60% 10%, 80% 40%, 100% 20%, 100% 100%, 0 100%); }
       `}</style>
     </div>

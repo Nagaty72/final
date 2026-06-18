@@ -102,6 +102,8 @@ export default function SeverityChart() {
       disease:   state.disease,
       gender:    state.gender,
       severity:  state.severity,
+      status:    state.status,
+      hospital:  state.hospital,
       timeRange: state.timeRange,
     }))
   );
@@ -144,7 +146,7 @@ export default function SeverityChart() {
       });
 
     return () => ctrl.abort();
-  }, [filters.city, diseaseDep, filters.gender, filters.severity, filters.timeRange]);
+  }, [filters.city, diseaseDep, filters.gender, filters.severity, filters.status, filters.hospital, filters.timeRange]);
 
   return (
     <div style={{

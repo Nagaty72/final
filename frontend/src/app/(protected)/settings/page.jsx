@@ -38,7 +38,6 @@ export default function SettingsPage() {
     preferred_theme: 'dark',
     preferred_language: 'en',
     emailAlerts: true,
-    weeklyReports: false,
     twoFactor: false
   });
 
@@ -420,18 +419,6 @@ export default function SettingsPage() {
                     onClick={() => handlePrefToggle('emailAlerts')}
                     style={{ width: 44, height: 24, background: prefs?.emailAlerts ? 'var(--accent)' : 'var(--bg-primary)', borderRadius: 24, border: `1px solid ${prefs?.emailAlerts ? 'var(--accent)' : 'var(--border)'}`, position: 'relative', cursor: 'pointer', transition: '0.3s', flexShrink: 0 }}>
                     <div style={{ width: 18, height: 18, background: '#fff', borderRadius: '50%', position: 'absolute', top: 2, left: prefs?.emailAlerts ? 22 : 2, transition: '0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
-                  </div>
-                </div>
-
-                <div style={{ padding: 20, border: '1px solid var(--border)', borderRadius: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <h4 style={{ fontSize: 15, fontWeight: 600, margin: '0 0 4px' }}>{t('settings.weekly_reports')}</h4>
-                    <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>{t('settings.weekly_reports_desc')}</p>
-                  </div>
-                  <div
-                    onClick={() => handlePrefToggle('weeklyReports')}
-                    style={{ width: 44, height: 24, background: prefs?.weeklyReports ? 'var(--accent)' : 'var(--bg-primary)', borderRadius: 24, border: `1px solid ${prefs?.weeklyReports ? 'var(--accent)' : 'var(--border)'}`, position: 'relative', cursor: 'pointer', transition: '0.3s', flexShrink: 0 }}>
-                    <div style={{ width: 18, height: 18, background: '#fff', borderRadius: '50%', position: 'absolute', top: 2, left: prefs?.weeklyReports ? 22 : 2, transition: '0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }} />
                   </div>
                 </div>
 

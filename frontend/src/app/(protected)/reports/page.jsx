@@ -328,7 +328,7 @@ export default function ReportsPage() {
             <div style={{ display:'flex', gap:12, flexWrap:'wrap', marginBottom:24 }}>
               {kpi.total_cases        != null && <KpiCard label="Total Cases"        value={kpi.total_cases?.toLocaleString()}        color={ACCENT}/>}
               {kpi.active_cases       != null && <KpiCard label="Active Cases"       value={kpi.active_cases?.toLocaleString()}       color="#F59E0B"/>}
-              {kpi.recovered          != null && <KpiCard label="Recovered"          value={kpi.recovered?.toLocaleString()}          color="#10B981"/>}
+              {kpi.recovered_cases    != null && <KpiCard label="Recovered"          value={kpi.recovered_cases?.toLocaleString()}    color="#10B981"/>}
               {kpi.deceased           != null && <KpiCard label="Deceased"           value={kpi.deceased?.toLocaleString()}           color="#EF4444"/>}
               {kpi.hospitals_affected != null && <KpiCard label="Hospitals Affected" value={kpi.hospitals_affected?.toLocaleString()} color="#3B82F6"/>}
             </div>

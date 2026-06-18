@@ -49,67 +49,112 @@ export const AnalyticsRepository = {
 
   // ─── NEW: DB-level analytics RPCs ───────────────────────────────────────────
 
-  async getKpis({ city, disease, gender, severity, startDate, endDate }) {
-    const { data, error } = await db().rpc('get_dashboard_kpis', {
+  async getKpis({ city, disease, gender, severity, status, hospital, startDate, endDate }) {
+    const rpcParams = {
       p_city:       city       || null,
       p_disease:    disease    || null,
       p_gender:     gender     || null,
       p_severity:   severity   || null,
+      p_status:     status     || null,
+      p_hospital_id: hospital  || null,
       p_start_date: startDate  || null,
       p_end_date:   endDate    || null,
-    });
+    };
+    console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
+    console.log("RPC Params", rpcParams);
+    const start = Date.now();
+    const { data, error } = await db().rpc('get_dashboard_kpis', rpcParams);
+    const duration = Date.now() - start;
+    console.log("RPC Result Count", data ? 1 : 0);
+    console.log("Execution Time", duration, "ms");
     if (error) throw error;
     return data;
   },
 
-  async getTrends({ city, disease, gender, severity, startDate, endDate }) {
-    const { data, error } = await db().rpc('get_dashboard_trends', {
+  async getTrends({ city, disease, gender, severity, status, hospital, startDate, endDate }) {
+    const rpcParams = {
       p_city:       city       || null,
       p_disease:    disease    || null,
       p_gender:     gender     || null,
       p_severity:   severity   || null,
+      p_status:     status     || null,
+      p_hospital_id: hospital  || null,
       p_start_date: startDate  || null,
       p_end_date:   endDate    || null,
-    });
+    };
+    console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
+    console.log("RPC Params", rpcParams);
+    const start = Date.now();
+    const { data, error } = await db().rpc('get_dashboard_trends', rpcParams);
+    const duration = Date.now() - start;
+    console.log("RPC Result Count", data?.length);
+    console.log("Execution Time", duration, "ms");
     if (error) throw error;
     return data || [];
   },
 
-  async getBubbleData({ city, disease, gender, severity, startDate, endDate }) {
-    const { data, error } = await db().rpc('get_dashboard_bubble_data', {
+  async getBubbleData({ city, disease, gender, severity, status, hospital, startDate, endDate }) {
+    const rpcParams = {
       p_city:       city       || null,
       p_disease:    disease    || null,
       p_gender:     gender     || null,
       p_severity:   severity   || null,
+      p_status:     status     || null,
+      p_hospital_id: hospital  || null,
       p_start_date: startDate  || null,
       p_end_date:   endDate    || null,
-    });
+    };
+    console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
+    console.log("RPC Params", rpcParams);
+    const start = Date.now();
+    const { data, error } = await db().rpc('get_dashboard_bubble_data', rpcParams);
+    const duration = Date.now() - start;
+    console.log("RPC Result Count", data?.length);
+    console.log("Execution Time", duration, "ms");
     if (error) throw error;
     return data || [];
   },
 
-  async getSeverityData({ city, disease, gender, severity, startDate, endDate }) {
-    const { data, error } = await db().rpc('get_dashboard_severity', {
+  async getSeverityData({ city, disease, gender, severity, status, hospital, startDate, endDate }) {
+    const rpcParams = {
       p_city:       city       || null,
       p_disease:    disease    || null,
       p_gender:     gender     || null,
       p_severity:   severity   || null,
+      p_status:     status     || null,
+      p_hospital_id: hospital  || null,
       p_start_date: startDate  || null,
       p_end_date:   endDate    || null,
-    });
+    };
+    console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
+    console.log("RPC Params", rpcParams);
+    const start = Date.now();
+    const { data, error } = await db().rpc('get_dashboard_severity', rpcParams);
+    const duration = Date.now() - start;
+    console.log("RPC Result Count", data?.length);
+    console.log("Execution Time", duration, "ms");
     if (error) throw error;
     return data || [];
   },
 
-  async getDiseaseBreakdown({ city, disease, gender, severity, startDate, endDate }) {
-    const { data, error } = await db().rpc('get_dashboard_disease_breakdown', {
+  async getDiseaseBreakdown({ city, disease, gender, severity, status, hospital, startDate, endDate }) {
+    const rpcParams = {
       p_city:       city       || null,
       p_disease:    disease    || null,
       p_gender:     gender     || null,
       p_severity:   severity   || null,
+      p_status:     status     || null,
+      p_hospital_id: hospital  || null,
       p_start_date: startDate  || null,
       p_end_date:   endDate    || null,
-    });
+    };
+    console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
+    console.log("RPC Params", rpcParams);
+    const start = Date.now();
+    const { data, error } = await db().rpc('get_dashboard_disease_breakdown', rpcParams);
+    const duration = Date.now() - start;
+    console.log("RPC Result Count", data?.length);
+    console.log("Execution Time", duration, "ms");
     if (error) throw error;
     return data || [];
   },

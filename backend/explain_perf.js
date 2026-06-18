@@ -1,0 +1,16 @@
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+dotenv.config({ path: './.env' });
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+async function testExplain() {
+  const { data, error } = await supabase.rpc('explain_kpis');
+  if (error) {
+    console.error("RPC Error:", error);
+  } else {
+    console.log(data.join('\n'));
+  }
+}
+
+testExplain();

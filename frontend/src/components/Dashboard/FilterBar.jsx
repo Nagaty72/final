@@ -3,6 +3,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
 import { useShallow } from 'zustand/react/shallow';
 import { getDiseaseList, getCityList } from '@/services/analytics.service';
+import { getReportFilterOptions } from '@/services/report.service';
 import { useTranslation } from 'react-i18next';
 import { SlidersHorizontal, RotateCcw, ChevronDown, Check } from 'lucide-react';
 
@@ -28,6 +29,13 @@ const SEVERITIES = [
   { value: '3', label: 'Severe' },
   { value: '4', label: 'Critical' },
   { value: '5', label: 'Extreme' },
+];
+
+const STATUSES = [
+  { value: '', label: 'All Statuses' },
+  { value: 'Under Treatment', label: 'Active' },
+  { value: 'Recovered', label: 'Recovered' },
+  { value: 'Deceased', label: 'Deceased' }
 ];
 
 function FilterSelect({ label, value, onChange, options }) {
@@ -270,12 +278,14 @@ function MultiSelect({ label, selectedValues, onChange, options }) {
 }
 
 export default function FilterBar() {
-  const { uiCity, uiDisease, uiGender, uiSeverity, uiTimeRange, setFilter, resetFilters, filtersChanging } = useDashboardFilterStore(
+  const { uiCity, uiDisease, uiGender, uiSeverity, uiStatus, uiHospital, uiTimeRange, setFilter, resetFilters, filtersChanging } = useDashboardFilterStore(
     useShallow((state) => ({
       uiCity: state.uiCity,
       uiDisease: state.uiDisease,
       uiGender: state.uiGender,
       uiSeverity: state.uiSeverity,
+      uiStatus: state.uiStatus,
+      uiHospital: state.uiHospital,
       uiTimeRange: state.uiTimeRange,
       setFilter: state.setFilter,
       resetFilters: state.resetFilters,
@@ -285,26 +295,42 @@ export default function FilterBar() {
 
   const [cities,   setCities]   = useState([]);
   const [diseases, setDiseases] = useState([]);
+  const [hospitals, setHospitals] = useState([]);
+  const [hospitalsLoading, setHospitalsLoading] = useState(true);
 
   const loadDropdowns = useCallback(async () => {
     try {
-      const [cRes, dRes] = await Promise.all([getCityList(), getDiseaseList()]);
+      const [cRes, dRes, fRes] = await Promise.all([
+        getCityList().catch(() => null),
+        getDiseaseList().catch(() => null),
+        getReportFilterOptions().catch(() => null)
+      ]);
+      
       if (cRes?.data) {
-        // Deduplicate city names before building options
         const uniqueCities = Array.from(new Map(cRes.data.map(c => [c, c])).values());
         setCities([{ value: '', label: 'All Governorates' }, ...uniqueCities.map(c => ({ value: c, label: c }))]);
       }
+      
       if (dRes?.data) {
-        // Deduplicate disease names before building options
         const uniqueDiseases = Array.from(new Map(dRes.data.map(d => [d.name, d])).values());
         setDiseases([{ value: '', label: 'All Diseases' }, ...uniqueDiseases.map(d => ({ value: d.name, label: d.name }))]);
       }
-    } catch (_) {}
+      
+      if (fRes?.data?.hospitals) {
+        const rawHospitals = fRes.data.hospitals || [];
+        const uniqueHospitals = Array.from(new Map(rawHospitals.map(h => [h.id, h])).values());
+        setHospitals([{ value: '', label: 'All Hospitals' }, ...uniqueHospitals.map(h => ({ value: h.id, label: h.name }))]);
+      }
+    } catch (_) {
+      // Ignored
+    } finally {
+      setHospitalsLoading(false);
+    }
   }, []);
 
   useEffect(() => { loadDropdowns(); }, [loadDropdowns]);
 
-  const activeFiltersCount = [uiCity, ...(uiDisease || []), uiGender, uiSeverity, uiTimeRange !== '1y' ? uiTimeRange : null].filter(Boolean).length;
+  const activeFiltersCount = [uiCity, ...(uiDisease || []), uiGender, uiSeverity, uiStatus, uiHospital, uiTimeRange !== '1y' ? uiTimeRange : null].filter(Boolean).length;
   const isDefault = activeFiltersCount === 0;
 
   return (
@@ -382,6 +408,9 @@ export default function FilterBar() {
         <MultiSelect  label="Disease"     selectedValues={uiDisease}  onChange={(v) => setFilter('uiDisease', v)}   options={diseases.length ? diseases : [{ value: '', label: 'Loading…' }]} />
         <FilterSelect label="Gender"      value={uiGender}   onChange={(v) => setFilter('uiGender', v)}    options={GENDERS} />
         <FilterSelect label="Severity"    value={uiSeverity} onChange={(v) => setFilter('uiSeverity', v)}  options={SEVERITIES} />
+        <FilterSelect label="Status"      value={uiStatus}   onChange={(v) => { console.log("Selected Status", v); setFilter('uiStatus', v); }}    options={STATUSES} />
+        <FilterSelect label="Hospital"    value={uiHospital} onChange={(v) => { console.log("Selected Hospital", v); setFilter('uiHospital', v); }}  
+          options={hospitalsLoading ? [{ value: '', label: 'Loading…' }] : (hospitals.length ? hospitals : [{ value: '', label: 'No hospitals found' }])} />
         <FilterSelect label="Time Range"  value={uiTimeRange} onChange={(v) => setFilter('uiTimeRange', v)} options={TIME_RANGES} />
       </div>
     </div>

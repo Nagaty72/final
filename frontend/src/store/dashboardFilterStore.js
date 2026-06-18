@@ -22,6 +22,8 @@ export const useDashboardFilterStore = create((set, get) => ({
   uiDisease:   [],
   uiGender:    '',
   uiSeverity:  '',
+  uiStatus:    '',
+  uiHospital:  '',
   uiTimeRange: '1y',
 
   // Applied filter values (used by chart widgets)
@@ -29,6 +31,8 @@ export const useDashboardFilterStore = create((set, get) => ({
   disease:   [], 
   gender:    '',
   severity:  '', 
+  status:    '',
+  hospital:  '',
   timeRange: '1y',   // default: last year
 
   // Pending flag — true while debounce is in flight
@@ -47,17 +51,20 @@ export const useDashboardFilterStore = create((set, get) => ({
         disease:   state.uiDisease,
         gender:    state.uiGender,
         severity:  state.uiSeverity,
+        status:    state.uiStatus,
+        hospital:  state.uiHospital,
         timeRange: state.uiTimeRange,
         filtersChanging: false,
       });
+      console.log("Store Hospital", get().hospital);
     }, 600); // 600ms debounce before triggering fetches
   },
 
   /** Reset all filters to default state */
   resetFilters: () => {
     set({
-      uiCity: '', uiDisease: [], uiGender: '', uiSeverity: '', uiTimeRange: '1y',
-      city: '', disease: [], gender: '', severity: '', timeRange: '1y',
+      uiCity: '', uiDisease: [], uiGender: '', uiSeverity: '', uiStatus: '', uiHospital: '', uiTimeRange: '1y',
+      city: '', disease: [], gender: '', severity: '', status: '', hospital: '', timeRange: '1y',
       filtersChanging: false,
     });
   },
@@ -67,12 +74,14 @@ export const useDashboardFilterStore = create((set, get) => ({
    * Strips empty strings so api.get() doesn't send empty params.
    */
   getApiFilters: () => {
-    const { city, disease, gender, severity, timeRange } = get();
+    const { city, disease, gender, severity, status, hospital, timeRange } = get();
     return {
       city:      city      || undefined,
       disease:   disease.length > 0 ? disease.join(',') : undefined,
       gender:    gender    || undefined,
       severity:  severity  || undefined,
+      status:    status    || undefined,
+      hospital:  hospital  || undefined,
       timeRange: timeRange || undefined,
     };
   },

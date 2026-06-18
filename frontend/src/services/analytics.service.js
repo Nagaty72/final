@@ -15,20 +15,34 @@ export const fetchDiseaseTrends = async (districtId = null, days = 30) => {
  * Null / undefined values are automatically stripped by api.get().
  */
 
+const formatParams = (filters = {}) => {
+  const params = {
+    governorate: filters.city || filters.governorate,
+    disease: Array.isArray(filters.disease) ? filters.disease.join(',') : filters.disease,
+    gender: filters.gender,
+    severity: filters.severity,
+    status: filters.status,
+    hospital: filters.hospital,
+    timeRange: filters.timeRange
+  };
+  console.log("Analytics Request Params", params);
+  return params;
+};
+
 export const getDashboardKpis = (filters = {}) =>
-  api.get(`${BASE}/kpis`, filters);
+  api.get(`${BASE}/kpis`, formatParams(filters));
 
 export const getDashboardTrends = (filters = {}) =>
-  api.get(`${BASE}/trends`, filters);
+  api.get(`${BASE}/trends`, formatParams(filters));
 
 export const getDashboardBubble = (filters = {}) =>
-  api.get(`${BASE}/bubble-data`, filters);
+  api.get(`${BASE}/bubble-data`, formatParams(filters));
 
 export const getDashboardSeverity = (filters = {}) =>
-  api.get(`${BASE}/severity`, filters);
+  api.get(`${BASE}/severity`, formatParams(filters));
 
 export const getDashboardDiseaseBreakdown = (filters = {}) =>
-  api.get(`${BASE}/disease-breakdown`, filters);
+  api.get(`${BASE}/disease-breakdown`, formatParams(filters));
 
 export const getDiseaseList = () =>
   api.get(`${BASE}/disease-list`);

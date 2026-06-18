@@ -9,8 +9,8 @@ import { KPI_PALETTE } from '@/lib/chartTheme';
 /* ─── KPI config — Total Cases is the Hero, rest are secondary ───────────── */
 const SECONDARY_CONFIG = [
   { key: 'active_cases',    label: 'Active Cases',      icon: HeartPulse,    variant: 'warning',  ...KPI_PALETTE.active_cases    },
-  { key: 'recovered',       label: 'Recovered',         icon: TrendingUp,    variant: 'success',  ...KPI_PALETTE.recovered       },
-  { key: 'severe_cases',    label: 'Severe / Critical', icon: AlertTriangle, variant: 'danger',   ...KPI_PALETTE.severe_cases    },
+  { key: 'recovered_cases', label: 'Recovered',         icon: TrendingUp,    variant: 'success',  ...KPI_PALETTE.recovered       },
+  { key: 'critical_cases',  label: 'Severe / Critical', icon: AlertTriangle, variant: 'danger',   ...KPI_PALETTE.severe_cases    },
   { key: 'total_patients',  label: 'Total Patients',    icon: Users,         variant: 'purple',   ...KPI_PALETTE.total_patients  },
   { key: 'total_hospitals', label: 'Hospitals',         icon: Hospital,      variant: 'info',     ...KPI_PALETTE.total_hospitals },
 ];
@@ -87,13 +87,23 @@ function RealSparkline({ trendRows, color }) {
   );
 }
 
-/* ─── Compute period-over-period % change from real trend data ───────────── */
-function computeTrend(trendRows) {
-  if (trendRows.length < 2) return null;
-  const last   = trendRows[trendRows.length - 1].count;
-  const prev   = trendRows[trendRows.length - 2].count;
-  if (prev === 0) return null;
-  return Math.round(((last - prev) / prev) * 100);
+/* ─── Compute period-over-period % change from real KPI data ───────────── */
+function computeTrend(currVal, prevVal) {
+  const curr = Number(currVal || 0);
+  const prev = Number(prevVal || 0);
+  
+  console.log("--- TREND CALCULATION ---");
+  console.log("Current Period Cases:", curr);
+  console.log("Previous Period Cases:", prev);
+
+  if (prev === 0 || isNaN(prev)) {
+    console.log("Growth %: N/A (prev is 0)");
+    return null;
+  }
+  
+  const pct = Math.round(((curr - prev) / prev) * 100);
+  console.log("Growth %:", pct + "%");
+  return pct;
 }
 
 /* ─── Trend indicator ────────────────────────────────────────────────────── */
@@ -119,10 +129,10 @@ function TrendBadge({ pct }) {
 }
 
 /* ─── Hero KPI Card ──────────────────────────────────────────────────────── */
-function HeroKpiCard({ value, trendRows, lastUpdated }) {
+function HeroKpiCard({ value, prevValue, trendRows, lastUpdated }) {
   const numVal  = Number(value ?? 0);
   const display = fmt(numVal);
-  const trendPct = useMemo(() => computeTrend(trendRows), [trendRows]);
+  const trendPct = useMemo(() => computeTrend(value, prevValue), [value, prevValue]);
   const periodLabel = trendRows.length > 0
     ? `${trendRows[trendRows.length - 1]?.month} ${trendRows[trendRows.length - 1]?.year}`
     : null;
@@ -347,11 +357,14 @@ export default function KpiCards() {
       disease:   state.disease,
       gender:    state.gender,
       severity:  state.severity,
+      status:    state.status,
+      hospital:  state.hospital,
       timeRange: state.timeRange,
     }))
   );
 
   const [kpis, setKpis]           = useState(null);
+  const [prevKpis, setPrevKpis]   = useState(null);
   const [trendRows, setTrendRows] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState(null);
@@ -379,7 +392,13 @@ export default function KpiCards() {
     ])
       .then(([kpiRes, trendRes]) => {
         if (ctrl.signal.aborted || !mountedRef.current) return;
-        setKpis(normalizeKpis(kpiRes?.data));
+        const kpiData = normalizeKpis(kpiRes?.data);
+        const prevKpiData = normalizeKpis(kpiRes?.prevData);
+        console.log("KPI API Response", kpiRes);
+        console.log("KPI Data Received", kpiData);
+        console.log("Prev KPI Data Received", prevKpiData);
+        setKpis(kpiData);
+        setPrevKpis(prevKpiData);
         setTrendRows(normalizeTrends(trendRes?.data ?? trendRes));
       })
       .catch(err => {
@@ -391,7 +410,7 @@ export default function KpiCards() {
       });
 
     return () => ctrl.abort();
-  }, [filters.city, diseaseDep, filters.gender, filters.severity, filters.timeRange]);
+  }, [filters.city, diseaseDep, filters.gender, filters.severity, filters.status, filters.hospital, filters.timeRange]);
 
   const lastUpdated = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
@@ -419,9 +438,16 @@ export default function KpiCards() {
     );
   }
 
+  console.log('KPI Cards Rendering Data:', kpis);
+
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
-      <HeroKpiCard value={kpis.total_cases} trendRows={trendRows} lastUpdated={lastUpdated} />
+      <HeroKpiCard 
+        value={kpis.total_cases} 
+        prevValue={prevKpis?.total_cases}
+        trendRows={trendRows} 
+        lastUpdated={lastUpdated} 
+      />
       {SECONDARY_CONFIG.map(cfg => (
         <SecondaryKpiCard key={cfg.key} config={cfg} value={kpis[cfg.key]} />
       ))}

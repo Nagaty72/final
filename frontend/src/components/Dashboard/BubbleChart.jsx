@@ -216,6 +216,8 @@ export default function BubbleChart() {
       disease:   state.disease,
       gender:    state.gender,
       severity:  state.severity,
+      status:    state.status,
+      hospital:  state.hospital,
       timeRange: state.timeRange,
     }))
   );
@@ -260,7 +262,7 @@ export default function BubbleChart() {
       });
 
     return () => ctrl.abort();
-  }, [filters.city, diseaseDep, filters.gender, filters.severity, filters.timeRange]);
+  }, [filters.city, diseaseDep, filters.gender, filters.severity, filters.status, filters.hospital, filters.timeRange]);
 
   // ── Derived ───────────────────────────────────────────────────────────────
   const diseaseNames    = useMemo(() => [...new Set(rows.map((r) => r.disease_name))].sort(), [rows]);

@@ -183,6 +183,8 @@ export default function DiseaseTrendChart() {
       disease:   state.disease,
       gender:    state.gender,
       severity:  state.severity,
+      status:    state.status,
+      hospital:  state.hospital,
       timeRange: state.timeRange,
     }))
   );
@@ -233,13 +235,16 @@ export default function DiseaseTrendChart() {
           })).filter(r => r.month);
         })();
 
+        console.log("Disease Trend API Response", { trendRes, breakdownRes });
+        console.log("Disease Trend Data", rawTrends);
+
         // Normalize breakdown: [{ name, cases, color }]
         const rawDiseases = (() => {
           let r = breakdownRes?.data ?? breakdownRes;
           if (!Array.isArray(r)) r = [];
           return r.slice(0, 12).map((row, i) => ({
             name:  row.disease_name ?? row.name ?? 'Unknown',
-            cases: Number(row.total_cases ?? row.cases ?? 0),
+            cases: Number(row.count ?? row.total_cases ?? row.cases ?? 0),
             color: getDiseaseColor(row.disease_name ?? row.name ?? '', i),
           }));
         })();
@@ -258,7 +263,7 @@ export default function DiseaseTrendChart() {
       });
 
     return () => ctrl.abort();
-  }, [filters.city, diseaseDep, filters.gender, filters.severity, filters.timeRange]);
+  }, [filters.city, diseaseDep, filters.gender, filters.severity, filters.status, filters.hospital, filters.timeRange]);
 
   // ── Build chart series ────────────────────────────────────────────────
   const { rows: chartRows, diseases } = useMemo(
@@ -283,6 +288,8 @@ export default function DiseaseTrendChart() {
   const showDots = chartRows.length <= 18;
 
   const hasData = !loading && !error && chartRows.length > 0 && diseases.length > 0;
+
+  console.log("Chart Dataset", chartRows);
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (

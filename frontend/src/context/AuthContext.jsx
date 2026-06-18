@@ -12,13 +12,21 @@ export function AuthProvider({ children }) {
   // On mount, check localStorage for existing session
   useEffect(() => {
     const savedToken = localStorage.getItem('ha_token');
-    const savedUser = localStorage.getItem('ha_user');
+    const savedUser  = localStorage.getItem('ha_user');
     if (savedToken && savedUser) {
-      setToken(savedToken);
       try {
-        setUser(JSON.parse(savedUser));
+        const parsed = JSON.parse(savedUser);
+        // Security: force-logout any restored session that was never OTP-verified
+        if (!parsed?.is_verified) {
+          console.warn('[AUTH] Restored session is unverified — clearing.');
+          localStorage.removeItem('ha_token');
+          localStorage.removeItem('ha_user');
+          localStorage.removeItem('ha_refresh');
+        } else {
+          setToken(savedToken);
+          setUser(parsed);
+        }
       } catch {
-        // Invalid stored user, clear it
         localStorage.removeItem('ha_user');
       }
     }
@@ -26,6 +34,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = useCallback((userData, accessToken, refreshToken) => {
+    console.log('[RUNTIME] AuthContext.login called for user:', userData.email, 'is_verified:', userData.is_verified);
     setUser(userData);
     setToken(accessToken);
     localStorage.setItem('ha_token', accessToken);
@@ -58,10 +67,11 @@ export function AuthProvider({ children }) {
     localStorage.setItem('ha_user', JSON.stringify(userData));
   }, []);
 
-  const isAuthenticated = !!token && !!user;
+  const isAuthenticated = !!token && !!user && user.is_verified === true;
+  const isVerified = !!user && user.is_verified === true;
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout, updateUser, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, token, loading, login, logout, updateUser, isAuthenticated, isVerified }}>
 
       {children}
     </AuthContext.Provider>

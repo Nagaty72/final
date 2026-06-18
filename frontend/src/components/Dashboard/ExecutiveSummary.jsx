@@ -42,8 +42,8 @@ function generateSummary({ kpis, breakdown, severity, filters }) {
 
   const totalCases    = Number(kpis.total_cases    ?? 0);
   const activeCases   = Number(kpis.active_cases   ?? 0);
-  const recovered     = Number(kpis.recovered      ?? 0);
-  const severeCases   = Number(kpis.severe_cases   ?? 0);
+  const recovered     = Number(kpis.recovered_cases ?? 0);
+  const severeCases   = Number(kpis.critical_cases  ?? 0);
   const totalPatients = Number(kpis.total_patients ?? 0);
   const hospitals     = Number(kpis.total_hospitals ?? 0);
 
@@ -186,6 +186,8 @@ export default function ExecutiveSummary() {
       disease:   state.disease,
       gender:    state.gender,
       severity:  state.severity,
+      status:    state.status,
+      hospital:  state.hospital,
       timeRange: state.timeRange,
     }))
   );
@@ -234,7 +236,7 @@ export default function ExecutiveSummary() {
       });
 
     return () => ctrl.abort();
-  }, [filters.city, diseaseDep, filters.gender, filters.severity, filters.timeRange]);
+  }, [filters.city, diseaseDep, filters.gender, filters.severity, filters.status, filters.hospital, filters.timeRange]);
 
   const summaryLines = useMemo(
     () => generateSummary({ kpis, breakdown, severity, filters }),
