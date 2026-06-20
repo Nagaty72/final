@@ -1,12 +1,6 @@
 'use client';
-import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
-import { useShallow } from 'zustand/react/shallow';
-import {
-  getDashboardKpis,
-  getDashboardDiseaseBreakdown,
-  getDashboardSeverity,
-} from '@/services/analytics.service';
+import React, { useState, useRef, useMemo } from 'react';
+import { useDashboardData } from '@/context/DashboardDataContext';
 import { FileText, RefreshCw, AlertCircle, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 /* ─── Normalize helpers ───────────────────────────────────────────────────── */
@@ -63,7 +57,7 @@ function generateSummary({ kpis, breakdown, severity, filters }) {
 
     lines.push({
       type: 'stat',
-      text: `A total of ${fmtN(totalCases)} cases recorded ${scopeLabel}${filters.timeRange && filters.timeRange !== '1y' ? ` over the selected period` : ''}.`,
+      text: `A total of ${fmtN(totalCases)} cases recorded ${scopeLabel}${filters.timeRange && filters.timeRange !== '6m' ? ` over the selected period` : ''}.`,
     });
   }
 
@@ -178,65 +172,19 @@ function ExecSkeleton() {
   );
 }
 
-/* ─── Main component ─────────────────────────────────────────────────────── */
+/* ─── Main component ──────────────────────────────────────────────────────────── */
 export default function ExecutiveSummary() {
-  const filters = useDashboardFilterStore(
-    useShallow(state => ({
-      city:      state.city,
-      disease:   state.disease,
-      gender:    state.gender,
-      severity:  state.severity,
-      status:    state.status,
-      hospital:  state.hospital,
-      timeRange: state.timeRange,
-    }))
-  );
+  const { kpisRaw, severityRaw, breakdownRaw, loading, error, filters } = useDashboardData();
+  const [genTime, setGenTime] = useState(null);
 
-  const [kpis,      setKpis]      = useState(null);
-  const [breakdown, setBreakdown] = useState([]);
-  const [severity,  setSeverity]  = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [error,     setError]     = useState(null);
-  const [genTime,   setGenTime]   = useState(null);
-  const abortRef   = useRef(null);
-  const mountedRef = useRef(true);
+  const kpis      = useMemo(() => normalizeKpis(kpisRaw?.data),                           [kpisRaw]);
+  const breakdown = useMemo(() => normalizeBreakdown(breakdownRaw?.data ?? breakdownRaw), [breakdownRaw]);
+  const severity  = useMemo(() => normalizeSeverity(severityRaw?.data ?? severityRaw),   [severityRaw]);
 
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => { mountedRef.current = false; };
-  }, []);
-
-  const diseaseDep = Array.isArray(filters.disease) ? filters.disease.join(',') : '';
-
-  useEffect(() => {
-    if (abortRef.current) abortRef.current.abort();
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-    setLoading(true);
-    setError(null);
-
-    Promise.all([
-      getDashboardKpis(filters),
-      getDashboardDiseaseBreakdown(filters),
-      getDashboardSeverity(filters),
-    ])
-      .then(([kpiRes, breakdownRes, severityRes]) => {
-        if (ctrl.signal.aborted || !mountedRef.current) return;
-        setKpis(normalizeKpis(kpiRes?.data));
-        setBreakdown(normalizeBreakdown(breakdownRes?.data ?? breakdownRes));
-        setSeverity(normalizeSeverity(severityRes?.data ?? severityRes));
-        setGenTime(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
-      })
-      .catch(err => {
-        if (ctrl.signal.aborted || !mountedRef.current) return;
-        setError(err.message);
-      })
-      .finally(() => {
-        if (!ctrl.signal.aborted && mountedRef.current) setLoading(false);
-      });
-
-    return () => ctrl.abort();
-  }, [filters.city, diseaseDep, filters.gender, filters.severity, filters.status, filters.hospital, filters.timeRange]);
+  // Update generation timestamp once data arrives
+  useMemo(() => {
+    if (!loading && kpis) setGenTime(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
+  }, [loading, kpis]);
 
   const summaryLines = useMemo(
     () => generateSummary({ kpis, breakdown, severity, filters }),
@@ -245,13 +193,14 @@ export default function ExecutiveSummary() {
 
   const hasAlert = summaryLines?.some(l => l.type === 'alert');
 
+
   // ── Active filter tags for context ──
   const activeTags = [
     filters.city && `Governorate: ${filters.city}`,
     filters.disease?.length && `${filters.disease.length} disease${filters.disease.length > 1 ? 's' : ''}`,
     filters.gender && `Gender: ${filters.gender}`,
     filters.severity && `Severity: ${filters.severity}`,
-    filters.timeRange && filters.timeRange !== '1y' && `Period: ${filters.timeRange}`,
+    filters.timeRange && filters.timeRange !== '6m' && `Period: ${filters.timeRange}`,
   ].filter(Boolean);
 
   return (

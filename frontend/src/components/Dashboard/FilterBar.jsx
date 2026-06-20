@@ -330,7 +330,7 @@ export default function FilterBar() {
 
   useEffect(() => { loadDropdowns(); }, [loadDropdowns]);
 
-  const activeFiltersCount = [uiCity, ...(uiDisease || []), uiGender, uiSeverity, uiStatus, uiHospital, uiTimeRange !== '1y' ? uiTimeRange : null].filter(Boolean).length;
+  const activeFiltersCount = [uiCity, ...(uiDisease || []), uiGender, uiSeverity, uiStatus, uiHospital, uiTimeRange !== '6m' ? uiTimeRange : null].filter(Boolean).length;
   const isDefault = activeFiltersCount === 0;
 
   return (

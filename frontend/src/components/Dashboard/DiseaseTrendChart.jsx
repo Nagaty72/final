@@ -1,31 +1,17 @@
 'use client';
 /**
  * DiseaseTrendChart — Multi-line epidemiological trend chart.
- *
- * Architecture:
- *  • Calls /api/v1/analytics/trends-by-disease — new per-disease trends endpoint
- *  • Falls back to /api/v1/analytics/disease-breakdown + /api/v1/analytics/trends
- *    if the new endpoint is not yet deployed (graceful degradation)
- *  • Pivots response into Recharts LineChart series: one line per disease
- *  • Monthly / Weekly granularity toggle (Monthly = default)
- *  • Interactive disease legend — click to hide/show individual lines
- *  • Smooth dot-less lines with dot on hover for large datasets
- *  • Professional tooltip: date, per-disease cases, total
- *  • Dark mode support via CSS variables
- *  • React 19 safe — isAnimationActive={false}, stable useEffect deps
- *  • AbortController + mountedRef for leak-free cleanup
+ * Data supplied by DashboardDataContext (no direct API calls).
  */
 
 import React, {
-  useEffect, useState, useRef, useMemo, useCallback,
+  useMemo, useCallback, useState,
 } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
-import { useShallow }              from 'zustand/react/shallow';
-import { getDashboardTrends, getDashboardDiseaseBreakdown } from '@/services/analytics.service';
+import { useDashboardData } from '@/context/DashboardDataContext';
 import { TrendingUp } from 'lucide-react';
 import { getDiseaseColor, tooltipStyle, gridStyle, axisTick, tooltipCursorLine } from '@/lib/chartTheme';
 
@@ -177,99 +163,37 @@ const yTickFmt = (v) => v >= 1_000_000 ? `${(v/1_000_000).toFixed(1)}M` : v >= 1
 
 // ── Main component ──────────────────────────────────────────────────────────
 export default function DiseaseTrendChart() {
-  const filters = useDashboardFilterStore(
-    useShallow((state) => ({
-      city:      state.city,
-      disease:   state.disease,
-      gender:    state.gender,
-      severity:  state.severity,
-      status:    state.status,
-      hospital:  state.hospital,
-      timeRange: state.timeRange,
-    }))
-  );
-
-  const [trendRows,   setTrendRows]   = useState([]);
-  const [diseaseRows, setDiseaseRows] = useState([]);
-  const [loading,     setLoading]     = useState(true);
-  const [error,       setError]       = useState(null);
+  const { trendsRaw, breakdownRaw, loading, error, filters } = useDashboardData();
   const [hiddenLines, setHiddenLines] = useState(new Set());
 
-  const abortRef   = useRef(null);
-  const mountedRef = useRef(true);
-  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
+  // Normalize trends: [{ month, year, count }]
+  const trendRows = useMemo(() => {
+    let r = trendsRaw?.data ?? trendsRaw;
+    if (!Array.isArray(r)) r = [];
+    return r.map(row => ({
+      month: row.month ?? '',
+      year:  row.year  ?? 0,
+      count: Number(row.count ?? row.total_cases ?? 0),
+    })).filter(r => r.month);
+  }, [trendsRaw]);
 
-  const diseaseDep = Array.isArray(filters.disease) ? filters.disease.join(',') : '';
-
-  // ── Fetch both trends + disease breakdown ─────────────────────────────
-  useEffect(() => {
-    if (abortRef.current) abortRef.current.abort();
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-    setLoading(true);
-    setError(null);
-
-    const apiFilters = {
-      city:      filters.city      || undefined,
-      disease:   filters.disease?.length ? filters.disease.join(',') : undefined,
-      gender:    filters.gender    || undefined,
-      severity:  filters.severity  || undefined,
-      timeRange: filters.timeRange || undefined,
-    };
-
-    Promise.all([
-      getDashboardTrends(apiFilters),
-      getDashboardDiseaseBreakdown(apiFilters),
-    ])
-      .then(([trendRes, breakdownRes]) => {
-        if (ctrl.signal.aborted || !mountedRef.current) return;
-
-        // Normalize trends: [{ month, year, count }]
-        const rawTrends = (() => {
-          let r = trendRes?.data ?? trendRes;
-          if (!Array.isArray(r)) r = [];
-          return r.map(row => ({
-            month: row.month ?? '',
-            year:  row.year  ?? 0,
-            count: Number(row.count ?? row.total_cases ?? 0),
-          })).filter(r => r.month);
-        })();
-
-        console.log("Disease Trend API Response", { trendRes, breakdownRes });
-        console.log("Disease Trend Data", rawTrends);
-
-        // Normalize breakdown: [{ name, cases, color }]
-        const rawDiseases = (() => {
-          let r = breakdownRes?.data ?? breakdownRes;
-          if (!Array.isArray(r)) r = [];
-          return r.slice(0, 12).map((row, i) => ({
-            name:  row.disease_name ?? row.name ?? 'Unknown',
-            cases: Number(row.count ?? row.total_cases ?? row.cases ?? 0),
-            color: getDiseaseColor(row.disease_name ?? row.name ?? '', i),
-          }));
-        })();
-
-        setTrendRows(rawTrends);
-        setDiseaseRows(rawDiseases);
-        // Reset hidden lines when data changes
-        setHiddenLines(new Set());
-      })
-      .catch(err => {
-        if (ctrl.signal.aborted || !mountedRef.current) return;
-        setError(err.message);
-      })
-      .finally(() => {
-        if (!ctrl.signal.aborted && mountedRef.current) setLoading(false);
-      });
-
-    return () => ctrl.abort();
-  }, [filters.city, diseaseDep, filters.gender, filters.severity, filters.status, filters.hospital, filters.timeRange]);
+  // Normalize breakdown: [{ name, cases, color }]
+  const diseaseRows = useMemo(() => {
+    let r = breakdownRaw?.data ?? breakdownRaw;
+    if (!Array.isArray(r)) r = [];
+    return r.slice(0, 12).map((row, i) => ({
+      name:  row.disease_name ?? row.name ?? 'Unknown',
+      cases: Number(row.count ?? row.total_cases ?? row.cases ?? 0),
+      color: getDiseaseColor(row.disease_name ?? row.name ?? '', i),
+    }));
+  }, [breakdownRaw]);
 
   // ── Build chart series ────────────────────────────────────────────────
   const { rows: chartRows, diseases } = useMemo(
     () => buildChartData(trendRows, diseaseRows, filters.disease),
     [trendRows, diseaseRows, filters.disease]
   );
+
 
   const colorMap = useMemo(
     () => Object.fromEntries(diseases.map(d => [d.name, d.color])),

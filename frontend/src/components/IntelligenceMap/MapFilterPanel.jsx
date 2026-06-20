@@ -388,7 +388,7 @@ export default function MapFilterPanel({
     ...(filters.disease || []),
     filters.gender,
     filters.severity,
-    filters.timeRange && filters.timeRange !== '1y' ? filters.timeRange : null,
+    filters.timeRange && filters.timeRange !== '6m' ? filters.timeRange : null,
   ].filter(Boolean).length, [filters]);
 
   const cityOptions = useMemo(() => {

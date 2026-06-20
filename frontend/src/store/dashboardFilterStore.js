@@ -24,7 +24,7 @@ export const useDashboardFilterStore = create((set, get) => ({
   uiSeverity:  '',
   uiStatus:    '',
   uiHospital:  '',
-  uiTimeRange: '1y',
+  uiTimeRange: '6m',
 
   // Applied filter values (used by chart widgets)
   city:      '',
@@ -33,7 +33,7 @@ export const useDashboardFilterStore = create((set, get) => ({
   severity:  '', 
   status:    '',
   hospital:  '',
-  timeRange: '1y',   // default: last year
+  timeRange: '6m',   // default: last 6 months
 
   // Pending flag — true while debounce is in flight
   filtersChanging: false,
@@ -63,8 +63,8 @@ export const useDashboardFilterStore = create((set, get) => ({
   /** Reset all filters to default state */
   resetFilters: () => {
     set({
-      uiCity: '', uiDisease: [], uiGender: '', uiSeverity: '', uiStatus: '', uiHospital: '', uiTimeRange: '1y',
-      city: '', disease: [], gender: '', severity: '', status: '', hospital: '', timeRange: '1y',
+      uiCity: '', uiDisease: [], uiGender: '', uiSeverity: '', uiStatus: '', uiHospital: '', uiTimeRange: '6m',
+      city: '', disease: [], gender: '', severity: '', status: '', hospital: '', timeRange: '6m',
       filtersChanging: false,
     });
   },

@@ -1,8 +1,6 @@
 'use client';
-import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
-import { useShallow } from 'zustand/react/shallow';
-import { getDashboardKpis, getDashboardTrends } from '@/services/analytics.service';
+import React, { useRef, useMemo } from 'react';
+import { useDashboardData } from '@/context/DashboardDataContext';
 import { Activity, Users, Hospital, TrendingUp, AlertTriangle, HeartPulse, TrendingDown, Minus } from 'lucide-react';
 import { KPI_PALETTE } from '@/lib/chartTheme';
 
@@ -351,66 +349,11 @@ function normalizeKpis(responseData) {
 
 /* ─── Main export ────────────────────────────────────────────────────────── */
 export default function KpiCards() {
-  const filters = useDashboardFilterStore(
-    useShallow(state => ({
-      city:      state.city,
-      disease:   state.disease,
-      gender:    state.gender,
-      severity:  state.severity,
-      status:    state.status,
-      hospital:  state.hospital,
-      timeRange: state.timeRange,
-    }))
-  );
+  const { kpisRaw, trendsRaw, loading, error } = useDashboardData();
 
-  const [kpis, setKpis]           = useState(null);
-  const [prevKpis, setPrevKpis]   = useState(null);
-  const [trendRows, setTrendRows] = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState(null);
-  const abortRef                  = useRef(null);
-  const mountedRef                = useRef(true);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => { mountedRef.current = false; };
-  }, []);
-
-  const diseaseDep = Array.isArray(filters.disease) ? filters.disease.join(',') : '';
-
-  useEffect(() => {
-    if (abortRef.current) abortRef.current.abort();
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-    setLoading(true);
-    setError(null);
-
-    // Fetch KPIs + trends in parallel — trends power the real sparkline
-    Promise.all([
-      getDashboardKpis(filters),
-      getDashboardTrends(filters),
-    ])
-      .then(([kpiRes, trendRes]) => {
-        if (ctrl.signal.aborted || !mountedRef.current) return;
-        const kpiData = normalizeKpis(kpiRes?.data);
-        const prevKpiData = normalizeKpis(kpiRes?.prevData);
-        console.log("KPI API Response", kpiRes);
-        console.log("KPI Data Received", kpiData);
-        console.log("Prev KPI Data Received", prevKpiData);
-        setKpis(kpiData);
-        setPrevKpis(prevKpiData);
-        setTrendRows(normalizeTrends(trendRes?.data ?? trendRes));
-      })
-      .catch(err => {
-        if (ctrl.signal.aborted || !mountedRef.current) return;
-        setError(err.message);
-      })
-      .finally(() => {
-        if (!ctrl.signal.aborted && mountedRef.current) setLoading(false);
-      });
-
-    return () => ctrl.abort();
-  }, [filters.city, diseaseDep, filters.gender, filters.severity, filters.status, filters.hospital, filters.timeRange]);
+  const kpis     = useMemo(() => normalizeKpis(kpisRaw?.data),                        [kpisRaw]);
+  const prevKpis = useMemo(() => normalizeKpis(kpisRaw?.prevData),                    [kpisRaw]);
+  const trendRows = useMemo(() => normalizeTrends(trendsRaw?.data ?? trendsRaw),      [trendsRaw]);
 
   const lastUpdated = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 

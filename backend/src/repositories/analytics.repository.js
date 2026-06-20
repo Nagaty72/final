@@ -66,7 +66,7 @@ export const AnalyticsRepository = {
     const { data, error } = await db().rpc('get_dashboard_kpis', rpcParams);
     const duration = Date.now() - start;
     console.log("RPC Result Count", data ? 1 : 0);
-    console.log("Execution Time", duration, "ms");
+    console.log("[get_dashboard_kpis] Execution Time", duration, "ms");
     if (error) throw error;
     return data;
   },
@@ -88,7 +88,7 @@ export const AnalyticsRepository = {
     const { data, error } = await db().rpc('get_dashboard_trends', rpcParams);
     const duration = Date.now() - start;
     console.log("RPC Result Count", data?.length);
-    console.log("Execution Time", duration, "ms");
+    console.log("[get_dashboard_trends] Execution Time", duration, "ms");
     if (error) throw error;
     return data || [];
   },
@@ -110,7 +110,7 @@ export const AnalyticsRepository = {
     const { data, error } = await db().rpc('get_dashboard_bubble_data', rpcParams);
     const duration = Date.now() - start;
     console.log("RPC Result Count", data?.length);
-    console.log("Execution Time", duration, "ms");
+    console.log("[get_dashboard_bubble_data] Execution Time", duration, "ms");
     if (error) throw error;
     return data || [];
   },
@@ -132,7 +132,7 @@ export const AnalyticsRepository = {
     const { data, error } = await db().rpc('get_dashboard_severity', rpcParams);
     const duration = Date.now() - start;
     console.log("RPC Result Count", data?.length);
-    console.log("Execution Time", duration, "ms");
+    console.log("[get_dashboard_severity] Execution Time", duration, "ms");
     if (error) throw error;
     return data || [];
   },
@@ -154,7 +154,7 @@ export const AnalyticsRepository = {
     const { data, error } = await db().rpc('get_dashboard_disease_breakdown', rpcParams);
     const duration = Date.now() - start;
     console.log("RPC Result Count", data?.length);
-    console.log("Execution Time", duration, "ms");
+    console.log("[get_dashboard_disease_breakdown] Execution Time", duration, "ms");
     if (error) throw error;
     return data || [];
   },
