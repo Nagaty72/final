@@ -213,7 +213,7 @@ export default function Sidebar() {
             className={`sidebar-link ${pathname === item.href || pathname.startsWith(item.href + '/') ? 'active' : ''}`}
           >
             {item.icon}
-            <span className="sidebar-text">{t(`sidebar.${item.key}`)}</span>
+            {!isCollapsed && <span className="sidebar-text">{t(`sidebar.${item.key}`)}</span>}
           </Link>
         ))}
       </nav>

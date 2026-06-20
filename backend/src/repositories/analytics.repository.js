@@ -63,10 +63,11 @@ export const AnalyticsRepository = {
     console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
     console.log("RPC Params", rpcParams);
     const start = Date.now();
+    console.log(`[RPC_START] RPC_NAME: get_dashboard_kpis | START_TIME: ${new Date(start).toISOString()}`);
     const { data, error } = await db().rpc('get_dashboard_kpis', rpcParams);
-    const duration = Date.now() - start;
-    console.log("RPC Result Count", data ? 1 : 0);
-    console.log("Execution Time", duration, "ms");
+    const end = Date.now();
+    const duration = end - start;
+    console.log(`[RPC_END] RPC_NAME: get_dashboard_kpis | END_TIME: ${new Date(end).toISOString()} | EXECUTION_MS: ${duration} | ROW_COUNT: ${data ? 1 : 0}`);
     if (error) throw error;
     return data;
   },
@@ -85,10 +86,11 @@ export const AnalyticsRepository = {
     console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
     console.log("RPC Params", rpcParams);
     const start = Date.now();
+    console.log(`[RPC_START] RPC_NAME: get_dashboard_trends | START_TIME: ${new Date(start).toISOString()}`);
     const { data, error } = await db().rpc('get_dashboard_trends', rpcParams);
-    const duration = Date.now() - start;
-    console.log("RPC Result Count", data?.length);
-    console.log("Execution Time", duration, "ms");
+    const end = Date.now();
+    const duration = end - start;
+    console.log(`[RPC_END] RPC_NAME: get_dashboard_trends | END_TIME: ${new Date(end).toISOString()} | EXECUTION_MS: ${duration} | ROW_COUNT: ${data?.length || 0}`);
     if (error) throw error;
     return data || [];
   },
@@ -107,10 +109,11 @@ export const AnalyticsRepository = {
     console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
     console.log("RPC Params", rpcParams);
     const start = Date.now();
+    console.log(`[RPC_START] RPC_NAME: get_dashboard_bubble_data | START_TIME: ${new Date(start).toISOString()}`);
     const { data, error } = await db().rpc('get_dashboard_bubble_data', rpcParams);
-    const duration = Date.now() - start;
-    console.log("RPC Result Count", data?.length);
-    console.log("Execution Time", duration, "ms");
+    const end = Date.now();
+    const duration = end - start;
+    console.log(`[RPC_END] RPC_NAME: get_dashboard_bubble_data | END_TIME: ${new Date(end).toISOString()} | EXECUTION_MS: ${duration} | ROW_COUNT: ${data?.length || 0}`);
     if (error) throw error;
     return data || [];
   },
@@ -129,10 +132,11 @@ export const AnalyticsRepository = {
     console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
     console.log("RPC Params", rpcParams);
     const start = Date.now();
+    console.log(`[RPC_START] RPC_NAME: get_dashboard_severity | START_TIME: ${new Date(start).toISOString()}`);
     const { data, error } = await db().rpc('get_dashboard_severity', rpcParams);
-    const duration = Date.now() - start;
-    console.log("RPC Result Count", data?.length);
-    console.log("Execution Time", duration, "ms");
+    const end = Date.now();
+    const duration = end - start;
+    console.log(`[RPC_END] RPC_NAME: get_dashboard_severity | END_TIME: ${new Date(end).toISOString()} | EXECUTION_MS: ${duration} | ROW_COUNT: ${data?.length || 0}`);
     if (error) throw error;
     return data || [];
   },
@@ -151,10 +155,11 @@ export const AnalyticsRepository = {
     console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
     console.log("RPC Params", rpcParams);
     const start = Date.now();
+    console.log(`[RPC_START] RPC_NAME: get_dashboard_disease_breakdown | START_TIME: ${new Date(start).toISOString()}`);
     const { data, error } = await db().rpc('get_dashboard_disease_breakdown', rpcParams);
-    const duration = Date.now() - start;
-    console.log("RPC Result Count", data?.length);
-    console.log("Execution Time", duration, "ms");
+    const end = Date.now();
+    const duration = end - start;
+    console.log(`[RPC_END] RPC_NAME: get_dashboard_disease_breakdown | END_TIME: ${new Date(end).toISOString()} | EXECUTION_MS: ${duration} | ROW_COUNT: ${data?.length || 0}`);
     if (error) throw error;
     return data || [];
   },

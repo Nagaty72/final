@@ -16,13 +16,16 @@ export function AuthProvider({ children }) {
     if (savedToken && savedUser) {
       try {
         const parsed = JSON.parse(savedUser);
-        // Security: force-logout any restored session that was never OTP-verified
-        if (!parsed?.is_verified) {
-          console.warn('[AUTH] Restored session is unverified — clearing.');
+        // Security: only clear if is_verified is explicitly false.
+        // If the field is absent (legacy sessions), preserve the session
+        // and let RouteGuard / backend middleware enforce access.
+        if (parsed?.is_verified === false) {
+          console.warn('[AUTHCONTEXT_RESTORE] Restored session is_verified=false — clearing.');
           localStorage.removeItem('ha_token');
           localStorage.removeItem('ha_user');
           localStorage.removeItem('ha_refresh');
         } else {
+          console.log('[AUTHCONTEXT_RESTORE] Session restored for:', parsed?.email, 'is_verified:', parsed?.is_verified);
           setToken(savedToken);
           setUser(parsed);
         }

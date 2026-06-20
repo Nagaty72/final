@@ -52,18 +52,21 @@ export const authMiddleware = async (req, res, next) => {
     let role = 'normal_user';
 
     if (!profile) {
-      console.log('[AUTH] USER_NOT_FOUND_IN_PUBLIC_USERS:', user.email);
+      console.log('[AUTH] PUBLIC_USER_FOUND: false — row missing for:', user.email);
       console.log('[AUTH] CREATING_PUBLIC_USER...');
-      
+
+      // If Supabase already confirmed the email (OTP success), create the row as verified.
+      const isEmailConfirmed = !!user.email_confirmed_at;
+
       const insertPayload = {
         id: user.id,
         email: user.email,
         full_name: user.user_metadata?.full_name || '',
         role_id: roleId,
-        is_verified: false,
+        is_verified: isEmailConfirmed,
         password_hash: 'managed_by_supabase_auth'
       };
-      
+
       console.log('[AUTH] Insert Payload:', JSON.stringify(insertPayload));
 
       // Lazy sync: if user signed up via Supabase but isn't in public.users yet
@@ -72,19 +75,37 @@ export const authMiddleware = async (req, res, next) => {
         .insert(insertPayload)
         .select('id, role_id, is_verified, full_name')
         .single();
-        
+
       if (insertError) {
         console.error('[AUTH] Failed to lazy sync user:', insertError);
         return res.status(500).json({ success: false, error: 'Internal sync error' });
       }
-      
-      console.log('[AUTH] CREATED_PUBLIC_USER');
-      console.log('[AUTH] Inserted object returned from DB:', JSON.stringify(newProfile));
-      console.log('[AUTH] PUBLIC_USER_IS_VERIFIED:', newProfile.is_verified);
-      
+
+      console.log('[AUTH] PUBLIC_USER_CREATED — is_verified:', newProfile.is_verified, 'for:', user.email);
+
       profile = newProfile;
     } else {
+      console.log('[AUTH] PUBLIC_USER_FOUND: true — is_verified:', profile.is_verified, 'email_confirmed_at:', user.email_confirmed_at, 'for:', user.email);
       roleId = profile.role_id;
+
+      // Auto-heal: if Supabase Auth has confirmed the email (OTP succeeded) but the
+      // public.users row hasn't been updated yet (e.g. client-side anon-key write was
+      // blocked by RLS), update is_verified here using the service-role key.
+      if (!profile.is_verified && user.email_confirmed_at) {
+        console.log('[AUTH] AUTO_HEAL: email_confirmed_at set but is_verified=false — healing for:', user.email);
+        const { data: healData, error: healError } = await supabase
+          .from('users')
+          .update({ is_verified: true })
+          .eq('id', user.id)
+          .select('is_verified')
+          .single();
+        if (!healError && healData) {
+          profile.is_verified = healData.is_verified;
+          console.log('[AUTH] PUBLIC_USER_UPDATED — is_verified:', profile.is_verified, 'for:', user.email);
+        } else {
+          console.error('[AUTH] AUTO_HEAL failed:', healError?.message);
+        }
+      }
     }
 
     // 3. Resolve role name

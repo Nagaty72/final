@@ -813,12 +813,12 @@ export default function HospitalsPage() {
           border-bottom: 1px solid var(--border);
           display: flex; justify-content: space-between; align-items: center;
         }
-        .modal-header h2 { font-size: 20px; font-weight: 600; margin: 0; color: white; }
+        .modal-header h2 { font-size: 20px; font-weight: 600; margin: 0; color: var(--accent); }
         .close-btn {
-          background: transparent; border: none; color: var(--text-muted); cursor: pointer;
+          background: transparent; border: none; color: var(--accent); cursor: pointer;
           transition: color 0.2s; padding: 4px; border-radius: 6px;
         }
-        .close-btn:hover { color: white; background: rgba(255,255,255,0.1); }
+        .close-btn:hover { color: var(--accent-hover); background: var(--accent-light); }
         
         .modal-alert {
           margin: 20px 32px 0; padding: 12px 16px; border-radius: 8px;
@@ -830,27 +830,28 @@ export default function HospitalsPage() {
         .crud-form { padding: 0 32px 32px; display: flex; flex-direction: column; gap: 24px; margin-top: 24px; }
         .form-section { display: flex; flex-direction: column; gap: 16px; }
         .section-title { 
-          font-size: 14px; font-weight: 600; color: #94a3b8; 
+          font-size: 14px; font-weight: 600; color: var(--accent); 
           text-transform: uppercase; letter-spacing: 0.5px;
           display: flex; align-items: center; gap: 8px; margin: 0 0 8px;
-          padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);
+          padding-bottom: 8px; border-bottom: 1px solid var(--border);
         }
         
-        .input-group label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
+        .input-group label { display: block; font-size: 13px; color: var(--accent); margin-bottom: 6px; font-weight: 500; }
         .input-field.modern {
           width: 100%; background: var(--bg-secondary); border: 1px solid var(--border);
-          border-radius: 8px; padding: 10px 14px; color: white; transition: all 0.2s;
+          border-radius: 8px; padding: 10px 14px; color: var(--text-primary); transition: all 0.2s;
         }
+        .input-field.modern::placeholder { color: var(--accent); opacity: 0.7; }
         .input-field.modern:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2); outline: none; }
         .input-icon-wrapper { position: relative; }
-        .input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--accent); }
         .pl-10 { padding-left: 36px !important; }
         
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         
         .checkbox-wrapper { display: flex; align-items: flex-end; padding-bottom: 10px; }
         .custom-checkbox {
-          display: flex; align-items: center; cursor: pointer; font-size: 14px; color: white;
+          display: flex; align-items: center; cursor: pointer; font-size: 14px; color: var(--accent);
           user-select: none; position: relative; padding-left: 28px;
         }
         .custom-checkbox input { position: absolute; opacity: 0; cursor: pointer; height: 0; width: 0; }
@@ -871,10 +872,10 @@ export default function HospitalsPage() {
         .modal-actions { display: flex; gap: 12px; margin-top: 8px; padding-top: 24px; border-top: 1px solid var(--border); }
         .btn-cancel {
           flex: 1; padding: 12px; border-radius: 8px;
-          background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-          color: white; cursor: pointer; font-weight: 500; transition: all 0.2s;
+          background: var(--bg-secondary); border: 1px solid var(--border);
+          color: var(--accent); cursor: pointer; font-weight: 500; transition: all 0.2s;
         }
-        .btn-cancel:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
+        .btn-cancel:hover:not(:disabled) { background: var(--bg-card-hover); color: var(--accent-hover); }
         .btn-cancel:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-save { flex: 2; border-radius: 8px; padding: 12px; display: flex; justify-content: center; align-items: center; gap: 8px; }
         

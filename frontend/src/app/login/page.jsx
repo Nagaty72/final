@@ -47,7 +47,19 @@ function AuthPageContent() {
   useEffect(() => {
     setMounted(true);
     const token = localStorage.getItem('ha_token');
-    if (token) router.push('/dashboard');
+    const savedUser = localStorage.getItem('ha_user');
+    if (token && savedUser) {
+      try {
+        const parsed = JSON.parse(savedUser);
+        // Only redirect to dashboard if the restored session is verified.
+        // An unverified user with a stale token should land on /verify-email, not /dashboard.
+        if (parsed?.is_verified === true) {
+          router.push('/dashboard');
+        }
+      } catch {
+        // Corrupt stored user — ignore and show login form
+      }
+    }
   }, [router]);
 
   useEffect(() => {
@@ -195,6 +207,9 @@ function AuthPageContent() {
         // NOTE: With Supabase 'Confirm Email' ENABLED, signUp() automatically
         // sends the Confirm Signup email containing the {{ .Token }} OTP.
         console.log('[SIGNUP] Attempting account creation for:', email);
+        console.log('[DIAGNOSTIC] NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL || 'UNDEFINED');
+        console.log('[DIAGNOSTIC] EMAIL:', email);
+        
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,

@@ -8,8 +8,9 @@ import { authService } from '@/services/auth.service';
 import { useAuth } from '@/context/AuthContext';
 
 /* ─── Core verification logic (needs Suspense wrapper for useSearchParams) ── */
-// Define the expected OTP length (matches Supabase dashboard config)
-const OTP_LENGTH = 8;
+// OTP_LENGTH must match Supabase Dashboard → Auth → Email OTP Expiry settings.
+// Supabase default is 6 digits. Change only if explicitly configured otherwise.
+const OTP_LENGTH = 6;
 
 function VerifyEmailContent() {
   const router = useRouter();
@@ -105,6 +106,7 @@ function VerifyEmailContent() {
     setError('');
 
     try {
+      console.log('[OTP_VERIFY_START] email:', email, '[OTP_LENGTH]:', code.length);
       const { data, error: verifyError } = await supabase.auth.verifyOtp({
         email,
         token: code,
@@ -112,30 +114,44 @@ function VerifyEmailContent() {
       });
 
       if (verifyError) throw verifyError;
-      console.log('[OTP] Verified successfully for:', email);
+      
+      console.log('[OTP_VERIFY_SUCCESS] session uid:', data?.session?.user?.id);
+      console.log('[EMAIL_CONFIRMATION_STATUS] email_confirmed_at:', data?.session?.user?.email_confirmed_at || data?.user?.email_confirmed_at);
 
       const { session, user } = data;
 
       if (session) {
         localStorage.setItem('ha_token', session.access_token);
 
-        // Mark user as verified in the application users table
-        console.log('[OTP] Setting is_verified=true for:', email);
-        const { error: verifyUpdateError } = await supabase
-          .from('users')
-          .update({ is_verified: true })
-          .eq('email', email);
+        // Step 1: Frontend insert removed.
+        // The backend auth.middleware.js already automatically creates the user row (lazy sync)
+        // and updates is_verified to true (auto-heal) using the service-role key when we call /auth/me.
+        // Direct inserts from the frontend here violate RLS.
 
-        if (verifyUpdateError) {
-          console.error('[OTP] Failed to set is_verified:', verifyUpdateError.message);
-          // Don't block the user — log and continue. They can retry if backend rejects them.
-        }
-
-        let hydratedUser = { ...user, is_verified: true };
+        // ── Step 2: Hydrate full profile from backend ────────────────────────────
+        // Backend middleware auto-heals is_verified via email_confirmed_at (service-role key),
+        // so this call will succeed even if the client-side write above was RLS-blocked.
+        let hydratedUser;
         try {
+          console.log('[PROFILE_HYDRATE_START] Calling /api/v1/auth/me...');
           const profileRes = await authService.getMe();
-          if (profileRes?.data) hydratedUser = { ...profileRes.data, is_verified: true };
-        } catch {
+          console.log('[PROFILE_HYDRATE_RESPONSE]', JSON.stringify(profileRes?.data));
+          if (profileRes?.data) {
+            hydratedUser = { ...profileRes.data, is_verified: true };
+            console.log('[PROFILE_HYDRATE_SUCCESS]', JSON.stringify(hydratedUser));
+          } else {
+            throw new Error('Empty profile response from /auth/me');
+          }
+        } catch (profileErr) {
+          const errMsg = profileErr?.message || '';
+          console.error('[PROFILE_HYDRATE_ERROR]', errMsg);
+          // If the backend explicitly rejects with EMAIL_NOT_VERIFIED, stop and surface the error.
+          if (errMsg.includes('EMAIL_NOT_VERIFIED') || errMsg.toLowerCase().includes('not verified') || errMsg.includes('verify your email')) {
+            setError('Email verified with Supabase but backend sync is still pending. Please wait a moment and try again, or contact support.');
+            setLoading(false);
+            return;
+          }
+          // For transient network errors, fall back gracefully with local user data.
           hydratedUser = {
             ...user,
             role: user?.user_metadata?.role || 'normal_user',
@@ -144,6 +160,7 @@ function VerifyEmailContent() {
         }
 
         setAuthContext(hydratedUser, session.access_token, session.refresh_token);
+        console.log('[AUTHCONTEXT_RESTORE] setAuthContext called — is_verified:', hydratedUser.is_verified, 'email:', hydratedUser.email);
         setSuccess(true);
 
         // Short pause so user sees success state, then navigate
@@ -151,7 +168,7 @@ function VerifyEmailContent() {
       }
     } catch (err) {
       const msg = err.message || '';
-      console.error('[OTP] Verification failed for:', email, '—', msg);
+      console.error('[OTP_VERIFY_ERROR] Verification failed for:', email, '—', msg);
       if (msg.toLowerCase().includes('expired')) {
         setError('This code has expired. Please request a new one.');
       } else if (msg.toLowerCase().includes('invalid')) {

@@ -8,9 +8,9 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function runBenchmark() {
   const params = {
-    p_city: 'Assiut',
+    p_city: null,
     p_disease: null,
-    p_end_date: '2026-06-18', // 1 year ago relative to today
+    p_end_date: '2026-06-19',
     p_gender: null,
     p_severity: null,
     p_start_date: '2025-06-18',

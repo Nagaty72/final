@@ -42,35 +42,31 @@ export default function LandingPage() {
       }
       
       try {
-        const [bubbleRes, severityRes] = await Promise.all([
-          api.get('/api/v1/analytics/bubble-data').catch(() => null),
-          api.get('/api/v1/analytics/severity').catch(() => null)
+        // Note: /api/v1/analytics/bubble-data requires authentication.
+        // On the public landing page the call always returns 401/403.
+        // Use static representative data with known-good coordinates instead.
+        // If a real authenticated call is needed here in future, move it
+        // behind a separate public analytics endpoint that returns lat/lng.
+        console.log('[BUBBLE_DATA] Using static fallback coordinates for public landing page.');
+        setBubbleData([
+          { city: 'Cairo Governorate',     cases: 14200, lat: 30.0444, lng: 31.2357 },
+          { city: 'Alexandria Governorate', cases: 8500,  lat: 31.2001, lng: 29.9187 },
+          { city: 'Giza Governorate',       cases: 7200,  lat: 30.0131, lng: 31.2089 },
+          { city: 'Dakahlia Governorate',   cases: 4100,  lat: 31.0364, lng: 31.3807 },
+          { city: 'Aswan Governorate',      cases: 2100,  lat: 24.0889, lng: 32.8998 },
         ]);
-        
-        if (bubbleRes?.success && bubbleRes.data.length > 0) {
-          setBubbleData(bubbleRes.data);
-        } else {
-          // Fallback if empty or unauthenticated
-          setBubbleData([
-            { city: 'Cairo Governorate', cases: 14200, lat: 30.0444, lng: 31.2357 },
-            { city: 'Alexandria Governorate', cases: 8500, lat: 31.2001, lng: 29.9187 },
-            { city: 'Giza Governorate', cases: 7200, lat: 30.0131, lng: 31.2089 },
-            { city: 'Dakahlia Governorate', cases: 4100, lat: 31.0364, lng: 31.3807 },
-            { city: 'Aswan Governorate', cases: 2100, lat: 24.0889, lng: 32.8998 },
-          ]);
-        }
-        
+
         if (severityRes?.success && severityRes.data.length > 0) {
           setSeverityData(severityRes.data);
         } else {
           setSeverityData([
             { severity: 'Critical', count: 12 },
-            { severity: 'High', count: 45 },
-            { severity: 'Medium', count: 120 },
+            { severity: 'High',     count: 45 },
+            { severity: 'Medium',   count: 120 },
           ]);
         }
       } catch (e) {
-        // Fallback already handled
+        // Fallback already handled above
       }
     } catch (err) {
       console.error('[FRONTEND ERROR] Failed to fetch public stats:', err);
@@ -117,10 +113,17 @@ export default function LandingPage() {
   };
 
   const projectCoords = (lat, lng) => {
+    const safeLat = Number.isFinite(Number(lat)) ? Number(lat) : 0;
+    const safeLng = Number.isFinite(Number(lng)) ? Number(lng) : 0;
+    if (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) {
+      console.error('[projectCoords] non-finite input — lat:', lat, 'lng:', lng, '→ clamped to 0');
+    }
     // Map exact coordinates to the 400x400 viewBox SVG path of Egypt
-    const x = 40 + ((lng - 25.0) / 10.0) * 280;
-    const y = 360 - ((lat - 22.0) / 9.5) * 290;
-    return { x: (x / 400) * 100, y: (y / 400) * 100 };
+    const x = 40 + ((safeLng - 25.0) / 10.0) * 280;
+    const y = 360 - ((safeLat - 22.0) / 9.5) * 290;
+    const safeX = Number.isFinite(x) ? (x / 400) * 100 : 0;
+    const safeY = Number.isFinite(y) ? (y / 400) * 100 : 0;
+    return { x: safeX, y: safeY };
   };
 
   const risk = getSeverityRisk();
@@ -366,8 +369,10 @@ export default function LandingPage() {
                         { name: 'Aswan', lat: 24.0889, lng: 32.8998, offY: 10, offX: 15 }
                       ].map((reg) => {
                         const {x, y} = projectCoords(reg.lat, reg.lng);
+                        const labelX = Number.isFinite(x) ? x : 50;
+                        const labelY = Number.isFinite(y) ? y : 50;
                         return (
-                          <div key={reg.name} className="absolute text-[8px] font-bold text-slate-500/80 dark:text-slate-400/60 uppercase tracking-widest" style={{ left: `calc(${x}% + ${reg.offX}px)`, top: `calc(${y}% + ${reg.offY}px)`, transform: 'translate(-50%, -50%)' }}>
+                          <div key={reg.name} className="absolute text-[8px] font-bold text-slate-500/80 dark:text-slate-400/60 uppercase tracking-widest" style={{ left: `calc(${labelX}% + ${reg.offX}px)`, top: `calc(${labelY}% + ${reg.offY}px)`, transform: 'translate(-50%, -50%)' }}>
                             {reg.name}
                           </div>
                         );
@@ -377,27 +382,54 @@ export default function LandingPage() {
                     {/* Plotted Governorates */}
                     <div className="relative w-full h-full max-w-[400px] mx-auto pointer-events-none p-2">
                       {bubbleData.slice(0, 5).map((gov, idx) => {
-                        const {x, y} = projectCoords(gov.lat, gov.lng);
-                        const maxCases = Math.max(...(bubbleData.map(d => d.cases) || [1]));
-                        const ratio = gov.cases / (maxCases || 1);
-                        const size = 6 + (ratio * 10); // Between 6px and 16px
-                        
-                        const colors = gov.cases > 10000 
-                          ? { bg: 'bg-red-500', pulse: 'bg-red-500/30', border: 'border-red-400', shadow: 'shadow-[0_0_12px_rgba(239,68,68,0.9)]' }
-                          : gov.cases > 5000 
-                          ? { bg: 'bg-amber-500', pulse: 'bg-amber-500/30', border: 'border-amber-400', shadow: 'shadow-[0_0_12px_rgba(245,158,11,0.9)]' }
-                          : { bg: 'bg-blue-500', pulse: 'bg-blue-500/30', border: 'border-blue-400', shadow: 'shadow-[0_0_12px_rgba(59,130,246,0.9)]' };
-                        
+                        // Diagnostic: log raw shape of first entry so field-name mismatches are visible
+                        if (idx === 0) console.log('[BUBBLE_DATA_ENTRY]', JSON.stringify(gov));
+
+                        // Skip entirely if coordinates are missing — avoids NaN in left/top CSS
+                        const safeLat = Number.isFinite(Number(gov.lat)) ? Number(gov.lat) : null;
+                        const safeLng = Number.isFinite(Number(gov.lng)) ? Number(gov.lng) : null;
+                        if (safeLat === null || safeLng === null) {
+                          console.error('[BUBBLE] non-finite lat/lng — skipping entry:', JSON.stringify(gov));
+                          return null;
+                        }
+
+                        const {x, y} = projectCoords(safeLat, safeLng);
+                        const markerX = Number.isFinite(x) ? x : 50;
+                        const markerY = Number.isFinite(y) ? y : 50;
+
+                        // Guard: API may return case_count, total_cases, or cases — normalise here
+                        const rawCases = gov.cases ?? gov.case_count ?? gov.total_cases ?? 0;
+                        const govCases = Number.isFinite(Number(rawCases)) ? Number(rawCases) : 0;
+
+                        const allCaseCounts = bubbleData.map(d => {
+                          const v = d.cases ?? d.case_count ?? d.total_cases ?? 0;
+                          return Number.isFinite(Number(v)) ? Number(v) : 0;
+                        });
+                        const maxCases = Math.max(...allCaseCounts, 1); // always ≥ 1
+
+                        const ratio = govCases / maxCases;
+                        const rawSize = 6 + (ratio * 10); // Between 6px and 16px
+                        const size = Number.isFinite(rawSize) ? rawSize : 6; // safeWidth guard
+
+                        const colors = govCases > 10000
+                          ? { bg: 'bg-red-500',   pulse: 'bg-red-500/30',   border: 'border-red-400',   shadow: 'shadow-[0_0_12px_rgba(239,68,68,0.9)]'   }
+                          : govCases > 5000
+                          ? { bg: 'bg-amber-500', pulse: 'bg-amber-500/30', border: 'border-amber-400', shadow: 'shadow-[0_0_12px_rgba(245,158,11,0.9)]'  }
+                          : { bg: 'bg-blue-500',  pulse: 'bg-blue-500/30',  border: 'border-blue-400',  shadow: 'shadow-[0_0_12px_rgba(59,130,246,0.9)]'  };
+
+                        const safeSize       = Number.isFinite(size)       ? size       : 6;
+                        const safeSizeTriple = Number.isFinite(size * 3)   ? size * 3   : 18;
+
                         return (
-                          <div key={idx} className="absolute group pointer-events-auto" style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }}>
-                            <div className={`absolute rounded-full ${colors.pulse} blur-sm animate-pulse`} style={{ width: size * 3, height: size * 3, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}></div>
-                            <div className={`absolute rounded-full border ${colors.border} animate-ping`} style={{ width: size, height: size, top: '50%', left: '50%', transform: 'translate(-50%, -50%)', animationDuration: '2.5s' }}></div>
-                            <div className={`relative rounded-full ${colors.bg} ${colors.shadow} border border-white dark:border-slate-900 transition-transform group-hover:scale-125`} style={{ width: size, height: size }}></div>
+                          <div key={idx} className="absolute group pointer-events-auto" style={{ left: `${markerX}%`, top: `${markerY}%`, transform: 'translate(-50%, -50%)' }}>
+                            <div className={`absolute rounded-full ${colors.pulse} blur-sm animate-pulse`} style={{ width: safeSizeTriple, height: safeSizeTriple, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}></div>
+                            <div className={`absolute rounded-full border ${colors.border} animate-ping`} style={{ width: safeSize, height: safeSize, top: '50%', left: '50%', transform: 'translate(-50%, -50%)', animationDuration: '2.5s' }}></div>
+                            <div className={`relative rounded-full ${colors.bg} ${colors.shadow} border border-white dark:border-slate-900 transition-transform group-hover:scale-125`} style={{ width: safeSize, height: safeSize }}></div>
                             
                             {/* Hover Tooltip inside map */}
                             <div className="absolute hidden lg:block opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 border border-slate-700 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-30 pointer-events-none -top-7 left-1/2 -translate-x-1/2 shadow-xl">
                               <span className="font-bold">{gov.city?.replace(' Governorate', '')}</span>
-                              <span className="text-slate-300 font-mono ml-1">{formatNumber(gov.cases)} cases</span>
+                              <span className="text-slate-300 font-mono ml-1">{formatNumber(govCases)} cases</span>
                             </div>
                           </div>
                         );

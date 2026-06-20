@@ -8,6 +8,43 @@ import { useTheme } from 'next-themes';
 const DARK_TILE = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 const LIGHT_TILE = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 
+// Fallback coordinates for known Egyptian governorates.
+// Used when the API response does not include lat/lng fields.
+const CITY_COORDS = {
+  'Cairo':           [30.0444, 31.2357],
+  'Cairo Governorate': [30.0444, 31.2357],
+  'Alexandria':      [31.2001, 29.9187],
+  'Alexandria Governorate': [31.2001, 29.9187],
+  'Giza':            [30.0131, 31.2089],
+  'Giza Governorate': [30.0131, 31.2089],
+  'Dakahlia':        [31.0364, 31.3807],
+  'Dakahlia Governorate': [31.0364, 31.3807],
+  'Aswan':           [24.0889, 32.8998],
+  'Aswan Governorate': [24.0889, 32.8998],
+  'Luxor':           [25.6872, 32.6396],
+  'Luxor Governorate': [25.6872, 32.6396],
+  'Qena':            [26.1551, 32.7160],
+  'Sohag':           [26.5569, 31.6948],
+  'Asyut':           [27.1833, 31.1667],
+  'Minya':           [28.0871, 30.7618],
+  'Beni Suef':       [29.0744, 31.0990],
+  'Fayyum':          [29.3084, 30.8428],
+  'Sharqia':         [30.7369, 31.7165],
+  'Gharbia':         [30.8758, 31.0334],
+  'Kafr el-Sheikh':  [31.1107, 30.9388],
+  'Monufia':         [30.5972, 30.9876],
+  'Qalyubia':        [30.3292, 31.2168],
+  'Beheira':         [30.8480, 30.3436],
+  'Ismailia':        [30.5965, 32.2715],
+  'Port Said':       [31.2565, 32.2841],
+  'Suez':            [29.9737, 32.5263],
+  'North Sinai':     [30.2841, 33.6272],
+  'South Sinai':     [28.2500, 33.8333],
+  'Matruh':          [31.3543, 27.2373],
+  'New Valley':      [25.4333, 30.5500],
+  'Red Sea':         [27.2574, 33.8129],
+};
+
 export default function LandingMapPreview({ bubbleData }) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -38,18 +75,51 @@ export default function LandingMapPreview({ bubbleData }) {
         />
         
         {bubbleData?.map((gov, idx) => {
-          if (!gov.lat || !gov.lng) return null;
-          const maxCases = Math.max(...(bubbleData.map(d => d.cases) || [1]));
-          const ratio = gov.cases / (maxCases || 1);
-          const size = 6 + (ratio * 12); // Between 6px and 18px
+          // Resolve lat/lng: use explicit fields first, fall back to CITY_COORDS lookup.
+          let rawLat = gov.lat ?? gov.latitude;
+          let rawLng = gov.lng ?? gov.longitude;
 
-          const color = gov.cases > 10000 ? '#EF4444' : gov.cases > 5000 ? '#F59E0B' : '#10B981';
-          const riskLevel = gov.cases > 10000 ? 'High Risk' : gov.cases > 5000 ? 'Medium Risk' : 'Low Risk';
+          if (!Number.isFinite(Number(rawLat)) || !Number.isFinite(Number(rawLng))) {
+            // Try the city name lookup table
+            const cityKey = gov.city || gov.district_name || gov.city_name || '';
+            const lookup = CITY_COORDS[cityKey] || CITY_COORDS[cityKey.replace(' Governorate', '')];
+            if (lookup) {
+              console.log('[LandingMapPreview] lat/lng missing — resolved via CITY_COORDS for:', cityKey);
+              [rawLat, rawLng] = lookup;
+            } else {
+              console.error('[LandingMapPreview] no coordinates found — skipping entry:', JSON.stringify(gov));
+              return null;
+            }
+          }
+
+          const safeLat = Number(rawLat);
+          const safeLng = Number(rawLng);
+
+          // Normalise case count — API may use cases, case_count, or total_cases
+          const rawCases = gov.cases ?? gov.case_count ?? gov.total_cases ?? 0;
+          const govCases = Number.isFinite(Number(rawCases)) ? Number(rawCases) : 0;
+
+          const allCaseCounts = (bubbleData || []).map(d => {
+            const v = d.cases ?? d.case_count ?? d.total_cases ?? 0;
+            return Number.isFinite(Number(v)) ? Number(v) : 0;
+          });
+          const maxCases = Math.max(...allCaseCounts, 1); // always ≥ 1
+
+          const ratio   = govCases / maxCases;
+          const rawSize = 6 + (ratio * 12); // Between 6px and 18px
+          const size    = Number.isFinite(rawSize) ? rawSize : 6;
+
+          if (!Number.isFinite(rawSize)) {
+            console.error('[LandingMapPreview] non-finite radius — govCases:', govCases, 'maxCases:', maxCases, 'gov:', JSON.stringify(gov));
+          }
+
+          const color     = govCases > 10000 ? '#EF4444' : govCases > 5000 ? '#F59E0B' : '#10B981';
+          const riskLevel = govCases > 10000 ? 'High Risk' : govCases > 5000 ? 'Medium Risk' : 'Low Risk';
 
           return (
             <CircleMarker
               key={idx}
-              center={[gov.lat, gov.lng]}
+              center={[safeLat, safeLng]}
               radius={size}
               pathOptions={{
                 fillColor: color,
@@ -62,7 +132,7 @@ export default function LandingMapPreview({ bubbleData }) {
               <Tooltip sticky direction="top" className={isDark ? 'dark-tooltip' : 'light-tooltip'}>
                 <div className="font-sans px-1 py-0.5">
                   <div className="font-bold text-[13px] mb-1">{gov.city?.replace(' Governorate', '')}</div>
-                  <div className="font-mono text-[11px] font-bold" style={{ color }}>{Number(gov.cases).toLocaleString()} cases</div>
+                  <div className="font-mono text-[11px] font-bold" style={{ color }}>{govCases.toLocaleString()} cases</div>
                   <div className="text-[9px] uppercase tracking-wider mt-1 text-slate-500 font-bold">
                     {riskLevel}
                   </div>

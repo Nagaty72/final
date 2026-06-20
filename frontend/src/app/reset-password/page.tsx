@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import { validatePassword, getPasswordValidationRules } from '@/lib/validators';
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -14,6 +15,8 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmError, setConfirmError] = useState('');
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -103,6 +106,8 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    if (passwordError || confirmError) return;
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
@@ -198,10 +203,14 @@ export default function ResetPasswordPage() {
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  className="auth-input"
+                  className={`auth-input ${passwordError ? 'has-error' : (password ? 'has-success' : '')}`}
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setPasswordError(validatePassword(e.target.value));
+                    if (confirmPassword) setConfirmError(e.target.value !== confirmPassword ? 'Passwords do not match.' : '');
+                  }}
                   required
                   minLength={8}
                 />
@@ -226,6 +235,27 @@ export default function ResetPasswordPage() {
                   )}
                 </button>
               </div>
+              {passwordError && <div className="auth-field-error">{passwordError}</div>}
+              {password && (
+                <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {Object.entries({
+                    length: 'At least 8 characters',
+                    uppercase: 'One uppercase letter',
+                    number: 'One number',
+                    special: 'One special character'
+                  }).map(([key, label]) => {
+                    const isValid = (getPasswordValidationRules(password) as any)[key];
+                    return (
+                      <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: isValid ? '#22c55e' : '#94a3b8' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          {isValid ? <polyline points="20 6 9 17 4 12" /> : <circle cx="12" cy="12" r="10" />}
+                        </svg>
+                        <span>{label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             <div className="auth-field">
@@ -237,20 +267,24 @@ export default function ResetPasswordPage() {
                 <input
                   id="confirmPassword"
                   type={showPassword ? 'text' : 'password'}
-                  className="auth-input"
+                  className={`auth-input ${confirmError ? 'has-error' : (confirmPassword ? 'has-success' : '')}`}
                   placeholder="••••••••"
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setConfirmError(e.target.value !== password ? 'Passwords do not match.' : '');
+                  }}
                   required
                 />
               </div>
+              {confirmError && <div className="auth-field-error">{confirmError}</div>}
             </div>
 
             <button
               id="auth-submit"
               type="submit"
               className="auth-submit-btn"
-              disabled={loading || !!success}
+              disabled={loading || !!success || !!passwordError || !!confirmError}
             >
               {loading ? (
                 <span className="auth-spinner" />
@@ -475,6 +509,25 @@ export default function ResetPasswordPage() {
         }
         .auth-input::placeholder {
           color: #334155;
+        }
+
+        .auth-input.has-error {
+          border-color: #ef4444;
+          box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+        }
+        .auth-input.has-error:focus {
+          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+        }
+        .auth-input.has-success {
+          border-color: #22c55e;
+          box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+        }
+        .auth-input.has-success:focus {
+          box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.3);
+        }
+        .auth-field-error {
+          color: #f87171; font-size: 13px; margin-top: 6px;
+          font-weight: 500; display: flex; align-items: center; gap: 4px;
         }
 
         .auth-toggle-pw {
