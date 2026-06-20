@@ -54,7 +54,7 @@ function AuthPageContent() {
         // Only redirect to dashboard if the restored session is verified.
         // An unverified user with a stale token should land on /verify-email, not /dashboard.
         if (parsed?.is_verified === true) {
-          router.push('/dashboard');
+          router.push(parsed.role === 'normal_user' ? '/overview' : '/dashboard');
         }
       } catch {
         // Corrupt stored user — ignore and show login form
@@ -198,9 +198,8 @@ function AuthPageContent() {
 
           console.log('[LOGIN] Verified user signed in:', hydratedUser.email);
           setAuthContext(hydratedUser, session.access_token, session.refresh_token);
+          router.push(hydratedUser.role === 'normal_user' ? '/overview' : '/dashboard');
         }
-
-        router.push('/dashboard');
       } else {
         // ── SIGNUP FLOW ────────────────────────────────────────────────────
         // Step 1: Create the account.

@@ -23,7 +23,9 @@ const formatParams = (filters = {}) => {
     severity: filters.severity,
     status: filters.status,
     hospital: filters.hospital,
-    timeRange: filters.timeRange
+    timeRange: filters.timeRange,
+    startDate: filters.startDate,
+    endDate: filters.endDate
   };
   console.log("Analytics Request Params", params);
   return params;

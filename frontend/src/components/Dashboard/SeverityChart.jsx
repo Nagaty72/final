@@ -4,7 +4,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { useDashboardData } from '@/context/DashboardDataContext';
 import { SEVERITY_PALETTE as THEME_SEVERITY, tooltipStyle } from '@/lib/chartTheme';
 
-const SEVERITY_ORDER   = ['Mild', 'Moderate', 'Severe', 'Critical', 'Extreme'];
+const SEVERITY_ORDER   = ['Mild', 'Moderate', 'Severe', 'Critical', 'Fatal', 'Extreme'];
 const SEVERITY_PALETTE = THEME_SEVERITY;
 const FALLBACK_COLOR   = '#7B8FA8';
 
@@ -62,6 +62,19 @@ function normalizeSeverity(responseData) {
   } else if (responseData && Array.isArray(responseData.data)) {
     rows = responseData.data;
   }
+
+  const numMap = { 1: 'Mild', 2: 'Moderate', 3: 'Severe', 4: 'Critical', 5: 'Fatal' };
+  rows = rows.map(r => {
+    let s = r.severity;
+    if (s in numMap) {
+      s = numMap[s];
+    } else if (typeof s === 'string') {
+      s = s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+    } else {
+      s = 'Unknown';
+    }
+    return { ...r, severity: s };
+  });
 
   const total = rows.reduce((s, r) => s + Number(r.count ?? r.total_cases ?? 0), 0) || 1;
 

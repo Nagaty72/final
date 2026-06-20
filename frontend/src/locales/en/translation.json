@@ -1,5 +1,6 @@
 {
   "sidebar": {
+    "overview": "Overview",
     "dashboard": "Dashboard",
     "hospitals": "Nearby Facilities",
     "disease_analytics": "Disease Analytics",

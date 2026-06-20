@@ -7,7 +7,7 @@
  * Roles (stored in DB → public.roles.name):
  *   super_admin    — Full access to everything
  *   decision_maker — Everything except User Management
- *   normal_user    — Dashboard, Hospitals, Chatbot, Disease Map only
+ *   normal_user    — Overview, Hospitals, Chatbot only
  */
 
 // ── Canonical role names ────────────────────────────────────────────────────
@@ -26,7 +26,8 @@ export const ROLES = /** @type {const} */ ({
  * null = accessible by all authenticated users
  */
 export const ROUTE_PERMISSIONS = {
-  // ── Super Admin + Decision Maker ───────────────────────────────────────
+  '/dashboard':        [ROLES.SUPER_ADMIN, ROLES.DECISION_MAKER],
+  '/intelligence-map': [ROLES.SUPER_ADMIN, ROLES.DECISION_MAKER],
   '/reports':          [ROLES.SUPER_ADMIN, ROLES.DECISION_MAKER],
   '/diseases':         [ROLES.SUPER_ADMIN, ROLES.DECISION_MAKER],
   '/patients':         [ROLES.SUPER_ADMIN, ROLES.DECISION_MAKER],
@@ -35,8 +36,7 @@ export const ROUTE_PERMISSIONS = {
   '/admin-panel':  [ROLES.SUPER_ADMIN],
 
   // ── All roles (null = no restriction beyond being authenticated) ───────────
-  '/dashboard':        null,
-  '/intelligence-map': null,
+  '/overview':         null,
   '/hospitals':        null,
   '/chatbot':          null,
   '/settings':         null,

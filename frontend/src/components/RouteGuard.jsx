@@ -41,7 +41,8 @@ export default function RouteGuard({ children }) {
 
     // Logged in and verified but wrong role for this route
     if (!canAccess(user.role, pathname)) {
-      router.replace('/dashboard?forbidden=1');
+      const fallback = user.role === 'normal_user' ? '/overview?forbidden=1' : '/dashboard?forbidden=1';
+      router.replace(fallback);
       return;
     }
 

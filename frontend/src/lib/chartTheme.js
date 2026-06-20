@@ -92,6 +92,7 @@ export const SEVERITY_PALETTE = {
   Severe:   '#f97316',   // Orange
   Critical: '#ef4444',   // Red
   Extreme:  '#991b1bff',   // Dark Red
+  Fatal:    '#991b1bff',   // Dark Red (Alias for Extreme)
 };
 
 // ── KPI card colors — each key maps to: { color, bg, border } ─────────────────
