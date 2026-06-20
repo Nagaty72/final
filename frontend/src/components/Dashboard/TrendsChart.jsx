@@ -1,12 +1,10 @@
 'use client';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell,
 } from 'recharts';
-import { useDashboardFilterStore } from '@/store/dashboardFilterStore';
-import { useShallow } from 'zustand/react/shallow';
-import { getDashboardTrends } from '@/services/analytics.service';
+import { useDashboardData } from '@/context/DashboardDataContext';
 import { BarChart2 } from 'lucide-react';
 import { TRENDS_BAR_PALETTE, PALETTE, tooltipStyle, gridStyle, axisTick, tooltipCursorBar } from '@/lib/chartTheme';
 
@@ -59,57 +57,8 @@ function normalizeTrends(responseData) {
 }
 
 export default function TrendsChart() {
-  const filters = useDashboardFilterStore(
-    useShallow((state) => ({
-      city:      state.city,
-      disease:   state.disease,
-      gender:    state.gender,
-      severity:  state.severity,
-      status:    state.status,
-      hospital:  state.hospital,
-      timeRange: state.timeRange,
-    }))
-  );
-
-  const [data, setData]       = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
-  const abortRef              = useRef(null);
-  const mountedRef            = useRef(true);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => { mountedRef.current = false; };
-  }, []);
-
-  const diseaseDep = Array.isArray(filters.disease) ? filters.disease.join(',') : '';
-
-  useEffect(() => {
-    if (abortRef.current) abortRef.current.abort();
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-
-    setLoading(true);
-    setError(null);
-
-    getDashboardTrends(filters)
-      .then((res) => {
-        if (ctrl.signal.aborted || !mountedRef.current) return;
-        // res = { success: true, data: [...] }
-        setData(normalizeTrends(res?.data));
-      })
-      .catch((err) => {
-        if (ctrl.signal.aborted || !mountedRef.current) return;
-        setError(err.message);
-      })
-      .finally(() => {
-        if (!ctrl.signal.aborted && mountedRef.current) {
-          setLoading(false);
-        }
-      });
-
-    return () => ctrl.abort();
-  }, [filters.city, diseaseDep, filters.gender, filters.severity, filters.status, filters.hospital, filters.timeRange]);
+  const { trendsRaw, loading, error } = useDashboardData();
+  const data = useMemo(() => normalizeTrends(trendsRaw?.data), [trendsRaw]);
 
   return (
     <div style={{

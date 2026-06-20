@@ -35,13 +35,13 @@ export const AnalyticsRepository = {
       .select('diagnosis_date')
       .order('diagnosis_date', { ascending: false })
       .limit(1);
-    
+
     if (error) throw error;
-    
+
     const maxDateStr = data?.[0]?.diagnosis_date;
     const maxDate = maxDateStr ? new Date(maxDateStr) : new Date();
     const current = new Date();
-    
+
     // Return LEAST(CURRENT_DATE, MAX(diagnosis_date))
     const effective = maxDate < current ? maxDate : current;
     return effective.toISOString().split('T')[0];
@@ -51,14 +51,14 @@ export const AnalyticsRepository = {
 
   async getKpis({ city, disease, gender, severity, status, hospital, startDate, endDate }) {
     const rpcParams = {
-      p_city:       city       || null,
-      p_disease:    disease    || null,
-      p_gender:     gender     || null,
-      p_severity:   severity   || null,
-      p_status:     status     || null,
-      p_hospital_id: hospital  || null,
-      p_start_date: startDate  || null,
-      p_end_date:   endDate    || null,
+      p_city: city || null,
+      p_disease: disease || null,
+      p_gender: gender || null,
+      p_severity: severity || null,
+      p_status: status || null,
+      p_hospital_id: hospital || null,
+      p_start_date: startDate || null,
+      p_end_date: endDate || null,
     };
     console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
     console.log("RPC Params", rpcParams);
@@ -74,14 +74,14 @@ export const AnalyticsRepository = {
 
   async getTrends({ city, disease, gender, severity, status, hospital, startDate, endDate }) {
     const rpcParams = {
-      p_city:       city       || null,
-      p_disease:    disease    || null,
-      p_gender:     gender     || null,
-      p_severity:   severity   || null,
-      p_status:     status     || null,
-      p_hospital_id: hospital  || null,
-      p_start_date: startDate  || null,
-      p_end_date:   endDate    || null,
+      p_city: city || null,
+      p_disease: disease || null,
+      p_gender: gender || null,
+      p_severity: severity || null,
+      p_status: status || null,
+      p_hospital_id: hospital || null,
+      p_start_date: startDate || null,
+      p_end_date: endDate || null,
     };
     console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
     console.log("RPC Params", rpcParams);
@@ -97,14 +97,14 @@ export const AnalyticsRepository = {
 
   async getBubbleData({ city, disease, gender, severity, status, hospital, startDate, endDate }) {
     const rpcParams = {
-      p_city:       city       || null,
-      p_disease:    disease    || null,
-      p_gender:     gender     || null,
-      p_severity:   severity   || null,
-      p_status:     status     || null,
-      p_hospital_id: hospital  || null,
-      p_start_date: startDate  || null,
-      p_end_date:   endDate    || null,
+      p_city: city || null,
+      p_disease: disease || null,
+      p_gender: gender || null,
+      p_severity: severity || null,
+      p_status: status || null,
+      p_hospital_id: hospital || null,
+      p_start_date: startDate || null,
+      p_end_date: endDate || null,
     };
     console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
     console.log("RPC Params", rpcParams);
@@ -120,14 +120,14 @@ export const AnalyticsRepository = {
 
   async getSeverityData({ city, disease, gender, severity, status, hospital, startDate, endDate }) {
     const rpcParams = {
-      p_city:       city       || null,
-      p_disease:    disease    || null,
-      p_gender:     gender     || null,
-      p_severity:   severity   || null,
-      p_status:     status     || null,
-      p_hospital_id: hospital  || null,
-      p_start_date: startDate  || null,
-      p_end_date:   endDate    || null,
+      p_city: city || null,
+      p_disease: disease || null,
+      p_gender: gender || null,
+      p_severity: severity || null,
+      p_status: status || null,
+      p_hospital_id: hospital || null,
+      p_start_date: startDate || null,
+      p_end_date: endDate || null,
     };
     console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
     console.log("RPC Params", rpcParams);
@@ -143,14 +143,14 @@ export const AnalyticsRepository = {
 
   async getDiseaseBreakdown({ city, disease, gender, severity, status, hospital, startDate, endDate }) {
     const rpcParams = {
-      p_city:       city       || null,
-      p_disease:    disease    || null,
-      p_gender:     gender     || null,
-      p_severity:   severity   || null,
-      p_status:     status     || null,
-      p_hospital_id: hospital  || null,
-      p_start_date: startDate  || null,
-      p_end_date:   endDate    || null,
+      p_city: city || null,
+      p_disease: disease || null,
+      p_gender: gender || null,
+      p_severity: severity || null,
+      p_status: status || null,
+      p_hospital_id: hospital || null,
+      p_start_date: startDate || null,
+      p_end_date: endDate || null,
     };
     console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
     console.log("RPC Params", rpcParams);

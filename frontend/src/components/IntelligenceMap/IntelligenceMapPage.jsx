@@ -41,10 +41,11 @@ function normalizeRows(res) {
   let raw = [];
   if (Array.isArray(res))               raw = res;
   else if (res?.data && Array.isArray(res.data)) raw = res.data;
-  return raw.map(r => ({
+  
+  const normalized = raw.map(r => ({
     city:           String(r.city          || 'Unknown'),
-    disease_name:   String(r.disease_name  || 'Unknown'),
-    total_cases:    Number(r.total_cases   || 0),
+    disease_name:   String(r.disease_name  || r.disease || 'Unknown'),
+    total_cases:    Number(r.total_cases   ?? r.count ?? 0),
     hospital_count: Number(r.hospital_count || 1),
     mild:           Number(r.mild     || 0),
     moderate:       Number(r.moderate || 0),
@@ -53,6 +54,11 @@ function normalizeRows(res) {
     extreme:        Number(r.extreme  || 0),
     load_index:     Number(r.load_index || 0),
   })).filter(r => r.total_cases > 0);
+
+  console.log('Bubble API Rows:', raw.length);
+  console.log('Normalized Rows:', normalized.length);
+
+  return normalized;
 }
 
 function normalizeKpis(res) {
@@ -98,13 +104,13 @@ function ModeButton({ active, onClick, icon: Icon, label, activeColor }) {
 export default function IntelligenceMapPage() {
   // ── Filter state ──────────────────────────────────────────────────────
   const [filters, setFiltersState] = useState({
-    city: '', disease: [], gender: '', severity: '', timeRange: '1y',
+    city: '', disease: [], gender: '', severity: '', timeRange: '6m',
   });
   const setFilter = useCallback((key, value) => {
     setFiltersState(prev => ({ ...prev, [key]: value }));
   }, []);
   const resetFilters = useCallback(() => {
-    setFiltersState({ city: '', disease: [], gender: '', severity: '', timeRange: '1y' });
+    setFiltersState({ city: '', disease: [], gender: '', severity: '', timeRange: '6m' });
   }, []);
 
   // ── UI state ──────────────────────────────────────────────────────────
