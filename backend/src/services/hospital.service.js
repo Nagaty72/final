@@ -16,5 +16,5 @@ export const HospitalService = {
   },
   update: (id, data) => HospitalRepository.update(id, data),
   delete: (id) => HospitalRepository.delete(id),
-  findNearby: (lng, lat, radius, city, type, limit) => HospitalRepository.findNearby(lng, lat, radius, city, type, limit),
+  findNearby: (lng, lat, radius, city, type, limit, requireBeds) => HospitalRepository.findNearby(lng, lat, radius, city, type, limit, requireBeds),
 };

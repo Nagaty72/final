@@ -46,7 +46,7 @@ if not GEMINI_API_KEY:
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 # Downgraded to gemini-1.5-flash for better free-tier availability and stability
-MODEL_NAME = "gemini-flash-latest"
+MODEL_NAME = "gemini-2.5-flash"
 
 GENERATION_CONFIG = types.GenerateContentConfig(
     temperature=0.7,
@@ -71,23 +71,23 @@ GENERATION_CONFIG = types.GenerateContentConfig(
             threshold="BLOCK_NONE",
         ),
     ],
-    system_instruction="""You are **HealthBot AI** — an elite, advanced healthcare analytics assistant built for the *Health Analytics Platform*.
+    system_instruction="""You are the public-facing Health Intelligence Assistant for Epicare.
 
 ### Your Identity & Role
-- You are an expert data scientist and epidemiologist specializing in **public health surveillance, disease analytics, and healthcare management** in Egypt and the MENA region.
-- You assist healthcare decision-makers (physicians, hospital administrators, public health officials, and government analysts).
+- You are an expert data scientist and epidemiologist specializing in public health surveillance, disease analytics, and healthcare management in Egypt and the MENA region.
+- You assist both the general public and healthcare decision-makers.
 
 ### Core Capabilities
 1. **Data-Driven Analysis** — Analyze and interpret the real-time context data provided to you from the database.
 2. **Geospatial Comparisons** — Compare healthcare metrics across Egyptian governorates (e.g., Cairo, Alexandria, Luxor) identifying hotspots and disparities.
 3. **Actionable Healthcare Insights** — Generate high-value insights from health data, identifying trends, anomalies, and forecasting potential outbreaks.
-4. **Strategic Decision Support** — Provide evidence-based, actionable recommendations for resource allocation, emergency preparedness, and intervention strategies.
+4. **Educational Public Health** — Provide general, educational public health knowledge based on typical epidemiological and seasonal trends in Egypt and the MENA region.
 
 ### Rules for Processing Context Data
 - If context data from the database is provided in the prompt, you **MUST base your answer on that data**.
-- Extract precise numbers, governorates, disease names, and capacities from the provided context.
-- If the context data says "No data available" or is empty, clearly state that there is no real-time data available for this query, but provide general epidemiological principles or hypothetical analysis if asked.
-- Do NOT fabricate real-world current statistics. Use the provided context data.
+- NEVER apologize for not having real-time data, and NEVER mention your lack of database access or system constraints.
+- When asked about current diseases or statistics without provided database context, respond confidently with general, educational public health knowledge based on typical epidemiological and seasonal trends.
+- Do not provide exact live statistical numbers unless they are explicitly provided in the database context. Instead, discuss categories (e.g., NCDs vs. Communicable diseases) and prevention strategies.
 
 ### Language & Localization Rules
 - **Detect the user's language automatically.**
@@ -95,6 +95,7 @@ GENERATION_CONFIG = types.GenerateContentConfig(
 - If the user writes in **English**, respond in formal, professional English.
 
 ### Response Style & Formatting
+- **Tone:** Maintain a professional, reassuring, and authoritative tone suitable for the general public.
 - **Analytical & Precise:** Always base your answers on logical reasoning.
 - **Structured:** Use markdown extensively. Use headers (`###`), bullet points (`-`), bold text (`**`), and tables to present data cleanly.
 - **Action-Oriented:** Conclude analyses with strategic recommendations.
@@ -174,7 +175,7 @@ User Message: {message}"""
         logger.error(f"Intent detection failed: {e}")
         return "general_chat"
 
-async def generate_chat_response(message: str, history: list = None, user_role: str = "normal_user") -> str:
+async def generate_chat_response(message: str, history: list = None, user_role: str = "normal_user", context_obj: dict = None) -> str:
     """
     Generate a healthcare-focused AI response using Gemini.
     Includes exponential backoff retries and fallback responses.
@@ -186,11 +187,11 @@ async def generate_chat_response(message: str, history: list = None, user_role: 
 
     Returns
     -------
-    str
-        The AI-generated response text or a formatted fallback message.
+    dict
+        A dictionary containing the AI-generated response text and fallback status.
     """
     if not message or not message.strip():
-        return "Please provide a message to get started. | يرجى إدخال رسالة للبدء."
+        return {"response": "Please provide a message to get started. | يرجى إدخال رسالة للبدء.", "isFallback": False}
 
     try:
         logger.info(f"Generating chat response for message length: {len(message)}")
@@ -218,6 +219,10 @@ async def generate_chat_response(message: str, history: list = None, user_role: 
         elif intent == "disease_trends":
             context_data = await analytics_service.get_disease_trends(user_role)
             
+        if context_obj:
+            import json
+            context_data = str(context_data) + f"\n\n[USER LOCATION/PREFERENCE CONTEXT]\n{json.dumps(context_obj, ensure_ascii=False)}"
+            
         # 3. Build Augmented Prompt
         augmented_prompt = message
         source_badge = "\n\n---\n**Source:** 🤖 AI Response"
@@ -241,16 +246,21 @@ Instructions:
 """
         
         response_text = await _call_gemini_api(augmented_prompt)
-        logger.info("Successfully generated AI response.")
+        logger.info("Successfully generated response from Gemini AI.")
         
-        return response_text + source_badge
+        return {"response": response_text + source_badge, "isFallback": False}
         
     except Exception as exc:
         error_msg = str(exc)
         logger.error(f"Gemini API generation failed after retries: {error_msg}")
+        logger.warning("WARNING: AI API failed. Serving response from Fallback DB/Hardcoded logic.")
+        
+        is_ar = bool(re.search(r'[\u0600-\u06FF]', message))
+        indicator = "⚡ [رد تلقائي] - " if is_ar else "⚡ [Automated Response] - "
+        fallback_msg = indicator + FALLBACK_MESSAGE
         
         # Return a professional fallback response instead of crashing the endpoint
-        return FALLBACK_MESSAGE
+        return {"response": fallback_msg, "isFallback": True}
 
 async def generate_chat_title(message: str) -> str:
     """

@@ -2,6 +2,7 @@ import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeProvider";
 import { LanguageProvider } from "@/context/LanguageProvider";
+import GlobalChatWidget from "@/components/GlobalChatWidget";
 import "./globals.css";
 
 const inter = Inter({
@@ -38,8 +39,9 @@ export default function RootLayout({ children }) {
           disableTransitionOnChange={false}
         >
           <LanguageProvider>
-            <AuthProvider>
+          <AuthProvider>
               {children}
+              <GlobalChatWidget />
             </AuthProvider>
           </LanguageProvider>
         </ThemeProvider>

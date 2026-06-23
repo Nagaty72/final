@@ -70,14 +70,15 @@ export const HospitalRepository = {
     if (error) throw error;
   },
 
-  async findNearby(longitude, latitude, radiusMeters = 10000, city = null, type = null, limit = 1000) {
+  async findNearby(longitude, latitude, radiusMeters = 10000, city = null, type = null, limit = 1000, requireBeds = false) {
     const { data, error } = await db().rpc('hospitals_within_radius', {
       lat: latitude,
       lng: longitude,
       radius: radiusMeters,
       p_city: city || null,
       p_type: type || null,
-      p_limit: limit
+      p_limit: limit,
+      p_require_beds: requireBeds
     });
     if (error) throw error;
     

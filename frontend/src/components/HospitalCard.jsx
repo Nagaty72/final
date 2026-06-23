@@ -52,11 +52,44 @@ export default function HospitalCard({ hospital, isActive, onClick }) {
         {hospital.emergency_available && (
           <span className="emergency-badge">{t('hospitals.emergency_247')}</span>
         )}
+        
+        {hospital.capacity > 0 && hospital.available_beds !== undefined && hospital.available_beds !== null && (
+          <span 
+            className="beds-badge" 
+            style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              fontSize: '11px',
+              fontWeight: '700',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+              alignSelf: 'flex-start',
+              ...((hospital.available_beds / hospital.capacity) * 100 > 20 
+                ? { background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }
+                : hospital.available_beds > 0
+                ? { background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }
+                : { background: 'var(--danger-light)', color: '#ef4444' })
+            }}
+          >
+            {hospital.available_beds === 0 
+              ? 'Full Capacity' 
+              : (hospital.available_beds / hospital.capacity) * 100 <= 20 
+              ? `Limited: ${hospital.available_beds} beds left` 
+              : `Available: ${hospital.available_beds} beds`}
+          </span>
+        )}
+
         <div className="capacity-info">
           <div className="capacity-item total" style={{ flex: 1 }}>
             <span className="label">Capacity</span>
             <span className="value">{hospital.capacity || 'N/A'}</span>
           </div>
+          {hospital.available_beds !== undefined && hospital.available_beds !== null && (
+            <div className="capacity-item beds" style={{ flex: 1 }}>
+              <span className="label">Available</span>
+              <span className="value">{hospital.available_beds}</span>
+            </div>
+          )}
         </div>
       </div>
 

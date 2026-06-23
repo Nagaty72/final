@@ -16,11 +16,13 @@ class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=5000)
     history: List[Dict[str, str]] = Field(default_factory=list)
     user_role: str = Field(default="normal_user")
+    context: Optional[Dict] = None
 
 class ChatResponse(BaseModel):
     response: str
     intent: Optional[str] = None
     data_source: Optional[str] = None
+    isFallback: Optional[bool] = False
 
 class TitleRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=5000)
@@ -51,8 +53,16 @@ async def chat(request: ChatRequest):
     Healthcare AI Chat endpoint.
     """
     try:
-        ai_response = await generate_chat_response(request.message, request.history, request.user_role)
-        return ChatResponse(response=ai_response)
+        result = await generate_chat_response(request.message, request.history, request.user_role, request.context)
+        
+        # Handle dict response (new format) or string response (legacy fallback)
+        if isinstance(result, dict):
+            return ChatResponse(
+                response=result["response"],
+                isFallback=result.get("isFallback", False)
+            )
+        else:
+            return ChatResponse(response=result, isFallback=False)
     except Exception as exc:
         raise HTTPException(
             status_code=500,
