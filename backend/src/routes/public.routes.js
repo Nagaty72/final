@@ -144,31 +144,6 @@ router.get('/cities', async (req, res) => {
   }
 });
 
-/**
- * POST /api/v1/public/widget-chat
- * No authentication required — strictly allowlisted predefined messages only.
- * Guards against prompt injection. Supports language param for bilingual replies.
- */
-const WIDGET_ALLOWED_MESSAGES = new Set([
-  // English
-  'How do I protect myself and my family from seasonal diseases?',
-  'What are the best tips to prevent colds and flu?',
-  'What should I do if I develop fever symptoms?',
-  'What are the most common diseases in Egypt right now?',
-  'How do I maintain a diet that boosts immunity?',
-  'What are the essential vaccines for children?',
-  'How can I quit smoking and improve my health?',
-  'How can I contact medical support or emergency services on the platform?',
-  // Arabic
-  'كيف أحمي نفسي وعائلتي من الأمراض الموسمية؟',
-  'ما هي أهم النصائح للوقاية من نزلات البرد والأنفلونزا؟',
-  'ماذا أفعل إذا ظهرت علي أعراض الحمى؟',
-  'ما هي الأمراض الأكثر شيوعاً في مصر حالياً؟',
-  'كيف أحافظ على نظام غذائي يقوي المناعة؟',
-  'ما هي التطعيمات الأساسية للأطفال؟',
-  'كيف يمكنني الإقلاع عن التدخين وتحسين صحتي؟',
-  'كيف يمكنني التواصل مع الدعم الطبي أو الطوارئ في المنصة؟',
-]);
 
 const widgetChatLimiter = new NodeCache({ stdTTL: 60 });
 
@@ -226,8 +201,6 @@ router.post('/widget-chat', async (req, res) => {
     finalMessage = isAr
       ? `ما هي المستشفيات أو مرافق الرعاية الصحية المتاحة في أو بالقرب من ${context?.governorate || gov}، مصر؟ يرجى تقديم إرشادات عامة للعثور على أقرب منشأة رعاية صحية. أجب باللغة العربية.`
       : `What hospitals or healthcare facilities are available in or near ${context?.governorate || gov}, Egypt? Provide general guidance on finding the nearest healthcare facility.`;
-  } else if (!WIDGET_ALLOWED_MESSAGES.has(message)) {
-    return res.status(403).json({ success: false, error: 'This message is not permitted via the public widget.' });
   } else if (language === 'ar') {
     // Append instruction to reply in Arabic for the AI
     finalMessage = `${message}\n\nيرجى الإجابة باللغة العربية الفصحى.`;
@@ -244,10 +217,11 @@ router.post('/widget-chat', async (req, res) => {
 
   try {
     const aiServiceUrl = ENV.AI_SERVICE_URL || 'http://localhost:8000';
+    console.log(`[public/widget-chat] Request timeout configured to 60000 ms`);
     const aiResponse = await axios.post(
       `${aiServiceUrl}/chat`,
-      { message: finalMessage, user_role: 'normal_user', history: [], context },
-      { timeout: 120000 }
+      { message: finalMessage, user_role: 'public_guest', history: [], context },
+      { timeout: 60000 }
     );
     const responseText = aiResponse.data?.response || (language === 'ar' ? 'لم يتم توليد رد.' : 'No response generated.');
     const isFallback = aiResponse.data?.isFallback || false;
@@ -257,6 +231,9 @@ router.post('/widget-chat', async (req, res) => {
     if (err.response) {
       console.error('[public/widget-chat] AI service responded with error:',
         err.response.status, JSON.stringify(err.response.data));
+      if (err.response.status === 403) {
+        return res.status(403).json({ success: false, error: err.response.data?.detail || 'This message is not permitted via the public widget.' });
+      }
     } else if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
       console.error('[public/widget-chat] AI service is offline or unreachable:', err.message);
     } else {

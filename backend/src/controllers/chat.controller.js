@@ -113,6 +113,7 @@ export const sendMessage = async (req, res) => {
         content: m.content || ''
       })).filter(m => m.content.trim() !== '');
 
+      console.log(`[CHAT] Request timeout configured to 60000 ms`);
       const aiResponse = await axios.post(
         `${aiServiceUrl}/chat`,
         {
@@ -121,7 +122,7 @@ export const sendMessage = async (req, res) => {
           history: safeHistory,
           context: context
         },
-        { timeout: 120000 }
+        { timeout: 60000 }
       );
       console.log(`[CHAT] Received AI response successfully.`);
       aiText = aiResponse.data.response || aiResponse.data.message || 'No response generated';

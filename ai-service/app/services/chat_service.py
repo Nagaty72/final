@@ -16,6 +16,7 @@ from google.genai import types
 from google.genai.errors import APIError
 from dotenv import load_dotenv
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from fastapi import HTTPException
 
 from app.services import analytics_service
 from google.genai.errors import APIError
@@ -151,6 +152,10 @@ Determine the primary intent from this list:
 - gender_analysis
 - age_analysis
 - disease_trends
+- nearest_hospital
+- contact_support
+- prevention_tips
+- disease_prevalence
 
 - general_chat
 
@@ -168,7 +173,8 @@ User Message: {message}"""
         valid_intents = [
             "top_diseases", "chronic_analysis", "compare_governorates", 
             "hospital_load", "emergency_analysis", "gender_analysis", 
-            "age_analysis", "disease_trends", "general_chat"
+            "age_analysis", "disease_trends", "nearest_hospital",
+            "contact_support", "prevention_tips", "disease_prevalence", "general_chat"
         ]
         return intent if intent in valid_intents else "general_chat"
     except Exception as e:
@@ -199,6 +205,17 @@ async def generate_chat_response(message: str, history: list = None, user_role: 
         # 1. Detect Intent
         intent = await _detect_intent(message)
         logger.info(f"Detected intent: {intent}")
+        
+        # 1.5. Validate Public Guest Access
+        if user_role == "public_guest":
+            allowed_public_intents = {
+                "nearest_hospital", "contact_support", 
+                "prevention_tips", "disease_prevalence", "general_chat"
+            }
+            if intent not in allowed_public_intents:
+                logger.warning(f"Public guest attempted restricted intent: {intent}")
+                raise HTTPException(status_code=403, detail="This administrative or diagnostic query is restricted. Please log in for full access.")
+
         
         # 2. Fetch Relevant Analytics Data
         context_data = ""
@@ -250,6 +267,8 @@ Instructions:
         
         return {"response": response_text + source_badge, "isFallback": False}
         
+    except HTTPException as http_exc:
+        raise http_exc
     except Exception as exc:
         error_msg = str(exc)
         logger.error(f"Gemini API generation failed after retries: {error_msg}")

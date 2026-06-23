@@ -63,6 +63,8 @@ async def chat(request: ChatRequest):
             )
         else:
             return ChatResponse(response=result, isFallback=False)
+    except HTTPException as http_exc:
+        raise http_exc
     except Exception as exc:
         raise HTTPException(
             status_code=500,
