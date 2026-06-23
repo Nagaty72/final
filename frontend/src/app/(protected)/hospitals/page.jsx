@@ -180,6 +180,7 @@ export default function HospitalsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedType, setSelectedType] = useState('');
+  const [requireBeds, setRequireBeds] = useState(false);
   
   // Interactive State
   const [activeHospitalId, setActiveHospitalId] = useState(null);
@@ -229,6 +230,7 @@ export default function HospitalsPage() {
     try {
       const params = { radius: 20000, limit: 1000 };
       if (selectedType) params.type = selectedType;
+      if (requireBeds) params.requireBeds = true;
       
       const res = await getNearbyHospitals(coords.latitude, coords.longitude, params);
       if (Array.isArray(res)) setHospitals(res);
@@ -270,7 +272,7 @@ export default function HospitalsPage() {
     if (location && user) {
       fetchNearbyData(location);
     }
-  }, [selectedType, user]); // Removed location to prevent double fetch race conditions
+  }, [selectedType, requireBeds, user]); // Removed location to prevent double fetch race conditions
 
   const filteredHospitals = useMemo(() => {
     let result = hospitals;
@@ -472,6 +474,15 @@ export default function HospitalsPage() {
                 <option value="Medical Center">{t('hospitals.medical_center')}</option>
               </select>
             </div>
+            {location && (
+              <div className="filter-row" style={{ marginTop: '8px' }}>
+                <label className="custom-checkbox" style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  <input type="checkbox" checked={requireBeds} onChange={(e) => setRequireBeds(e.target.checked)} />
+                  <span className="checkmark"></span>
+                  Must have available beds
+                </label>
+              </div>
+            )}
             {location && (
               <div className="location-active-badge">
                 {t('hospitals.showing_nearest')}

@@ -64,7 +64,7 @@ export const sendMessage = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    let { conversationId, message } = req.body;
+    let { conversationId, message, context } = req.body;
 
     // Validate message
     if (!message || !message.trim()) {
@@ -102,6 +102,7 @@ export const sendMessage = async (req, res) => {
     // 4. Call AI Service
     const aiServiceUrl = ENV.AI_SERVICE_URL || 'http://localhost:8000';
     let aiText = "I couldn't retrieve the latest analytics right now. Please try your request again.";
+    let isFallback = false;
 
     try {
       const userRole = req.user.role || 'normal_user';
@@ -117,11 +118,14 @@ export const sendMessage = async (req, res) => {
         {
           message,
           user_role: userRole,
-          history: safeHistory
-        }
+          history: safeHistory,
+          context: context
+        },
+        { timeout: 120000 }
       );
       console.log(`[CHAT] Received AI response successfully.`);
       aiText = aiResponse.data.response || aiResponse.data.message || 'No response generated';
+      isFallback = aiResponse.data?.isFallback || false;
     } catch (aiError) {
       console.error('[CHAT] AI Service request failed!');
       console.error('[CHAT] Error Message:', aiError.message);
@@ -145,7 +149,7 @@ export const sendMessage = async (req, res) => {
     if (isFirstMessage) {
       try {
         console.log(`[CHAT] First message detected. Generating title...`);
-        const titleRes = await axios.post(`${aiServiceUrl}/chat/title`, { message });
+        const titleRes = await axios.post(`${aiServiceUrl}/chat/title`, { message }, { timeout: 15000 });
         generatedTitle = titleRes.data.title || 'Healthcare Analytics';
         await chatService.updateConversationTitle(conversationId, userId, generatedTitle);
         console.log(`[CHAT] Generated Title: ${generatedTitle}`);
@@ -161,7 +165,8 @@ export const sendMessage = async (req, res) => {
       conversationId,
       conversationTitle: generatedTitle,
       userMessage: savedUserMsg,
-      assistantMessage: savedAiMsg
+      assistantMessage: savedAiMsg,
+      isFallback
     });
 
   } catch (error) {

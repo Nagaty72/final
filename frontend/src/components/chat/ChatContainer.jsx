@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import MessageBubble from './MessageBubble';
 import ChatInput from './ChatInput';
 import TypingIndicator from './TypingIndicator';
 import ChatSidebar from './ChatSidebar';
 import * as chatService from '@/services/chat.service';
+import { useTranslation } from 'react-i18next';
 import { Activity, AlertTriangle, FileText, Map, Sparkles, TrendingUp, ShieldCheck, Briefcase } from 'lucide-react';
 
 /**
@@ -36,7 +38,7 @@ const SUGGESTED_PROMPTS = [
   'Generate health intelligence briefing',
 ];
 
-function EmptyState({ onAction }) {
+function EmptyState({ onAction, isAdmin }) {
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -63,7 +65,9 @@ function EmptyState({ onAction }) {
         Analyze disease trends, identify outbreaks, generate executive insights, and explore healthcare data.
       </p>
 
-      <div style={{ width: '100%', textAlign: 'left', marginBottom: 32 }}>
+      {isAdmin && (
+        <>
+          <div style={{ width: '100%', textAlign: 'left', marginBottom: 32 }}>
         <h3 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', marginBottom: 16 }}>
           Quick Actions
         </h3>
@@ -174,17 +178,46 @@ function EmptyState({ onAction }) {
           ))}
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }
 
+const EGYPT_GOVERNORATES = [
+  'Cairo', 'Alexandria', 'Giza', 'Luxor', 'Aswan', 'Assiut', 'Sohag', 'Qena',
+  'Minia', 'Beni Suef', 'Fayoum', 'Matruh', 'Port Said', 'Ismailia', 'Suez',
+  'Damietta', 'Kafr El Sheikh', 'Mansoura', 'Tanta', 'Zagazig', 'Banha',
+  'Sharm El Sheikh', 'Hurghada', 'Siwa', 'Minya',
+];
+
 export default function ChatContainer() {
+  const { user } = useAuth();
+  const { t } = useTranslation();
+  const isAdmin = ['super_admin', 'decision_maker', 'admin'].includes(user?.role);
+  
+  const NORMAL_USER_CHIPS = [
+    t('chat.quickQuestions.q1'),
+    t('chat.quickQuestions.q2'),
+    t('chat.quickQuestions.q3'),
+    t('chat.quickQuestions.q4'),
+    t('chat.quickQuestions.q5'),
+    t('chat.quickQuestions.q6'),
+    t('chat.quickQuestions.q7'),
+    t('chat.quickQuestions.q8')
+  ];
+
   const [conversations, setConversations] = useState([]);
   const [activeConversationId, setActiveConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSidebarLoading, setIsSidebarLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  const [govPickerOpen, setGovPickerOpen] = useState(false);
+  const [pendingLocationMsg, setPendingLocationMsg] = useState('');
+  const [selectedGov, setSelectedGov] = useState('');
+  
   const scrollRef = useRef(null);
 
   const loadConversations = async () => {
@@ -274,8 +307,33 @@ export default function ChatContainer() {
     scrollToBottom();
   }, [messages, isLoading, scrollToBottom]);
 
-  const handleSend = async (text) => {
+  const handleSend = async (text, context = null) => {
     if (!text.trim()) return;
+
+    // Intercept location-based queries
+    const isLocationQuery = text === t('chat.quickQuestions.q1') || text === t('chat.quickQuestions.q4');
+    
+    if (isLocationQuery && !context) {
+      setPendingLocationMsg(text);
+      if (!navigator.geolocation) {
+        setGovPickerOpen(true);
+        return;
+      }
+      
+      setIsLoading(true);
+      navigator.geolocation.getCurrentPosition(
+        ({ coords: { latitude: lat, longitude: lng } }) => {
+          setIsLoading(false);
+          handleSend(text, { location: { lat, lng }, requireBeds: text === t('chat.quickQuestions.q4') });
+        },
+        (err) => {
+          setIsLoading(false);
+          setGovPickerOpen(true);
+        },
+        { timeout: 8000, maximumAge: 60000 }
+      );
+      return;
+    }
 
     let currentId = activeConversationId;
     setError(null);
@@ -306,7 +364,7 @@ export default function ChatContainer() {
 
     try {
       // 3. Send message to backend
-      const response = await chatService.sendMessage(currentId, text);
+      const response = await chatService.sendMessage(currentId, text, context);
       
       // 4. Update messages with actual server data
       setMessages(prev => {
@@ -359,7 +417,7 @@ export default function ChatContainer() {
           className="flex-1 overflow-y-auto px-6 py-8 space-y-6 chatbot-scroll"
         >
           {messages.length === 0 ? (
-            <EmptyState onAction={handleSend} />
+            <EmptyState onAction={handleSend} isAdmin={isAdmin} />
           ) : (
             <div className="flex flex-col space-y-6">
               {/* Compact Disclaimer Banner */}
@@ -389,9 +447,58 @@ export default function ChatContainer() {
           )}
         </div>
 
-        {/* Input */}
-        <div className="p-6 border-t" style={{ background: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
-          <ChatInput onSend={handleSend} disabled={isLoading} />
+        {/* Input or Normal User Chips */}
+        <div className="p-6 border-t flex flex-col gap-4 relative" style={{ background: 'var(--bg-primary)', borderColor: 'var(--border)' }}>
+          {govPickerOpen && (
+            <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-[90%] max-w-sm p-4 rounded-xl border shadow-2xl" 
+                 style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', zIndex: 50 }}>
+              <p className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
+                📍 {t('language') === 'ar' ? 'يرجى اختيار محافظتك يدوياً للحصول على إحصائيات دقيقة:' : 'Please select your governorate manually for accurate statistics:'}
+              </p>
+              <select value={selectedGov} onChange={e => setSelectedGov(e.target.value)} 
+                      className="w-full p-2.5 rounded-lg mb-4 border outline-none text-sm"
+                      style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
+                <option value="">{t('language') === 'ar' ? 'اختر المحافظة...' : 'Select Governorate...'}</option>
+                {EGYPT_GOVERNORATES.map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+              <div className="flex gap-3">
+                <button className="flex-1 py-2 rounded-lg text-sm font-medium transition-colors" 
+                        style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                        onClick={() => { setGovPickerOpen(false); setPendingLocationMsg(''); setSelectedGov(''); }}>
+                  {t('common.cancel')}
+                </button>
+                <button className="flex-1 py-2 rounded-lg text-sm font-medium text-white transition-colors"
+                        style={{ background: 'linear-gradient(135deg, var(--accent), var(--purple))' }}
+                        disabled={!selectedGov}
+                        onClick={() => {
+                          setGovPickerOpen(false);
+                          handleSend(pendingLocationMsg, { governorate: selectedGov });
+                          setPendingLocationMsg('');
+                          setSelectedGov('');
+                        }}>
+                  {t('common.save') || 'Confirm'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!isAdmin ? (
+            <div className="grid grid-cols-2 gap-2 max-w-4xl mx-auto w-full">
+              {NORMAL_USER_CHIPS.map((chip, i) => (
+                <button
+                  key={i}
+                  onClick={() => handleSend(chip)}
+                  disabled={isLoading || govPickerOpen}
+                  className="px-4 py-3 rounded-xl text-xs font-medium text-white hover:text-white transition-all border border-white/10 hover:border-purple-400/60 hover:bg-purple-500/20 disabled:opacity-40 disabled:cursor-not-allowed text-start flex items-center justify-start h-full"
+                  style={{ background: 'var(--glass-bg)', color: 'var(--text-primary)' }}
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <ChatInput onSend={handleSend} disabled={isLoading || govPickerOpen} />
+          )}
         </div>
       </div>
     </div>

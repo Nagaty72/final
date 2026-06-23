@@ -160,9 +160,12 @@ export default function LandingPage() {
               <img src="/logo.jpeg" alt="Epicare Logo" className="w-full h-full object-contain dark:drop-shadow-[0_0_12px_rgba(255,255,255,0.3)] filter drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]" />
             </div>
             <div>
-              <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300">
-                {t('landing.nav_platform') || 'Epicare'}
-              </span>
+              <span
+                  suppressHydrationWarning
+                  className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300"
+                >
+                  {mounted ? (t('landing.nav_platform') || 'Epicare') : 'Epicare'}
+                </span>
               <div className="text-[9px] font-semibold tracking-widest uppercase text-slate-400 dark:text-slate-500 leading-none mt-0.5">
                 National Health Intelligence
               </div>
@@ -170,11 +173,11 @@ export default function LandingPage() {
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition-colors">
-              {t('landing.nav_features') || 'Capabilities'}
+            <a href="#features" suppressHydrationWarning className="text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition-colors">
+              {mounted ? (t('landing.nav_features') || 'Capabilities') : 'Capabilities'}
             </a>
-            <a href="#intelligence" className="text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition-colors">
-              {t('landing.nav_how') || 'Intelligence'}
+            <a href="#intelligence" suppressHydrationWarning className="text-sm font-medium text-slate-600 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400 transition-colors">
+              {mounted ? (t('landing.nav_how') || 'Intelligence') : 'Intelligence'}
             </a>
           </div>
 
@@ -184,16 +187,16 @@ export default function LandingPage() {
 
             {!loading && (
               user ? (
-                <Link href="/dashboard" className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-colors shadow-lg shadow-blue-600/20">
-                  {t('landing.nav_dashboard') || 'Go to Dashboard'}
+                <Link suppressHydrationWarning href="/dashboard" className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-colors shadow-lg shadow-blue-600/20">
+                  {mounted ? (t('landing.nav_dashboard') || 'Go to Dashboard') : 'Go to Dashboard'}
                 </Link>
               ) : (
                 <div className="flex items-center gap-3">
-                  <Link href="/login" className="hidden sm:block px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                    {t('landing.nav_login') || 'Sign In'}
+                  <Link suppressHydrationWarning href="/login" className="hidden sm:block px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    {mounted ? (t('landing.nav_login') || 'Sign In') : 'Sign In'}
                   </Link>
-                  <Link href="/login?mode=signup" className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-colors shadow-lg shadow-blue-600/20">
-                    {t('landing.nav_signup') || 'Request Access'}
+                  <Link suppressHydrationWarning href="/login?mode=signup" className="px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition-colors shadow-lg shadow-blue-600/20">
+                    {mounted ? (t('landing.nav_signup') || 'Request Access') : 'Request Access'}
                   </Link>
                 </div>
               )

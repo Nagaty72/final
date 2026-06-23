@@ -46,7 +46,7 @@ export const HospitalController = {
 
   async findNearby(req, res, next) {
     try {
-      const { longitude, latitude, radius, city, type, limit } = req.query;
+      const { longitude, latitude, radius, city, type, limit, requireBeds } = req.query;
       console.log("[TRACE] Controller findNearby() req.query:", req.query);
       const data = await HospitalService.findNearby(
         Number(longitude), 
@@ -54,7 +54,8 @@ export const HospitalController = {
         Number(radius) || 10000,
         city,
         type,
-        Number(limit) || 1000
+        Number(limit) || 1000,
+        requireBeds === 'true'
       );
       res.json({ success: true, data });
     } catch (e) { next(e); }

@@ -22,6 +22,6 @@ export const getMessages = async (conversationId) => {
   return api.get(`/api/v1/chat/conversations/${conversationId}/messages`);
 };
 
-export const sendMessage = async (conversationId, message) => {
-  return api.post('/api/v1/chat/send', { conversationId, message });
+export const sendMessage = async (conversationId, message, context = null) => {
+  return api.post('/api/v1/chat/send', { conversationId, message, context });
 };
