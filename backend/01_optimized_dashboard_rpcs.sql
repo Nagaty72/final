@@ -13,10 +13,10 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_patients_gender ON public.patients(g
 -- 2. Rewrite RPCs with Dynamic SQL
 
 -- get_dashboard_kpis
-DROP FUNCTION IF EXISTS public.get_dashboard_kpis(text, uuid, date, text, text, date, uuid, text);
+DROP FUNCTION IF EXISTS public.get_dashboard_kpis(text, uuid[], date, text, text, date, uuid, text);
 CREATE OR REPLACE FUNCTION public.get_dashboard_kpis(
   p_city text DEFAULT NULL,
-  p_disease uuid DEFAULT NULL,
+  p_disease uuid[] DEFAULT NULL,
   p_end_date date DEFAULT NULL,
   p_gender text DEFAULT NULL,
   p_severity text DEFAULT NULL,
@@ -34,7 +34,7 @@ BEGIN
       SELECT mr.id, mr.patient_id, mr.hospital_id, mr.outcome, mr.severity, mr.disease_id
       FROM public.medical_records mr WHERE 1=1';
 
-  IF p_disease IS NOT NULL THEN v_sql := v_sql || ' AND mr.disease_id = ' || quote_literal(p_disease); END IF;
+  IF p_disease IS NOT NULL AND array_length(p_disease, 1) > 0 THEN v_sql := v_sql || ' AND mr.disease_id = ANY(' || quote_literal(p_disease::text) || '::uuid[])'; END IF;
   IF p_severity IS NOT NULL THEN v_sql := v_sql || ' AND mr.severity = ' || p_severity::int; END IF;
   IF p_hospital_id IS NOT NULL THEN v_sql := v_sql || ' AND mr.hospital_id = ' || quote_literal(p_hospital_id); END IF;
   IF p_status IS NOT NULL THEN v_sql := v_sql || ' AND mr.outcome = ' || quote_literal(p_status); END IF;
@@ -64,7 +64,7 @@ BEGIN
     LEFT JOIN public.hospitals h ON mr.hospital_id = h.id
     WHERE 1=1 ';
 
-  IF p_city IS NOT NULL THEN v_sql := v_sql || ' AND (p.city = ' || quote_literal(p_city) || ' OR h.city = ' || quote_literal(p_city) || ')'; END IF;
+  IF p_city IS NOT NULL THEN v_sql := v_sql || ' AND COALESCE(p.city, h.city) = ' || quote_literal(p_city); END IF;
   IF p_gender IS NOT NULL THEN v_sql := v_sql || ' AND p.gender = ' || quote_literal(p_gender); END IF;
 
   RETURN QUERY EXECUTE v_sql;
@@ -72,9 +72,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- get_dashboard_trends
-DROP FUNCTION IF EXISTS public.get_dashboard_trends(text, uuid, date, text, text, date, uuid, text);
+DROP FUNCTION IF EXISTS public.get_dashboard_trends(text, uuid[], date, text, text, date, uuid, text);
 CREATE OR REPLACE FUNCTION public.get_dashboard_trends(
-  p_city text DEFAULT NULL, p_disease uuid DEFAULT NULL, p_end_date date DEFAULT NULL,
+  p_city text DEFAULT NULL, p_disease uuid[] DEFAULT NULL, p_end_date date DEFAULT NULL,
   p_gender text DEFAULT NULL, p_severity text DEFAULT NULL, p_start_date date DEFAULT NULL,
   p_hospital_id uuid DEFAULT NULL, p_status text DEFAULT NULL
 )
@@ -86,11 +86,11 @@ BEGIN
     LEFT JOIN public.patients p ON mr.patient_id = p.id
     LEFT JOIN public.hospitals h ON mr.hospital_id = h.id WHERE 1=1';
     
-  IF p_disease IS NOT NULL THEN v_sql := v_sql || ' AND mr.disease_id = ' || quote_literal(p_disease); END IF;
+  IF p_disease IS NOT NULL AND array_length(p_disease, 1) > 0 THEN v_sql := v_sql || ' AND mr.disease_id = ANY(' || quote_literal(p_disease::text) || '::uuid[])'; END IF;
   IF p_severity IS NOT NULL THEN v_sql := v_sql || ' AND mr.severity = ' || p_severity::int; END IF;
   IF p_hospital_id IS NOT NULL THEN v_sql := v_sql || ' AND mr.hospital_id = ' || quote_literal(p_hospital_id); END IF;
   IF p_status IS NOT NULL THEN v_sql := v_sql || ' AND mr.outcome = ' || quote_literal(p_status); END IF;
-  IF p_city IS NOT NULL THEN v_sql := v_sql || ' AND (p.city = ' || quote_literal(p_city) || ' OR h.city = ' || quote_literal(p_city) || ')'; END IF;
+  IF p_city IS NOT NULL THEN v_sql := v_sql || ' AND COALESCE(p.city, h.city) = ' || quote_literal(p_city); END IF;
   IF p_gender IS NOT NULL THEN v_sql := v_sql || ' AND p.gender = ' || quote_literal(p_gender); END IF;
 
   -- Default Boundary Logic
@@ -104,9 +104,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- get_dashboard_severity
-DROP FUNCTION IF EXISTS public.get_dashboard_severity(text, uuid, date, text, text, date, uuid, text);
+DROP FUNCTION IF EXISTS public.get_dashboard_severity(text, uuid[], date, text, text, date, uuid, text);
 CREATE OR REPLACE FUNCTION public.get_dashboard_severity(
-  p_city text DEFAULT NULL, p_disease uuid DEFAULT NULL, p_end_date date DEFAULT NULL,
+  p_city text DEFAULT NULL, p_disease uuid[] DEFAULT NULL, p_end_date date DEFAULT NULL,
   p_gender text DEFAULT NULL, p_severity text DEFAULT NULL, p_start_date date DEFAULT NULL,
   p_hospital_id uuid DEFAULT NULL, p_status text DEFAULT NULL
 )
@@ -118,11 +118,11 @@ BEGIN
     LEFT JOIN public.patients p ON mr.patient_id = p.id
     LEFT JOIN public.hospitals h ON mr.hospital_id = h.id WHERE mr.severity IS NOT NULL';
     
-  IF p_disease IS NOT NULL THEN v_sql := v_sql || ' AND mr.disease_id = ' || quote_literal(p_disease); END IF;
+  IF p_disease IS NOT NULL AND array_length(p_disease, 1) > 0 THEN v_sql := v_sql || ' AND mr.disease_id = ANY(' || quote_literal(p_disease::text) || '::uuid[])'; END IF;
   IF p_severity IS NOT NULL THEN v_sql := v_sql || ' AND mr.severity = ' || p_severity::int; END IF;
   IF p_hospital_id IS NOT NULL THEN v_sql := v_sql || ' AND mr.hospital_id = ' || quote_literal(p_hospital_id); END IF;
   IF p_status IS NOT NULL THEN v_sql := v_sql || ' AND mr.outcome = ' || quote_literal(p_status); END IF;
-  IF p_city IS NOT NULL THEN v_sql := v_sql || ' AND (p.city = ' || quote_literal(p_city) || ' OR h.city = ' || quote_literal(p_city) || ')'; END IF;
+  IF p_city IS NOT NULL THEN v_sql := v_sql || ' AND COALESCE(p.city, h.city) = ' || quote_literal(p_city); END IF;
   IF p_gender IS NOT NULL THEN v_sql := v_sql || ' AND p.gender = ' || quote_literal(p_gender); END IF;
 
   -- Default Boundary Logic
@@ -136,9 +136,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- get_dashboard_disease_breakdown
-DROP FUNCTION IF EXISTS public.get_dashboard_disease_breakdown(text, uuid, date, text, text, date, uuid, text);
+DROP FUNCTION IF EXISTS public.get_dashboard_disease_breakdown(text, uuid[], date, text, text, date, uuid, text);
 CREATE OR REPLACE FUNCTION public.get_dashboard_disease_breakdown(
-  p_city text DEFAULT NULL, p_disease uuid DEFAULT NULL, p_end_date date DEFAULT NULL,
+  p_city text DEFAULT NULL, p_disease uuid[] DEFAULT NULL, p_end_date date DEFAULT NULL,
   p_gender text DEFAULT NULL, p_severity text DEFAULT NULL, p_start_date date DEFAULT NULL,
   p_hospital_id uuid DEFAULT NULL, p_status text DEFAULT NULL
 )
@@ -151,11 +151,11 @@ BEGIN
     LEFT JOIN public.patients p ON mr.patient_id = p.id
     LEFT JOIN public.hospitals h ON mr.hospital_id = h.id WHERE 1=1';
     
-  IF p_disease IS NOT NULL THEN v_sql := v_sql || ' AND mr.disease_id = ' || quote_literal(p_disease); END IF;
+  IF p_disease IS NOT NULL AND array_length(p_disease, 1) > 0 THEN v_sql := v_sql || ' AND mr.disease_id = ANY(' || quote_literal(p_disease::text) || '::uuid[])'; END IF;
   IF p_severity IS NOT NULL THEN v_sql := v_sql || ' AND mr.severity = ' || p_severity::int; END IF;
   IF p_hospital_id IS NOT NULL THEN v_sql := v_sql || ' AND mr.hospital_id = ' || quote_literal(p_hospital_id); END IF;
   IF p_status IS NOT NULL THEN v_sql := v_sql || ' AND mr.outcome = ' || quote_literal(p_status); END IF;
-  IF p_city IS NOT NULL THEN v_sql := v_sql || ' AND (p.city = ' || quote_literal(p_city) || ' OR h.city = ' || quote_literal(p_city) || ')'; END IF;
+  IF p_city IS NOT NULL THEN v_sql := v_sql || ' AND COALESCE(p.city, h.city) = ' || quote_literal(p_city); END IF;
   IF p_gender IS NOT NULL THEN v_sql := v_sql || ' AND p.gender = ' || quote_literal(p_gender); END IF;
 
   -- Default Boundary Logic
@@ -169,9 +169,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- get_dashboard_bubble_data
-DROP FUNCTION IF EXISTS public.get_dashboard_bubble_data(text, uuid, date, text, text, date, uuid, text);
+DROP FUNCTION IF EXISTS public.get_dashboard_bubble_data(text, uuid[], date, text, text, date, uuid, text);
 CREATE OR REPLACE FUNCTION public.get_dashboard_bubble_data(
-  p_city text DEFAULT NULL, p_disease uuid DEFAULT NULL, p_end_date date DEFAULT NULL,
+  p_city text DEFAULT NULL, p_disease uuid[] DEFAULT NULL, p_end_date date DEFAULT NULL,
   p_gender text DEFAULT NULL, p_severity text DEFAULT NULL, p_start_date date DEFAULT NULL,
   p_hospital_id uuid DEFAULT NULL, p_status text DEFAULT NULL
 )
@@ -184,11 +184,11 @@ BEGIN
     LEFT JOIN public.patients p ON mr.patient_id = p.id
     LEFT JOIN public.hospitals h ON mr.hospital_id = h.id WHERE 1=1';
     
-  IF p_disease IS NOT NULL THEN v_sql := v_sql || ' AND mr.disease_id = ' || quote_literal(p_disease); END IF;
+  IF p_disease IS NOT NULL AND array_length(p_disease, 1) > 0 THEN v_sql := v_sql || ' AND mr.disease_id = ANY(' || quote_literal(p_disease::text) || '::uuid[])'; END IF;
   IF p_severity IS NOT NULL THEN v_sql := v_sql || ' AND mr.severity = ' || p_severity::int; END IF;
   IF p_hospital_id IS NOT NULL THEN v_sql := v_sql || ' AND mr.hospital_id = ' || quote_literal(p_hospital_id); END IF;
   IF p_status IS NOT NULL THEN v_sql := v_sql || ' AND mr.outcome = ' || quote_literal(p_status); END IF;
-  IF p_city IS NOT NULL THEN v_sql := v_sql || ' AND (p.city = ' || quote_literal(p_city) || ' OR h.city = ' || quote_literal(p_city) || ')'; END IF;
+  IF p_city IS NOT NULL THEN v_sql := v_sql || ' AND COALESCE(p.city, h.city) = ' || quote_literal(p_city); END IF;
   IF p_gender IS NOT NULL THEN v_sql := v_sql || ' AND p.gender = ' || quote_literal(p_gender); END IF;
 
   -- Default Boundary Logic
@@ -197,6 +197,9 @@ BEGIN
   IF p_end_date IS NOT NULL THEN v_sql := v_sql || ' AND mr.diagnosis_date <= ' || quote_literal(p_end_date); END IF;
 
   v_sql := v_sql || ' GROUP BY COALESCE(p.city, h.city), d.name ORDER BY total_cases DESC';
+  
+  RAISE NOTICE 'FINAL_SQL=%', v_sql;
+  
   RETURN QUERY EXECUTE v_sql;
 END;
 $$ LANGUAGE plpgsql;

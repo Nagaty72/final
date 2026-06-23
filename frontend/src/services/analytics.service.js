@@ -28,6 +28,8 @@ const formatParams = (filters = {}) => {
     endDate: filters.endDate
   };
   console.log("Analytics Request Params", params);
+  console.log('[API_DISEASE_PARAM]', params.disease);
+  console.log('[REQUEST_GOV]', params.governorate);
   return params;
 };
 

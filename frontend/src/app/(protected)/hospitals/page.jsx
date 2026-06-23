@@ -222,13 +222,15 @@ export default function HospitalsPage() {
     }
   };
 
-  const fetchNearbyData = async () => {
+  const fetchNearbyData = async (coords = location) => {
+    if (!coords) return;
+    console.log("Coordinates Sent To API:", coords);
     setLoading(true);
     try {
       const params = { radius: 20000, limit: 1000 };
       if (selectedType) params.type = selectedType;
       
-      const res = await getNearbyHospitals(location.latitude, location.longitude, params);
+      const res = await getNearbyHospitals(coords.latitude, coords.longitude, params);
       if (Array.isArray(res)) setHospitals(res);
       if (selectedCity) setSelectedCity('');
     } catch (e) {
@@ -264,19 +266,36 @@ export default function HospitalsPage() {
   }, [selectedCity, selectedType, location, user]);
 
   useEffect(() => {
+    // Only re-fetch on type change if we already have location
     if (location && user) {
-      fetchNearbyData();
+      fetchNearbyData(location);
     }
-  }, [location, selectedType, user]);
+  }, [selectedType, user]); // Removed location to prevent double fetch race conditions
 
   const filteredHospitals = useMemo(() => {
-    if (!searchTerm) return hospitals;
-    const term = searchTerm.toLowerCase();
-    return hospitals.filter(h => 
-      h.name?.toLowerCase().includes(term) ||
-      h.address?.toLowerCase().includes(term) ||
-      h.district_name?.toLowerCase().includes(term)
-    );
+    let result = hospitals;
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(h => 
+        h.name?.toLowerCase().includes(term) ||
+        h.address?.toLowerCase().includes(term) ||
+        h.district_name?.toLowerCase().includes(term)
+      );
+    }
+    // Strictly sort by distance ascending
+    result = result.sort((a, b) => {
+      if (a.distance !== undefined && b.distance !== undefined) {
+        return a.distance - b.distance;
+      }
+      return 0;
+    });
+
+    console.log("LIST RENDER COUNT:", result.length);
+    console.log("MAP RENDER COUNT:", result.filter(h => h.latitude && h.longitude).length);
+    console.log("LIST IDs:", result.map(h => h.id));
+    console.log("MAP IDs:", result.filter(h => h.latitude && h.longitude).map(h => h.id));
+
+    return result;
   }, [hospitals, searchTerm]);
 
   const stats = useMemo(() => {
@@ -386,7 +405,7 @@ export default function HospitalsPage() {
         <div className="header-actions">
           <button 
             className={`auth-btn location-btn ${location ? 'active' : ''}`} 
-            onClick={requestLocation}
+            onClick={() => requestLocation((coords) => fetchNearbyData(coords))}
             disabled={geoLoading}
           >
             {geoLoading ? <Loader2 className="animate-spin" size={16} /> : <MapPin size={16} />}

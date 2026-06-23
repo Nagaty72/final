@@ -90,6 +90,8 @@ const extractFilters = async (query) => {
   const effectiveDate = await getEffectiveDate();
   const { startDate, endDate } = getDateRangeFromTimeRange(query.timeRange, effectiveDate);
 
+  console.log('[CONTROLLER_DISEASE]', query.disease);
+
   // Parse disease string back to array if needed.
   // Frontend might send 'disease=COVID-19,Malaria' or 'disease[]=COVID-19&disease[]=Malaria'
   let parsedDisease = null;
@@ -198,6 +200,7 @@ export const AnalyticsController = {
     try {
       console.log("Analytics Query", req.query);
       const filters = await extractFilters(req.query);
+      console.log('[CONTROLLER_GOV]', filters.city);
       const data = await AnalyticsService.getBubbleData(filters);
       res.json({ success: true, data });
     } catch (e) { next(e); }

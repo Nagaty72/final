@@ -42,6 +42,8 @@ function normalizeRows(res) {
   if (Array.isArray(res))               raw = res;
   else if (res?.data && Array.isArray(res.data)) raw = res.data;
   
+  console.log('[RAW_API_UNIQUE_CITIES]', [...new Set(raw.map(r => r.city))]);
+  
   const normalized = raw.map(r => ({
     city:           String(r.city          || 'Unknown'),
     disease_name:   String(r.disease_name  || r.disease || 'Unknown'),
@@ -57,6 +59,7 @@ function normalizeRows(res) {
 
   console.log('Bubble API Rows:', raw.length);
   console.log('Normalized Rows:', normalized.length);
+  console.log('[NORMALIZED_UNIQUE_CITIES]', [...new Set(normalized.map(r => r.city))]);
 
   return normalized;
 }
@@ -104,13 +107,13 @@ function ModeButton({ active, onClick, icon: Icon, label, activeColor }) {
 export default function IntelligenceMapPage() {
   // ── Filter state ──────────────────────────────────────────────────────
   const [filters, setFiltersState] = useState({
-    city: '', disease: [], gender: '', severity: '', timeRange: '6m',
+    city: '', disease: '', gender: '', severity: '', timeRange: '6m',
   });
   const setFilter = useCallback((key, value) => {
     setFiltersState(prev => ({ ...prev, [key]: value }));
   }, []);
   const resetFilters = useCallback(() => {
-    setFiltersState({ city: '', disease: [], gender: '', severity: '', timeRange: '6m' });
+    setFiltersState({ city: '', disease: '', gender: '', severity: '', timeRange: '6m' });
   }, []);
 
   // ── UI state ──────────────────────────────────────────────────────────
@@ -141,7 +144,7 @@ export default function IntelligenceMapPage() {
   }, []);
 
   // ── Fetch map data on filter change ──────────────────────────────────
-  const diseaseDep = Array.isArray(filters.disease) ? filters.disease.join(',') : '';
+  const diseaseDep = filters.disease;
 
   useEffect(() => {
     if (abortRef.current) abortRef.current.abort();
@@ -150,9 +153,11 @@ export default function IntelligenceMapPage() {
     setLoading(true);
     setError(null);
 
+    console.log('[STORE_GOV]', filters.city);
+
     const apiFilters = {
       city:      filters.city      || undefined,
-      disease:   filters.disease?.length ? filters.disease.join(',') : undefined,
+      disease:   filters.disease   || undefined,
       gender:    filters.gender    || undefined,
       severity:  filters.severity  || undefined,
       timeRange: filters.timeRange || undefined,
@@ -220,6 +225,19 @@ export default function IntelligenceMapPage() {
   }, []);
 
   // ── Render ────────────────────────────────────────────────────────────
+  console.log(
+    '[RAW_API_UNIQUE_CITIES]',
+    [...new Set(rows.map(r => r.city))]
+  );
+
+  console.log(
+    '[RAW_API_CITY_COUNTS]',
+    rows.reduce((acc, r) => {
+      acc[r.city] = (acc[r.city] || 0) + 1;
+      return acc;
+    }, {})
+  );
+
   return (
     <div
       ref={pageRef}

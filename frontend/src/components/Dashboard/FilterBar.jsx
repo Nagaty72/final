@@ -190,11 +190,14 @@ function MultiSelect({ label, selectedValues, onChange, options }) {
     }
   };
 
+  const selectedLabels = selectedValues.map(val => {
+    const opt = options.find(o => String(o.value) === String(val));
+    return opt ? opt.label : val;
+  });
+
   const displayText = selectedValues.length === 0
     ? 'All Diseases'
-    : selectedValues.length === 1
-      ? selectedValues[0]
-      : `${selectedValues.length} selected`;
+    : selectedLabels.join(', ');
 
   const dropdownMenu = isOpen ? (
     <div
@@ -220,7 +223,10 @@ function MultiSelect({ label, selectedValues, onChange, options }) {
         return (
           <div
             key={`${o.value}-${idx}`}
-            onClick={() => o.value ? toggleValue(o.value) : onChange([])}
+            onClick={() => {
+              console.log('[DISEASE_SELECTED]', o.value);
+              o.value ? toggleValue(o.value) : onChange([]);
+            }}
             style={{
               padding: '8px 12px', fontSize: 13, cursor: 'pointer',
               display: 'flex', alignItems: 'center', gap: 8,
@@ -312,8 +318,10 @@ export default function FilterBar() {
       }
       
       if (dRes?.data) {
-        const uniqueDiseases = Array.from(new Map(dRes.data.map(d => [d.name, d])).values());
-        setDiseases([{ value: '', label: 'All Diseases' }, ...uniqueDiseases.map(d => ({ value: d.name, label: d.name }))]);
+        const uniqueDiseases = Array.from(new Map(dRes.data.map(d => [d.id, d])).values());
+        const diseaseOptions = [{ value: '', label: 'All Diseases' }, ...uniqueDiseases.map(d => ({ value: d.id, label: d.name }))];
+        console.log('[DISEASE_OPTIONS]', diseaseOptions);
+        setDiseases(diseaseOptions);
       }
       
       if (fRes?.data?.hospitals) {
@@ -330,7 +338,7 @@ export default function FilterBar() {
 
   useEffect(() => { loadDropdowns(); }, [loadDropdowns]);
 
-  const activeFiltersCount = [uiCity, ...(uiDisease || []), uiGender, uiSeverity, uiStatus, uiHospital, uiTimeRange !== '6m' ? uiTimeRange : null].filter(Boolean).length;
+  const activeFiltersCount = [uiCity, uiDisease, uiGender, uiSeverity, uiStatus, uiHospital, uiTimeRange !== '6m' ? uiTimeRange : null].filter(Boolean).length;
   const isDefault = activeFiltersCount === 0;
 
   return (
@@ -405,7 +413,7 @@ export default function FilterBar() {
 
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <FilterSelect label="Governorate" value={uiCity}     onChange={(v) => setFilter('uiCity', v)}      options={cities.length ? cities : [{ value: '', label: 'Loading…' }]} />
-        <MultiSelect  label="Disease"     selectedValues={uiDisease}  onChange={(v) => setFilter('uiDisease', v)}   options={diseases.length ? diseases : [{ value: '', label: 'Loading…' }]} />
+        <FilterSelect label="Disease"     value={uiDisease}  onChange={(v) => { console.log('[STORE_BEFORE_UPDATE]', v); setFilter('uiDisease', v); }}   options={diseases.length ? diseases : [{ value: '', label: 'Loading…' }]} />
         <FilterSelect label="Gender"      value={uiGender}   onChange={(v) => setFilter('uiGender', v)}    options={GENDERS} />
         <FilterSelect label="Severity"    value={uiSeverity} onChange={(v) => setFilter('uiSeverity', v)}  options={SEVERITIES} />
         <FilterSelect label="Status"      value={uiStatus}   onChange={(v) => { console.log("Selected Status", v); setFilter('uiStatus', v); }}    options={STATUSES} />

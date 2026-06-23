@@ -19,7 +19,7 @@ function debounce(key, fn, delay = 300) {
 export const useDashboardFilterStore = create((set, get) => ({
   // Raw UI filter values (used by FilterBar)
   uiCity:      '',
-  uiDisease:   [],
+  uiDisease:   '',
   uiGender:    '',
   uiSeverity:  '',
   uiStatus:    '',
@@ -28,7 +28,7 @@ export const useDashboardFilterStore = create((set, get) => ({
 
   // Applied filter values (used by chart widgets)
   city:      '',
-  disease:   [], 
+  disease:     '', 
   gender:    '',
   severity:  '', 
   status:    '',
@@ -57,14 +57,15 @@ export const useDashboardFilterStore = create((set, get) => ({
         filtersChanging: false,
       });
       console.log("Store Hospital", get().hospital);
+      console.log('[STORE_DISEASE]', get().disease);
     }, 600); // 600ms debounce before triggering fetches
   },
 
   /** Reset all filters to default state */
   resetFilters: () => {
     set({
-      uiCity: '', uiDisease: [], uiGender: '', uiSeverity: '', uiStatus: '', uiHospital: '', uiTimeRange: '6m',
-      city: '', disease: [], gender: '', severity: '', status: '', hospital: '', timeRange: '6m',
+      uiCity: '', uiDisease: '', uiGender: '', uiSeverity: '', uiStatus: '', uiHospital: '', uiTimeRange: '6m',
+      city: '', disease: '', gender: '', severity: '', status: '', hospital: '', timeRange: '6m',
       filtersChanging: false,
     });
   },
@@ -77,7 +78,7 @@ export const useDashboardFilterStore = create((set, get) => ({
     const { city, disease, gender, severity, status, hospital, timeRange } = get();
     return {
       city:      city      || undefined,
-      disease:   disease.length > 0 ? disease.join(',') : undefined,
+      disease:   disease   || undefined,
       gender:    gender    || undefined,
       severity:  severity  || undefined,
       status:    status    || undefined,

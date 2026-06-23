@@ -9,6 +9,18 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { api } from '@/services/api';
 import dynamic from 'next/dynamic';
 
+const PublicFacilityFinder = dynamic(() => import('@/components/PublicFacilityFinder'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex-1 w-full min-h-[500px] flex items-center justify-center bg-white/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 backdrop-blur-xl">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-10 h-10 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+        <div className="text-sm font-semibold text-slate-500 dark:text-slate-400 animate-pulse">Initializing Facility Map...</div>
+      </div>
+    </div>
+  )
+});
+
 const MapPreview = dynamic(() => import('@/components/LandingMapPreview'), {
   ssr: false,
   loading: () => (
@@ -191,13 +203,13 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <main className="relative z-10 pt-32 pb-16 sm:pt-40 lg:pt-48 lg:pb-32 overflow-hidden">
-        <div className="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-[45%_55%] gap-12 lg:gap-10 items-center">
+      <main className="relative z-10 pt-28 pb-12 sm:pt-36 lg:pt-40 lg:pb-24 overflow-hidden">
+        <div className="w-[85%] xl:w-[80%] max-w-[1280px] mx-auto px-4">
+          <div className="flex flex-col items-center">
             
-            {/* Left Column: Copy */}
-            <div className="max-w-2xl animate-fade-in-up">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-300 text-xs font-semibold uppercase tracking-wider mb-8 shadow-sm">
+            {/* Top Area: Copy (Centered) */}
+            <div className="max-w-4xl text-center animate-fade-in-up mb-10 flex flex-col items-center">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-300 text-[11px] font-bold uppercase tracking-wider mb-5 shadow-sm">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
@@ -206,18 +218,18 @@ export default function LandingPage() {
               </div>
 
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 leading-[1.1]">
-                Public Health <br />
+                Public Health <br className="hidden sm:block" />
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-blue-400 dark:to-cyan-300">
                   Intelligence Platform
                 </span>
               </h1>
 
-              <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 mb-8 leading-relaxed max-w-xl">
+              <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 mb-8 leading-relaxed max-w-2xl">
                 Advanced AI decision-support system for national disease surveillance, predictive modeling, and geospatial outbreak tracking.
               </p>
 
               {/* Feature Pills */}
-              <div className="flex flex-wrap gap-3 mb-10">
+              <div className="flex flex-wrap justify-center gap-3 mb-8">
                 {['Real-Time Surveillance', 'AI Predictive Analytics', 'Geospatial Intelligence', 'Data-Driven Decisions'].map((pill, i) => (
                   <span key={i} className="px-3 py-1.5 rounded-lg bg-white/60 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2 shadow-sm backdrop-blur-sm">
                     <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
@@ -226,7 +238,7 @@ export default function LandingPage() {
                 ))}
               </div>
 
-              <div className="flex flex-col sm:flex-row items-center gap-4 mb-10">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link href={user ? "/dashboard" : "/login"} className="w-full sm:w-auto px-8 py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-lg transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 group">
                   Explore Dashboard
                   <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -237,239 +249,37 @@ export default function LandingPage() {
                   See How It Works
                 </a>
               </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mt-10 pt-8 border-t border-slate-200 dark:border-slate-800">
-                {[
-                  { l: 'Health Records', v: stats?.totalRecords ? formatNumber(stats.totalRecords) : '15M+' },
-                  { l: 'Diseases Tracked', v: stats?.totalDiseases || '14' },
-                  { l: 'Governorates', v: stats?.governoratesCovered || '27' },
-                  { l: 'Hospitals Linked', v: stats?.totalHospitals ? formatNumber(stats.totalHospitals) : '85+' },
-                ].map((m, i) => (
-                  <div key={i}>
-                    <div className="text-2xl font-bold text-slate-900 dark:text-white mb-1">{loadingStats ? '...' : m.v}</div>
-                    <div className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">{m.l}</div>
-                  </div>
-                ))}
-              </div>
             </div>
 
-            {/* Right Column: Product Showcase */}
-            <div className="relative lg:h-[650px] flex items-center justify-center animate-fade-in-up mt-12 lg:mt-0 w-full" style={{ animationDelay: '0.2s' }}>
-              {/* Background Map Image */}
-              <div className="absolute inset-0 bg-[url('/bg-intelligence.png')] bg-cover bg-center opacity-20 dark:opacity-10 pointer-events-none rounded-[3rem] mix-blend-luminosity"></div>
+            {/* Bottom Area: Full-width Interactive Facility Finder */}
+            <div className="relative w-full lg:h-[600px] animate-fade-in-up mt-6" style={{ animationDelay: '0.2s' }}>
+              <div className="absolute inset-0 bg-[url('/bg-intelligence.png')] bg-cover bg-center opacity-20 dark:opacity-10 pointer-events-none rounded-[2.5rem] mix-blend-luminosity"></div>
               
-              {/* Main Dashboard Panel */}
-              <div className="relative w-full max-w-2xl lg:max-w-none bg-white dark:bg-[#0f172a] border border-slate-200/80 dark:border-slate-700/60 rounded-2xl shadow-2xl shadow-slate-300/30 dark:shadow-blue-900/30 overflow-hidden flex flex-col z-20 transform lg:rotate-[1deg] hover:rotate-0 transition-transform duration-500 lg:scale-105 origin-right">
-                {/* Header */}
-                <div className="h-10 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700/60 flex items-center px-4 gap-2 shrink-0">
-                  <div className="flex gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-400/80"></div>
-                    <div className="w-2.5 h-2.5 rounded-full bg-amber-400/80"></div>
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-400/80"></div>
-                  </div>
-                  <div className="mx-auto bg-white/60 dark:bg-slate-900/50 rounded text-[10px] font-mono text-slate-400 px-3 py-1 border border-slate-200 dark:border-slate-700">epicare.gov.eg / intelligence-dashboard</div>
-                </div>
-                
-                {/* Dashboard Content */}
-                <div className="p-6 bg-slate-50/50 dark:bg-[#0B1120]/50 space-y-5 flex-1">
-                  {/* Top KPIs */}
-                  <div className="grid grid-cols-4 gap-4">
-                    {[
-                      { l: 'Active Cases', v: stats?.activeCases ? formatNumber(stats.activeCases) : '12.4k', c: 'text-amber-500', i: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z', bg: 'bg-amber-50 dark:bg-amber-500/10' },
-                      { l: 'Hospitals', v: stats?.totalHospitals ? formatNumber(stats.totalHospitals) : '85', c: 'text-blue-500', i: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', bg: 'bg-blue-50 dark:bg-blue-500/10' },
-                      { l: 'Governorates', v: stats?.governoratesCovered ? formatNumber(stats.governoratesCovered) : '27', c: 'text-green-500', i: 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z', bg: 'bg-green-50 dark:bg-green-500/10' },
-                      { l: 'Diseases', v: stats?.totalDiseases ? formatNumber(stats.totalDiseases) : '14', c: 'text-purple-500', i: 'M13 10V3L4 14h7v7l9-11h-7z', bg: 'bg-purple-50 dark:bg-purple-500/10' },
-                    ].map((k,i) => (
-                      <div key={i} className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl p-4 shadow-sm flex flex-col justify-between">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${k.bg} ${k.c}`}>
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d={k.i} /></svg>
-                          </div>
-                        </div>
-                        <div>
-                          <div className={`text-2xl font-extrabold ${k.c}`}>{loadingStats ? '...' : k.v}</div>
-                          <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mt-1">{k.l}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Middle section: Chart & AI */}
-                  <div className="grid grid-cols-3 gap-4 h-44">
-                    <div className="col-span-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl p-4 shadow-sm flex flex-col">
-                      <div className="flex justify-between items-center mb-4">
-                        <div>
-                          <div className="text-[10px] uppercase tracking-widest font-bold text-slate-400 dark:text-slate-500">Analytics</div>
-                          <div className="text-sm font-bold text-slate-800 dark:text-slate-200">Outbreak Velocity (14 Days)</div>
-                        </div>
-                        <div className={`text-[10px] ${risk.color} ${risk.bg} px-2.5 py-1 rounded-md font-bold flex items-center gap-1 border ${risk.border || 'border-transparent'}`}>
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
-                          {risk.label} RISK
-                        </div>
-                      </div>
-                      <div className="flex-1 w-full relative">
-                        <svg viewBox="0 0 200 50" className="w-full h-full preserve-3d" preserveAspectRatio="none">
-                          <defs>
-                            <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.4" />
-                              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-                            </linearGradient>
-                          </defs>
-                          <path d="M0,50 L0,30 C20,35 40,15 60,25 C80,35 100,5 120,20 C140,35 160,10 180,15 L200,5 L200,50 Z" fill="url(#trendGrad)" />
-                          <path d="M0,30 C20,35 40,15 60,25 C80,35 100,5 120,20 C140,35 160,10 180,15 L200,5" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                          <circle cx="60" cy="25" r="3" fill="#ffffff" stroke="#3b82f6" strokeWidth="1.5" />
-                          <circle cx="120" cy="20" r="3" fill="#ffffff" stroke="#3b82f6" strokeWidth="1.5" />
-                          <circle cx="180" cy="15" r="3" fill="#ffffff" stroke="#3b82f6" strokeWidth="1.5" />
-                        </svg>
-                      </div>
-                    </div>
-                    
-                    <div className="col-span-1 bg-white dark:bg-[#111827] border border-indigo-100 dark:border-indigo-500/30 rounded-xl p-4 shadow-sm flex flex-col relative overflow-hidden group hover:border-indigo-300 dark:hover:border-indigo-400/50 transition-colors">
-                      <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="text-[9px] font-extrabold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest flex items-center gap-1.5">
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                          Insight Generated
-                        </div>
-                        <span className="text-[9px] text-slate-400">1m ago</span>
-                      </div>
-                      <div className="text-sm font-bold text-slate-800 dark:text-slate-200 leading-snug mb-1.5">
-                        Dominant Outbreak Risk
-                      </div>
-                      <div className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-3">
-                        AI models indicate elevated cluster activity for {stats?.topDiseases?.[0]?.name || 'respiratory illness'} across major governorates based on recent velocity.
-                      </div>
-                      <div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                        <div className="text-[9px] font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 px-2 py-0.5 rounded border border-red-100 dark:border-red-500/20">Active Alert</div>
-                        <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer flex items-center gap-1">
-                          Review Data <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Bottom: Mini Intelligence Map Preview */}
-                  <div className="bg-[#f8fafc] dark:bg-[#0c1322] border border-slate-200 dark:border-slate-800 rounded-xl h-44 shadow-inner relative overflow-hidden flex items-center justify-center">
-                    <div className="absolute inset-0 opacity-40 dark:opacity-20 bg-[url('data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M1 1h18v18H1V1zm1 1v16h16V2H2z\' fill=\'%239C92AC\' fill-opacity=\'0.4\' fill-rule=\'evenodd\'/%3E%3C/svg%3E')] bg-[size:20px_20px]"></div>
-                    
-                    {/* Real Egypt SVG Background */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-70 dark:opacity-50">
-                      <svg viewBox="0 0 400 400" className="w-full h-full max-w-[400px] p-2 drop-shadow-2xl overflow-visible">
-                        <path d="M 40 80 Q 100 80 140 100 Q 180 80 200 70 Q 220 80 240 100 Q 280 80 310 70 L 290 140 L 270 200 L 220 140 Q 250 220 280 280 L 320 360 L 40 360 Z" fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="1.5" className="dark:fill-[#1e293b]/80 dark:stroke-[#334155]" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-
-                    {/* Geography Labels */}
-                    <div className="absolute inset-0 pointer-events-none p-2 max-w-[400px] mx-auto hidden sm:block">
-                      {[
-                        { name: 'Alexandria', lat: 31.2001, lng: 29.9187, offY: -12, offX: -10 },
-                        { name: 'Cairo', lat: 30.0444, lng: 31.2357, offY: -15, offX: 15 },
-                        { name: 'Giza', lat: 29.9870, lng: 31.2118, offY: 5, offX: -20 },
-                        { name: 'Luxor', lat: 25.6872, lng: 32.6396, offY: 0, offX: 15 },
-                        { name: 'Aswan', lat: 24.0889, lng: 32.8998, offY: 10, offX: 15 }
-                      ].map((reg) => {
-                        const {x, y} = projectCoords(reg.lat, reg.lng);
-                        const labelX = Number.isFinite(x) ? x : 50;
-                        const labelY = Number.isFinite(y) ? y : 50;
-                        return (
-                          <div key={reg.name} className="absolute text-[8px] font-bold text-slate-500/80 dark:text-slate-400/60 uppercase tracking-widest" style={{ left: `calc(${labelX}% + ${reg.offX}px)`, top: `calc(${labelY}% + ${reg.offY}px)`, transform: 'translate(-50%, -50%)' }}>
-                            {reg.name}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Plotted Governorates */}
-                    <div className="relative w-full h-full max-w-[400px] mx-auto pointer-events-none p-2">
-                      {bubbleData.slice(0, 5).map((gov, idx) => {
-                        // Diagnostic: log raw shape of first entry so field-name mismatches are visible
-                        if (idx === 0) console.log('[BUBBLE_DATA_ENTRY]', JSON.stringify(gov));
-
-                        // Skip entirely if coordinates are missing — avoids NaN in left/top CSS
-                        const safeLat = Number.isFinite(Number(gov.lat)) ? Number(gov.lat) : null;
-                        const safeLng = Number.isFinite(Number(gov.lng)) ? Number(gov.lng) : null;
-                        if (safeLat === null || safeLng === null) {
-                          console.error('[BUBBLE] non-finite lat/lng — skipping entry:', JSON.stringify(gov));
-                          return null;
-                        }
-
-                        const {x, y} = projectCoords(safeLat, safeLng);
-                        const markerX = Number.isFinite(x) ? x : 50;
-                        const markerY = Number.isFinite(y) ? y : 50;
-
-                        // Guard: API may return case_count, total_cases, or cases — normalise here
-                        const rawCases = gov.cases ?? gov.case_count ?? gov.total_cases ?? 0;
-                        const govCases = Number.isFinite(Number(rawCases)) ? Number(rawCases) : 0;
-
-                        const allCaseCounts = bubbleData.map(d => {
-                          const v = d.cases ?? d.case_count ?? d.total_cases ?? 0;
-                          return Number.isFinite(Number(v)) ? Number(v) : 0;
-                        });
-                        const maxCases = Math.max(...allCaseCounts, 1); // always ≥ 1
-
-                        const ratio = govCases / maxCases;
-                        const rawSize = 6 + (ratio * 10); // Between 6px and 16px
-                        const size = Number.isFinite(rawSize) ? rawSize : 6; // safeWidth guard
-
-                        const colors = govCases > 10000
-                          ? { bg: 'bg-red-500',   pulse: 'bg-red-500/30',   border: 'border-red-400',   shadow: 'shadow-[0_0_12px_rgba(239,68,68,0.9)]'   }
-                          : govCases > 5000
-                          ? { bg: 'bg-amber-500', pulse: 'bg-amber-500/30', border: 'border-amber-400', shadow: 'shadow-[0_0_12px_rgba(245,158,11,0.9)]'  }
-                          : { bg: 'bg-blue-500',  pulse: 'bg-blue-500/30',  border: 'border-blue-400',  shadow: 'shadow-[0_0_12px_rgba(59,130,246,0.9)]'  };
-
-                        const safeSize       = Number.isFinite(size)       ? size       : 6;
-                        const safeSizeTriple = Number.isFinite(size * 3)   ? size * 3   : 18;
-
-                        return (
-                          <div key={idx} className="absolute group pointer-events-auto" style={{ left: `${markerX}%`, top: `${markerY}%`, transform: 'translate(-50%, -50%)' }}>
-                            <div className={`absolute rounded-full ${colors.pulse} blur-sm animate-pulse`} style={{ width: safeSizeTriple, height: safeSizeTriple, top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}></div>
-                            <div className={`absolute rounded-full border ${colors.border} animate-ping`} style={{ width: safeSize, height: safeSize, top: '50%', left: '50%', transform: 'translate(-50%, -50%)', animationDuration: '2.5s' }}></div>
-                            <div className={`relative rounded-full ${colors.bg} ${colors.shadow} border border-white dark:border-slate-900 transition-transform group-hover:scale-125`} style={{ width: safeSize, height: safeSize }}></div>
-                            
-                            {/* Hover Tooltip inside map */}
-                            <div className="absolute hidden lg:block opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 border border-slate-700 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-30 pointer-events-none -top-7 left-1/2 -translate-x-1/2 shadow-xl">
-                              <span className="font-bold">{gov.city?.replace(' Governorate', '')}</span>
-                              <span className="text-slate-300 font-mono ml-1">{formatNumber(govCases)} cases</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {bubbleData.length === 0 && (
-                        <div className="absolute inset-0 flex items-center justify-center text-xs text-slate-500 font-mono">Loading telemetry...</div>
-                      )}
-                    </div>
-                    
-                    <div className="absolute bottom-3 left-3 bg-white/90 dark:bg-slate-800/90 backdrop-blur border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-2 z-10">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                      <div className="text-[10px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest">Active Hotspots</div>
-                    </div>
-
-                    {/* Risk Legend */}
-                    <div className="absolute bottom-3 right-3 bg-white/90 dark:bg-slate-800/90 backdrop-blur border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 rounded-lg shadow-sm flex flex-col gap-1.5 z-10">
-                      <div className="text-[7px] text-slate-500 font-bold uppercase tracking-widest mb-0.5">Risk Level</div>
-                      <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.8)]"></span><span className="text-[8px] text-slate-700 dark:text-slate-300 font-bold">High Risk</span></div>
-                      <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.8)]"></span><span className="text-[8px] text-slate-700 dark:text-slate-300 font-bold">Medium Risk</span></div>
-                      <div className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,0.8)]"></span><span className="text-[8px] text-slate-700 dark:text-slate-300 font-bold">Low Risk</span></div>
-                    </div>
-                  </div>
-                </div>
+              {/* Facility Finder Component */}
+              <div className="relative w-full h-full flex flex-col z-20 transition-transform duration-500 hover:scale-[1.01]">
+                <PublicFacilityFinder />
               </div>
-
-              {/* Decorative elements behind the dashboard */}
-              <div className="absolute -top-10 -right-10 w-40 h-40 bg-blue-500/10 dark:bg-blue-500/20 rounded-full blur-2xl z-0"></div>
-              <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-cyan-500/10 dark:bg-cyan-500/20 rounded-full blur-2xl z-0"></div>
               
-              {/* Floating notification card */}
-              <div className="absolute -right-6 top-1/4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 shadow-xl z-30 flex items-center gap-3 animate-pulse-slow hidden sm:flex" style={{ animationDelay: '1s' }}>
-                <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
-                </div>
-                <div>
-                  <div className="text-[11px] font-bold text-slate-900 dark:text-white leading-tight">Data Synced</div>
-                  <div className="text-[9px] text-slate-500 mt-0.5">Just now</div>
-                </div>
-              </div>
+              {/* Decorative elements behind the finder */}
+              <div className="absolute -top-10 -right-10 w-64 h-64 bg-blue-500/20 dark:bg-blue-500/20 rounded-full blur-3xl z-0 pointer-events-none"></div>
+              <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-cyan-500/20 dark:bg-cyan-500/20 rounded-full blur-3xl z-0 pointer-events-none"></div>
             </div>
+
+            {/* Platform Stats placed below map */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 w-full max-w-4xl mx-auto text-center">
+              {[
+                { l: 'Health Records', v: stats?.totalRecords ? formatNumber(stats.totalRecords) : '15M+' },
+                { l: 'Diseases Tracked', v: stats?.totalDiseases || '14' },
+                { l: 'Governorates', v: stats?.governoratesCovered || '27' },
+                { l: 'Hospitals Linked', v: stats?.totalHospitals ? formatNumber(stats.totalHospitals) : '85+' },
+              ].map((m, i) => (
+                <div key={i}>
+                  <div className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">{loadingStats ? '...' : m.v}</div>
+                  <div className="text-xs uppercase tracking-[0.2em] text-slate-500 font-bold">{m.l}</div>
+                </div>
+              ))}
+            </div>
+
           </div>
         </div>
       </main>

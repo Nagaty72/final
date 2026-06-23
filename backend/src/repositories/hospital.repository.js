@@ -8,15 +8,21 @@ const db = () => {
 
 export const HospitalRepository = {
   async findAll({ city, type, districtId, limit = 1000, offset = 0 }) {
-    const { data, error } = await db().rpc('get_hospitals_with_gis', {
+    const rpcParams = {
       p_city: city || null,
       p_type: type || null,
       p_district_id: districtId || null,
       p_limit: limit,
       p_offset: offset
-    });
+    };
+    console.log("[TRACE] Repository findAll() RPC get_hospitals_with_gis Params:", rpcParams);
+    
+    const { data, error } = await db().rpc('get_hospitals_with_gis', rpcParams);
 
-    if (error) throw error;
+    if (error) {
+      console.error("[TRACE] RPC get_hospitals_with_gis Error:", error);
+      throw error;
+    }
     
     return data.map(h => ({
       ...h,
@@ -71,15 +77,22 @@ export const HospitalRepository = {
   },
 
   async findNearby(longitude, latitude, radiusMeters = 10000, city = null, type = null, limit = 1000) {
-    const { data, error } = await db().rpc('hospitals_within_radius', {
+    const rpcParams = {
       lat: latitude,
       lng: longitude,
       radius: radiusMeters,
       p_city: city || null,
       p_type: type || null,
       p_limit: limit
-    });
-    if (error) throw error;
+    };
+    console.log("[TRACE] Repository findNearby() RPC hospitals_within_radius Params:", rpcParams);
+
+    const { data, error } = await db().rpc('hospitals_within_radius', rpcParams);
+
+    if (error) {
+      console.error("[TRACE] RPC hospitals_within_radius Error:", error);
+      throw error;
+    }
     
     return data.map(h => ({
       ...h,

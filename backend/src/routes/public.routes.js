@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getSupabase } from '../config/supabase.js';
 import NodeCache from 'node-cache';
+import { HospitalController } from '../controllers/hospital.controller.js';
 
 const router = Router();
 const cache = new NodeCache({ stdTTL: 120, checkperiod: 60 }); // 2-min cache
@@ -104,6 +105,38 @@ router.get('/stats', async (req, res) => {
   } catch (err) {
     console.error('[public/stats] Error:', err.message);
     return res.status(500).json({ success: false, error: 'Failed to fetch public stats' });
+  }
+});
+
+/**
+ * GET /api/v1/public/hospitals
+ * Public access to hospital list (read-only)
+ */
+router.get('/hospitals', HospitalController.getAll);
+
+/**
+ * GET /api/v1/public/hospitals/nearby
+ * Public access to nearby hospitals (read-only)
+ */
+router.get('/hospitals/nearby', HospitalController.findNearby);
+
+/**
+ * GET /api/v1/public/cities
+ * Public access to unique governorates/cities
+ */
+router.get('/cities', async (req, res) => {
+  try {
+    const db = getSupabase();
+    if (!db) return res.status(503).json({ success: false, error: 'Database not configured' });
+    
+    const { data, error } = await db.from('districts').select('city').order('city');
+    if (error) throw error;
+    
+    const uniqueCities = [...new Set(data.map(d => d.city).filter(Boolean))];
+    return res.json({ success: true, data: uniqueCities });
+  } catch (err) {
+    console.error('[public/cities] Error:', err.message);
+    return res.status(500).json({ success: false, error: 'Failed to fetch cities' });
   }
 });
 

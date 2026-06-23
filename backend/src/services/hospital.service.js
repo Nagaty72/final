@@ -2,7 +2,10 @@ import { HospitalRepository } from '../repositories/hospital.repository.js';
 import { getSupabase } from '../config/supabase.js';
 
 export const HospitalService = {
-  getAll: (filters) => HospitalRepository.findAll(filters),
+  getAll: (filters) => {
+    console.log("[TRACE] Service getAll() filters:", filters);
+    return HospitalRepository.findAll(filters);
+  },
   getById: (id) => HospitalRepository.findById(id),
   create: async (data) => {
     // Idempotency: Check if the hospital already exists before creating
@@ -16,5 +19,8 @@ export const HospitalService = {
   },
   update: (id, data) => HospitalRepository.update(id, data),
   delete: (id) => HospitalRepository.delete(id),
-  findNearby: (lng, lat, radius, city, type, limit) => HospitalRepository.findNearby(lng, lat, radius, city, type, limit),
+  findNearby: (lng, lat, radiusMeters, city, type, limit) => {
+    console.log(`[TRACE] Service findNearby() - Lng:${lng}, Lat:${lat}, Radius:${radiusMeters}, City:${city}, Type:${type}, Limit:${limit}`);
+    return HospitalRepository.findNearby(lng, lat, radiusMeters, city, type, limit);
+  },
 };

@@ -156,9 +156,14 @@ function PortalMultiSelect({ label, selectedValues, onChange, options }) {
       : [...selectedValues, val]);
   };
 
+  const selectedLabels = selectedValues.map(val => {
+    const opt = options.find(o => String(o.value) === String(val));
+    return opt ? opt.label : val;
+  });
+
   const displayText = selectedValues.length === 0
     ? 'All Diseases'
-    : selectedValues.length === 1 ? selectedValues[0] : `${selectedValues.length} selected`;
+    : selectedLabels.join(', ');
 
   const portalRoot = getPortalRoot();
   const dropdownEl = (isOpen && coords && portalRoot) ? createPortal(
@@ -385,7 +390,7 @@ export default function MapFilterPanel({
 }) {
   const activeCount = useMemo(() => [
     filters.city,
-    ...(filters.disease || []),
+    filters.disease,
     filters.gender,
     filters.severity,
     filters.timeRange && filters.timeRange !== '6m' ? filters.timeRange : null,
@@ -400,10 +405,10 @@ export default function MapFilterPanel({
   }, [cities]);
 
   const diseaseOptions = useMemo(() => {
-    const unique = Array.from(new Map(diseases.map(d => [d.name ?? d, d])).values());
+    const unique = Array.from(new Map(diseases.map(d => [d.id ?? d.name ?? d, d])).values());
     return [
       { value: '', label: 'All Diseases' },
-      ...unique.map(d => ({ value: d.name ?? d, label: d.name ?? d })),
+      ...unique.map(d => ({ value: d.id ?? d.name ?? d, label: d.name ?? d })),
     ];
   }, [diseases]);
 
@@ -481,13 +486,13 @@ export default function MapFilterPanel({
 
         {/* Filters */}
         <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
-          <PortalMultiSelect
+          <FilterSelect
             label="Disease"
-            selectedValues={filters.disease || []}
+            value={filters.disease || ''}
             onChange={v => setFilter('disease', v)}
             options={diseaseOptions}
           />
-          <FilterSelect label="Governorate" value={filters.city || ''}      onChange={v => setFilter('city',      v)} options={cityOptions}  />
+          <FilterSelect label="Governorate" value={filters.city || ''}      onChange={v => { console.log('[MAP_FILTER_GOV]', v); setFilter('city', v); }} options={cityOptions}  />
           <FilterSelect label="Gender"      value={filters.gender || ''}    onChange={v => setFilter('gender',    v)} options={GENDERS}      />
           <FilterSelect label="Severity"    value={filters.severity || ''}  onChange={v => setFilter('severity',  v)} options={SEVERITIES}   />
           <FilterSelect label="Time Range"  value={filters.timeRange || ''} onChange={v => setFilter('timeRange', v)} options={TIME_RANGES}  />

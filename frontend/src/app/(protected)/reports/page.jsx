@@ -94,7 +94,7 @@ export default function ReportsPage() {
         if (fRes?.data) {
           const raw = fRes.data;
           setFilterOptions({
-            diseases: Array.from(new Map((raw.diseases || []).map(d => [d.name, d])).values()),
+            diseases: Array.from(new Map((raw.diseases || []).map(d => [d.id, d])).values()),
             cities: Array.from(new Set(raw.cities || [])),
             hospitals: Array.from(new Map((raw.hospitals || []).map(h => [h.name, h])).values()),
           });
@@ -231,7 +231,7 @@ export default function ReportsPage() {
               <SelectField label="Governorate" value={filters.city} onChange={v => setFilters(p=>({...p, city:v}))} options={filterOptions.cities.map(c=>({value:c, label:c}))}/>
             )}
             {selectedTpl.filters.includes('disease') && (
-              <SelectField label="Disease" value={filters.disease} onChange={v => setFilters(p=>({...p, disease:v}))} options={filterOptions.diseases.map(d=>({value:d.name, label:d.name}))}/>
+              <SelectField label="Disease" value={filters.disease} onChange={v => setFilters(p=>({...p, disease:v}))} options={filterOptions.diseases.map(d=>({value:d.id, label:d.name}))}/>
             )}
             {selectedTpl.filters.includes('gender') && (
               <SelectField label="Gender" value={filters.gender} onChange={v => setFilters(p=>({...p, gender:v}))} options={GENDERS.map(g=>({value:g, label:g.charAt(0).toUpperCase()+g.slice(1)}))}/>

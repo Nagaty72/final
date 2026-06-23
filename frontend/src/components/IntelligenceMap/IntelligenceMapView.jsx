@@ -120,7 +120,6 @@ function ThemeAwareTiles() {
   const isDark = resolvedTheme === 'dark';
   return (
     <TileLayer
-      key={isDark ? 'dark' : 'light'}
       url={isDark ? DARK_TILE_URL : LIGHT_TILE_URL}
       attribution={TILE_ATTR}
       maxZoom={20}
@@ -197,7 +196,16 @@ export default function IntelligenceMapView({
       if (hiddenDiseases.has(r.disease_name)) return;
       const gov = normalizeGovName(r.city);
       if (!GOVERNORATE_COORDS[gov]) return;
-      if (!groups[gov]) groups[gov] = [];
+      if (!groups[gov]) {
+        groups[gov] = [];
+        console.log(
+          '[CITY_COORD_MAPPING]',
+          JSON.stringify({
+            incomingCity: r.city,
+            mappedCoords: GOVERNORATE_COORDS[gov]
+          }, null, 2)
+        );
+      }
       groups[gov].push(r);
     });
 
@@ -225,6 +233,24 @@ export default function IntelligenceMapView({
     });
 
     // No slice — ALL governorates with matching data are rendered.
+    console.log('[RENDER_INPUT_COUNT]', rows.length);
+    console.log('[RENDER_OUTPUT_COUNT]', result.length);
+    console.log('[UNIQUE_CITIES_IN_RENDER]', [...new Set(result.map(b => b.canonicalGov))]);
+
+    console.log(
+      '[LEAFLET_MARKER_COORDS]',
+      JSON.stringify(
+        result.slice(0, 20).map(b => ({
+          gov: b.canonicalGov,
+          city: b.city,
+          lat: b.position?.[0],
+          lng: b.position?.[1],
+          value: b.total_cases
+        })),
+        null,
+        2
+      )
+    );
     return result;
   }, [rows, hiddenDiseases, diseaseColorMap, mode]);
 

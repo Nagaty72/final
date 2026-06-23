@@ -64,43 +64,45 @@ export default function HospitalCard({ hospital, isActive, onClick }) {
         .hospital-card {
           background: var(--glass-bg);
           border: 1px solid var(--border);
-          border-radius: 12px;
-          padding: 16px;
+          border-radius: 14px;
+          padding: 20px;
           cursor: pointer;
           transition: all 0.2s ease;
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 14px;
         }
         .hospital-card:hover {
           background: var(--bg-card-hover);
           border-color: rgba(59, 130, 246, 0.5);
           transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
         }
         .hospital-card.active {
           background: var(--bg-card);
           border-color: #3b82f6;
-          box-shadow: 0 0 0 1px #3b82f6, 0 4px 20px rgba(59, 130, 246, 0.2);
+          box-shadow: 0 0 0 2px #3b82f6, 0 6px 20px rgba(59, 130, 246, 0.15);
         }
         .card-header {
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
-          gap: 12px;
+          gap: 14px;
         }
         .hospital-name {
-          font-size: 16px;
-          font-weight: 600;
+          font-size: 18px;
+          font-weight: 700;
           color: var(--text-primary);
-          margin: 0 0 4px 0;
+          margin: 0 0 5px 0;
+          line-height: 1.3;
         }
         .hospital-type {
-          font-size: 13px;
+          font-size: 13.5px;
           color: var(--text-secondary);
           margin: 0;
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 8px;
         }
         .type-dot {
           display: inline-block;
@@ -111,25 +113,25 @@ export default function HospitalCard({ hospital, isActive, onClick }) {
         .distance-badge {
           display: flex;
           align-items: center;
-          gap: 4px;
+          gap: 5px;
           background: var(--accent-light);
           color: var(--accent);
-          padding: 4px 8px;
+          padding: 5px 10px;
           border-radius: 6px;
-          font-size: 12px;
-          font-weight: 600;
+          font-size: 12.5px;
+          font-weight: 700;
           white-space: nowrap;
         }
         .card-body {
           display: flex;
           flex-direction: column;
-          gap: 6px;
+          gap: 8px;
         }
         .info-row {
           display: flex;
           align-items: flex-start;
           gap: 8px;
-          font-size: 13px;
+          font-size: 13.5px;
           color: var(--text-secondary);
           line-height: 1.4;
         }
@@ -139,31 +141,26 @@ export default function HospitalCard({ hospital, isActive, onClick }) {
         }
         .card-footer {
           margin-top: auto;
-          padding-top: 12px;
+          padding-top: 14px;
           border-top: 1px solid var(--border);
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          gap: 14px;
         }
         .emergency-badge {
           background: var(--danger-light);
           color: var(--danger);
-          padding: 4px 8px;
-          border-radius: 4px;
-          font-size: 11px;
-          font-weight: 700;
+          padding: 5px 10px;
+          border-radius: 6px;
+          font-size: 11.5px;
+          font-weight: 800;
           text-transform: uppercase;
           letter-spacing: 0.5px;
           align-self: flex-start;
         }
-        .capacity-text {
-          font-size: 12px;
-          color: var(--text-muted);
-          font-weight: 500;
-        }
         .capacity-info {
           display: flex;
-          gap: 8px;
+          gap: 10px;
           width: 100%;
         }
         .capacity-item {
@@ -172,8 +169,8 @@ export default function HospitalCard({ hospital, isActive, onClick }) {
           flex-direction: column;
           align-items: center;
           background: rgba(0,0,0,0.03);
-          padding: 6px;
-          border-radius: 6px;
+          padding: 8px;
+          border-radius: 8px;
           border: 1px solid var(--border);
         }
         :global(.dark) .capacity-item {
@@ -187,11 +184,12 @@ export default function HospitalCard({ hospital, isActive, onClick }) {
           color: var(--text-muted);
           text-transform: uppercase;
           letter-spacing: 0.5px;
-          margin-bottom: 2px;
+          margin-bottom: 3px;
+          font-weight: 600;
         }
         .capacity-item .value {
-          font-size: 14px;
-          font-weight: 700;
+          font-size: 16px;
+          font-weight: 800;
           color: var(--text-primary);
         }
       `}</style>

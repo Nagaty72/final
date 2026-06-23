@@ -23,6 +23,38 @@ export const getNearbyHospitals = async (lat, lng, params = {}) => {
   return res.data;
 };
 
+export const getPublicHospitals = async (params = {}) => {
+  const query = new URLSearchParams();
+  if (params.city) query.append('city', params.city);
+  if (params.type) query.append('type', params.type);
+  if (params.districtId) query.append('districtId', params.districtId);
+  if (params.limit) query.append('limit', params.limit);
+  
+  const queryString = query.toString();
+  const url = `/api/v1/public/hospitals${queryString ? `?${queryString}` : ''}`;
+  console.log("[TRACE] Service layer getPublicHospitals URL:", url);
+  const res = await api.get(url);
+  return res.data;
+};
+
+export const getPublicNearbyHospitals = async (lat, lng, params = {}) => {
+  const query = new URLSearchParams({ latitude: lat, longitude: lng });
+  if (params.radius) query.append('radius', params.radius);
+  if (params.city) query.append('city', params.city);
+  if (params.type) query.append('type', params.type);
+  if (params.limit) query.append('limit', params.limit);
+
+  const url = `/api/v1/public/hospitals/nearby?${query.toString()}`;
+  console.log("[TRACE] Service layer getPublicNearbyHospitals URL:", url);
+  const res = await api.get(url);
+  return res.data;
+};
+
+export const getPublicCities = async () => {
+  const res = await api.get('/api/v1/public/cities');
+  return res.data;
+};
+
 export const createHospital = async (data) => {
   const res = await api.post('/api/v1/hospitals', data);
   return res.data;

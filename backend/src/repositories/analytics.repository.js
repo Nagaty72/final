@@ -50,9 +50,10 @@ export const AnalyticsRepository = {
   // ─── NEW: DB-level analytics RPCs ───────────────────────────────────────────
 
   async getKpis({ city, disease, gender, severity, status, hospital, startDate, endDate }) {
+    const diseaseId = Array.isArray(disease) ? disease[0] : (disease || null);
     const rpcParams = {
       p_city: city || null,
-      p_disease: disease || null,
+      p_disease: diseaseId,
       p_gender: gender || null,
       p_severity: severity || null,
       p_status: status || null,
@@ -61,7 +62,9 @@ export const AnalyticsRepository = {
       p_end_date: endDate || null,
     };
     console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
-    console.log("RPC Params", rpcParams);
+    console.log('[FINAL_DISEASE_TYPE]', typeof diseaseId);
+    console.log('[FINAL_DISEASE_VALUE]', diseaseId);
+    console.log('[FINAL_RPC_PARAMS]', rpcParams);
     const start = Date.now();
     console.log(`[RPC_START] RPC_NAME: get_dashboard_kpis | START_TIME: ${new Date(start).toISOString()}`);
     const { data, error } = await db().rpc('get_dashboard_kpis', rpcParams);
@@ -73,9 +76,10 @@ export const AnalyticsRepository = {
   },
 
   async getTrends({ city, disease, gender, severity, status, hospital, startDate, endDate }) {
+    const diseaseId = Array.isArray(disease) ? disease[0] : (disease || null);
     const rpcParams = {
       p_city: city || null,
-      p_disease: disease || null,
+      p_disease: diseaseId,
       p_gender: gender || null,
       p_severity: severity || null,
       p_status: status || null,
@@ -84,7 +88,9 @@ export const AnalyticsRepository = {
       p_end_date: endDate || null,
     };
     console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
-    console.log("RPC Params", rpcParams);
+    console.log('[FINAL_DISEASE_TYPE]', typeof diseaseId);
+    console.log('[FINAL_DISEASE_VALUE]', diseaseId);
+    console.log('[FINAL_RPC_PARAMS]', rpcParams);
     const start = Date.now();
     console.log(`[RPC_START] RPC_NAME: get_dashboard_trends | START_TIME: ${new Date(start).toISOString()}`);
     const { data, error } = await db().rpc('get_dashboard_trends', rpcParams);
@@ -98,30 +104,45 @@ export const AnalyticsRepository = {
   async getBubbleData({ city, disease, gender, severity, status, hospital, startDate, endDate }) {
     const rpcParams = {
       p_city: city || null,
-      p_disease: disease || null,
+      p_disease: disease
+        ? (Array.isArray(disease) ? disease : [disease])
+        : null,
       p_gender: gender || null,
-      p_severity: severity || null,
-      p_status: status || null,
-      p_hospital_id: hospital || null,
+      p_severity: severity ? Number(severity) : null,
       p_start_date: startDate || null,
       p_end_date: endDate || null,
     };
     console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
-    console.log("RPC Params", rpcParams);
+    console.log('[FINAL_RPC_PARAMS]', rpcParams);
+    console.log(
+      '[RPC_FUNCTION_SIGNATURE]',
+      Object.keys(rpcParams),
+      rpcParams
+    );
+    console.log('[RPC_GOV]', rpcParams.p_city);
     const start = Date.now();
     console.log(`[RPC_START] RPC_NAME: get_dashboard_bubble_data | START_TIME: ${new Date(start).toISOString()}`);
     const { data, error } = await db().rpc('get_dashboard_bubble_data', rpcParams);
     const end = Date.now();
     const duration = end - start;
     console.log(`[RPC_END] RPC_NAME: get_dashboard_bubble_data | END_TIME: ${new Date(end).toISOString()} | EXECUTION_MS: ${duration} | ROW_COUNT: ${data?.length || 0}`);
+    if (data) {
+      console.log('[RPC_PAYLOAD]', rpcParams);
+      console.log('[RPC_RETURN_SHAPE]', {
+        columns: data?.length ? Object.keys(data[0]) : [],
+        sample: data?.[0]
+      });
+      console.log('[BUBBLE_CITY_SAMPLE]', data.slice(0, 10).map(r => r.city));
+    }
     if (error) throw error;
     return data || [];
   },
 
   async getSeverityData({ city, disease, gender, severity, status, hospital, startDate, endDate }) {
+    const diseaseId = Array.isArray(disease) ? disease[0] : (disease || null);
     const rpcParams = {
       p_city: city || null,
-      p_disease: disease || null,
+      p_disease: diseaseId,
       p_gender: gender || null,
       p_severity: severity || null,
       p_status: status || null,
@@ -130,7 +151,9 @@ export const AnalyticsRepository = {
       p_end_date: endDate || null,
     };
     console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
-    console.log("RPC Params", rpcParams);
+    console.log('[FINAL_DISEASE_TYPE]', typeof diseaseId);
+    console.log('[FINAL_DISEASE_VALUE]', diseaseId);
+    console.log('[FINAL_RPC_PARAMS]', rpcParams);
     const start = Date.now();
     console.log(`[RPC_START] RPC_NAME: get_dashboard_severity | START_TIME: ${new Date(start).toISOString()}`);
     const { data, error } = await db().rpc('get_dashboard_severity', rpcParams);
@@ -142,9 +165,10 @@ export const AnalyticsRepository = {
   },
 
   async getDiseaseBreakdown({ city, disease, gender, severity, status, hospital, startDate, endDate }) {
+    const diseaseId = Array.isArray(disease) ? disease[0] : (disease || null);
     const rpcParams = {
       p_city: city || null,
-      p_disease: disease || null,
+      p_disease: diseaseId,
       p_gender: gender || null,
       p_severity: severity || null,
       p_status: status || null,
@@ -153,7 +177,9 @@ export const AnalyticsRepository = {
       p_end_date: endDate || null,
     };
     console.log("Analytics Query", { city, disease, gender, severity, status, hospital, startDate, endDate });
-    console.log("RPC Params", rpcParams);
+    console.log('[FINAL_DISEASE_TYPE]', typeof diseaseId);
+    console.log('[FINAL_DISEASE_VALUE]', diseaseId);
+    console.log('[FINAL_RPC_PARAMS]', rpcParams);
     const start = Date.now();
     console.log(`[RPC_START] RPC_NAME: get_dashboard_disease_breakdown | START_TIME: ${new Date(start).toISOString()}`);
     const { data, error } = await db().rpc('get_dashboard_disease_breakdown', rpcParams);

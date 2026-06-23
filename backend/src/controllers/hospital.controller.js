@@ -4,6 +4,7 @@ export const HospitalController = {
   async getAll(req, res, next) {
     try {
       const { city, type, districtId, limit, offset } = req.query;
+      console.log("[TRACE] Controller getAll() req.query:", req.query);
       const data = await HospitalService.getAll({ 
         city, 
         type, 
@@ -46,6 +47,7 @@ export const HospitalController = {
   async findNearby(req, res, next) {
     try {
       const { longitude, latitude, radius, city, type, limit } = req.query;
+      console.log("[TRACE] Controller findNearby() req.query:", req.query);
       const data = await HospitalService.findNearby(
         Number(longitude), 
         Number(latitude), 

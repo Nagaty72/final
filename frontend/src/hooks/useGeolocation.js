@@ -5,7 +5,7 @@ export function useGeolocation() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const requestLocation = useCallback(() => {
+  const requestLocation = useCallback((onSuccess) => {
     setLoading(true);
     setError(null);
 
@@ -17,11 +17,14 @@ export function useGeolocation() {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setLocation({
+        const coords = {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
-        });
+        };
+        console.log("Browser Coordinates:", coords);
+        setLocation(coords);
         setLoading(false);
+        if (onSuccess) onSuccess(coords);
       },
       (err) => {
         let errorMessage = 'Failed to get location.';
