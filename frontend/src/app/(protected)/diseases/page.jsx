@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { diseaseService } from '@/services/disease.service';
 import { getDashboardDiseaseBreakdown } from '@/services/analytics.service';
 import { useAuth } from '@/context/AuthContext';
+import DiseaseSelector from '@/components/DiseaseSelector';
 
 
 export default function DiseasesPage() {
@@ -12,6 +13,7 @@ export default function DiseasesPage() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedDiseaseId, setSelectedDiseaseId] = useState('all');
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -178,7 +180,17 @@ export default function DiseasesPage() {
       )}
 
       <div className="chart-container">
-        <h2 style={{ fontSize: 16, fontWeight: 600, margin: '0 0 16px' }}>Disease Directory</h2>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '16px' }}>
+          <h2 style={{ fontSize: 16, fontWeight: 600, margin: 0 }}>Disease Directory</h2>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <DiseaseSelector 
+              diseases={diseases} 
+              selectedDiseaseId={selectedDiseaseId} 
+              onChange={setSelectedDiseaseId} 
+            />
+          </div>
+        </div>
 
         {loading ? (
           <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)' }}>Loading diseases...</div>
@@ -196,7 +208,7 @@ export default function DiseasesPage() {
                 </tr>
               </thead>
               <tbody>
-                {diseases.map((d) => (
+                {diseases.filter(d => selectedDiseaseId === 'all' || d.id === selectedDiseaseId).map((d) => (
                   <tr key={d.id}>
                     <td style={{ fontWeight: 600 }}>{d.name}</td>
                     <td>{d.category || 'N/A'}</td>
@@ -213,7 +225,7 @@ export default function DiseasesPage() {
                     )}
                   </tr>
                 ))}
-                {diseases.length === 0 && (
+                {diseases.filter(d => selectedDiseaseId === 'all' || d.id === selectedDiseaseId).length === 0 && (
                   <tr><td colSpan={user?.role === 'super_admin' ? 4 : 3} style={{ textAlign: 'center', padding: 20 }}>No diseases found.</td></tr>
                 )}
               </tbody>
