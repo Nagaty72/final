@@ -600,7 +600,7 @@ function AuthPageContent() {
             <h2 className="showcase-title">Epicare</h2>
           </div>
           
-          <h3 className="showcase-tagline">AI-Powered Healthcare Intelligence Platform</h3>
+          <h3 className="showcase-tagline">National Health Intelligence Platform</h3>
           <p className="showcase-desc">
             Monitor disease trends, analyze outbreaks, visualize healthcare data, and generate intelligent health insights in real-time.
           </p>

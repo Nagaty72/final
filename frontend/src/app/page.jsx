@@ -217,7 +217,7 @@ export default function LandingPage() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-500 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
                 </span>
-                AI-Powered Healthcare Intelligence
+                National Health Intelligence Platform
               </div>
 
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 leading-[1.1]">
@@ -228,12 +228,12 @@ export default function LandingPage() {
               </h1>
 
               <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 mb-8 leading-relaxed max-w-2xl">
-                Advanced AI decision-support system for national disease surveillance, predictive modeling, and geospatial outbreak tracking.
+                Empowering health authorities with real-time disease surveillance, geographic health intelligence, healthcare facility analytics, and evidence-based decision support.
               </p>
 
               {/* Feature Pills */}
               <div className="flex flex-wrap justify-center gap-3 mb-8">
-                {['Real-Time Surveillance', 'AI Predictive Analytics', 'Geospatial Intelligence', 'Data-Driven Decisions'].map((pill, i) => (
+                {['Real-Time Surveillance', 'Interactive Disease Maps', 'Outbreak Monitoring', 'Data-Driven Decisions'].map((pill, i) => (
                   <span key={i} className="px-3 py-1.5 rounded-lg bg-white/60 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2 shadow-sm backdrop-blur-sm">
                     <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" /></svg>
                     {pill}
@@ -462,7 +462,7 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { title: 'AI Predictive Modeling', desc: 'Foresee outbreak trajectories using advanced machine learning applied to historical and real-time medical records.', icon: 'M13 10V3L4 14h7v7l9-11h-7z', color: 'blue' },
+              { title: 'Epidemiological Modeling', desc: 'Foresee outbreak trajectories using advanced analytics applied to historical and real-time medical records.', icon: 'M13 10V3L4 14h7v7l9-11h-7z', color: 'blue' },
               { title: 'Geospatial Intelligence', desc: 'Pinpoint infection clusters and track geographical spread on high-resolution interactive maps.', icon: 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z', color: 'purple' },
               { title: 'Real-Time KPI Dashboards', desc: 'Monitor active cases, recovery rates, and critical severity metrics filtered by any parameter instantly.', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', color: 'green' },
               { title: 'Hospital Capacity Monitoring', desc: 'Track resource availability and patient loads across the national healthcare network.', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4', color: 'red' },

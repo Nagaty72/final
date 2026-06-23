@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
+
 import dynamic from 'next/dynamic';
 import { getPublicHospitals, getPublicNearbyHospitals, getPublicCities } from '@/services/hospital.service';
 import { useGeolocation } from '@/hooks/useGeolocation';
@@ -20,18 +20,8 @@ function GovernorateDropdown({ value, onChange, options, disabled, placeholder }
   const [isOpen, setIsOpen] = useState(false);
   const triggerRef = useRef(null);
   const dropdownRef = useRef(null);
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-
   const openDropdown = useCallback(() => {
     if (disabled) return;
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setCoords({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-      });
-    }
     setIsOpen(true);
   }, [disabled]);
 
@@ -52,14 +42,17 @@ function GovernorateDropdown({ value, onChange, options, disabled, placeholder }
   const selectedOption = options.find(o => o.value === value);
   const displayText = selectedOption ? selectedOption.label : placeholder;
 
-  const dropdownEl = isOpen ? createPortal(
+  console.log('[DROPDOWN_OPEN]', isOpen);
+  console.log('[DROPDOWN_OPTIONS]', options.length);
+
+  const dropdownEl = isOpen ? (
     <div
       ref={dropdownRef}
       style={{
-        position: 'fixed',
-        top: coords.top,
-        left: coords.left,
-        width: coords.width,
+        position: 'absolute',
+        top: 'calc(100% + 4px)',
+        left: 0,
+        right: 0,
         zIndex: 99999,
         background: 'var(--bg-secondary)',
         border: '1px solid var(--border)',
@@ -116,8 +109,7 @@ function GovernorateDropdown({ value, onChange, options, disabled, placeholder }
           </div>
         );
       })}
-    </div>,
-    document.body
+    </div>
   ) : null;
 
   return (
@@ -169,6 +161,9 @@ export default function PublicFacilityFinder() {
   const [hospitals, setHospitals] = useState([]);
   const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  console.log('[CITIES_STATE]', cities);
+  console.log('[CITIES_LENGTH]', cities.length);
   
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -234,7 +229,10 @@ export default function PublicFacilityFinder() {
     const fetchAllCities = async () => {
       try {
         const res = await getPublicCities();
-        if (Array.isArray(res)) setCities(res.sort());
+        console.log('[TRACE] cities response from getPublicCities:', res);
+        if (res && Array.isArray(res.data)) setCities(res.data.sort());
+        else if (Array.isArray(res)) setCities(res.sort());
+        else console.log('[TRACE] res is not an array, skipping setCities');
       } catch (e) {
         console.error('Failed to fetch public cities:', e);
       }
@@ -333,7 +331,11 @@ export default function PublicFacilityFinder() {
                   <GovernorateDropdown
                     value={selectedCity}
                     onChange={setSelectedCity}
-                    options={cities.map(city => ({ value: city, label: city }))}
+                    options={(() => {
+                      const opts = cities.map(city => ({ value: city, label: city }));
+                      console.log('[TRACE] Dropdown options count:', opts.length, 'cities state:', cities);
+                      return opts;
+                    })()}
                     disabled={!!location}
                     placeholder="All Cities"
                   />
