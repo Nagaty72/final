@@ -116,3 +116,19 @@ async def get_disease_trends(role: str = "normal_user") -> str:
         logger.error(f"Error in get_disease_trends: {e}")
         return "Failed to fetch disease trends."
 
+async def get_nearest_hospitals(lat: float, lng: float, radius: int = 15000, require_beds: bool = False, role: str = "normal_user") -> str:
+    """Fetch nearby hospitals using PostGIS RPC."""
+    try:
+        data = await supabase_client.call_rpc("hospitals_within_radius", {
+            "lat": lat,
+            "lng": lng,
+            "radius": radius,
+            "p_city": None,
+            "p_type": None,
+            "p_limit": 5,
+            "p_require_beds": require_beds
+        })
+        return _format_data(data, role)
+    except Exception as e:
+        logger.error(f"Error in get_nearest_hospitals: {e}")
+        return "Failed to fetch nearby hospitals."

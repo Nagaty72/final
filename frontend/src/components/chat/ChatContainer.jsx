@@ -217,6 +217,7 @@ export default function ChatContainer() {
   const [govPickerOpen, setGovPickerOpen] = useState(false);
   const [pendingLocationMsg, setPendingLocationMsg] = useState('');
   const [selectedGov, setSelectedGov] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(true);
   
   const scrollRef = useRef(null);
 
@@ -483,18 +484,38 @@ export default function ChatContainer() {
           )}
 
           {!isAdmin ? (
-            <div className="grid grid-cols-2 gap-2 max-w-4xl mx-auto w-full">
-              {NORMAL_USER_CHIPS.map((chip, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleSend(chip)}
-                  disabled={isLoading || govPickerOpen}
-                  className="px-4 py-3 rounded-xl text-xs font-medium text-white hover:text-white transition-all border border-white/10 hover:border-purple-400/60 hover:bg-purple-500/20 disabled:opacity-40 disabled:cursor-not-allowed text-start flex items-center justify-start h-full"
-                  style={{ background: 'var(--glass-bg)', color: 'var(--text-primary)' }}
-                >
-                  {chip}
-                </button>
-              ))}
+            <div className="flex flex-col gap-2 w-full max-w-4xl mx-auto">
+              <div 
+                className="flex items-center justify-between cursor-pointer px-2 py-1 select-none"
+                onClick={() => setShowSuggestions(!showSuggestions)}
+              >
+                <div className="text-sm font-semibold flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}>
+                  💡 Suggested Questions
+                </div>
+                <div className="text-xs font-medium transition-colors hover:text-purple-400" style={{ color: 'var(--accent)' }}>
+                  {showSuggestions ? '[ Hide ]' : '[ Show ]'}
+                </div>
+              </div>
+              <div 
+                className="grid grid-cols-2 gap-2 overflow-y-auto transition-all duration-300 ease-in-out scrollbar-thin"
+                style={{ 
+                  maxHeight: showSuggestions ? '160px' : '0px',
+                  opacity: showSuggestions ? 1 : 0,
+                  pointerEvents: showSuggestions ? 'auto' : 'none',
+                }}
+              >
+                {NORMAL_USER_CHIPS.map((chip, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleSend(chip)}
+                    disabled={isLoading || govPickerOpen}
+                    className="px-4 py-3 rounded-xl text-xs font-medium text-white hover:text-white transition-all border border-white/10 hover:border-purple-400/60 hover:bg-purple-500/20 disabled:opacity-40 disabled:cursor-not-allowed text-start flex items-center justify-start h-full"
+                    style={{ background: 'var(--glass-bg)', color: 'var(--text-primary)' }}
+                  >
+                    {chip}
+                  </button>
+                ))}
+              </div>
             </div>
           ) : (
             <ChatInput onSend={handleSend} disabled={isLoading || govPickerOpen} />

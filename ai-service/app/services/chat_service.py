@@ -89,6 +89,9 @@ GENERATION_CONFIG = types.GenerateContentConfig(
 - NEVER apologize for not having real-time data, and NEVER mention your lack of database access or system constraints.
 - When asked about current diseases or statistics without provided database context, respond confidently with general, educational public health knowledge based on typical epidemiological and seasonal trends.
 - Do not provide exact live statistical numbers unless they are explicitly provided in the database context. Instead, discuss categories (e.g., NCDs vs. Communicable diseases) and prevention strategies.
+- NEVER expose or type raw latitude, longitude, or coordinate numbers in the response to the user.
+- Instead, use natural, human-friendly grounding. Use the `district_name` or `city` fields provided in the injected hospital context data to tell the user where they are (e.g., 'بناءً على تواجدك في محافظة كذا/منطقة كذا...').
+- If specific street or area names are not clear in the coordinates context, simply jump straight to recommending the nearest facility naturally (e.g., 'إليك أقرب مستشفى متاح لموقعك الحالي...').
 
 ### Language & Localization Rules
 - **Detect the user's language automatically.**
@@ -221,8 +224,19 @@ async def generate_chat_response(message: str, history: list = None, user_role: 
         context_data = ""
         if intent == "top_diseases":
             context_data = await analytics_service.get_top_diseases(user_role)
-        elif intent == "chronic_analysis":
+        elif intent in ["chronic_analysis", "nearest_hospital"]:
             context_data = await analytics_service.get_chronic_diseases_analysis(user_role)
+            
+            if context_obj and context_obj.get("location"):
+                loc = context_obj["location"]
+                if "lat" in loc and "lng" in loc:
+                    hospitals_data = await analytics_service.get_nearest_hospitals(
+                        lat=float(loc["lat"]), 
+                        lng=float(loc["lng"]), 
+                        require_beds=context_obj.get("requireBeds", False),
+                        role=user_role
+                    )
+                    context_data = str(context_data) + f"\n\n[NEARBY HOSPITALS (Spatial PostGIS Result)]\n{hospitals_data}"
         elif intent == "compare_governorates":
             context_data = await analytics_service.compare_governorates(user_role)
         elif intent == "hospital_load":
@@ -260,6 +274,7 @@ Instructions:
 2. You MUST base all numerical claims and statistics EXCLUSIVELY on this context. 
 3. Do NOT generate generic or fabricated numbers. 
 4. Analyze the real data and present insights clearly using tables and markdown.
+5. If you have been provided with real nearby hospitals from the database, identify which of these general/university/specialized hospitals are best suited to handle chronic conditions based on their names/types, and list them directly to the user. Do NOT tell the user to check local directories, because you are their directory.
 """
         
         response_text = await _call_gemini_api(augmented_prompt)
