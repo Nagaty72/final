@@ -280,7 +280,7 @@ export default function GlobalChatWidget() {
 
   return (
     <>
-      <div ref={dragRef} className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4 pointer-events-none" style={wrapperStyle}>
+      <div ref={dragRef} className="fixed bottom-6 right-6 z-[99999] flex flex-col items-end gap-4 pointer-events-none" style={wrapperStyle}>
         {/* ── Chat Panel ── */}
         {open && (
           <div

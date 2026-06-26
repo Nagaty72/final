@@ -485,7 +485,8 @@ export default function ChatContainer() {
 
           {!isAdmin ? (
             <div className="flex flex-col gap-2 w-full max-w-4xl mx-auto">
-              <div 
+              {/* Collapsible header */}
+              <div
                 className="flex items-center justify-between cursor-pointer px-2 py-1 select-none"
                 onClick={() => setShowSuggestions(!showSuggestions)}
               >
@@ -496,26 +497,50 @@ export default function ChatContainer() {
                   {showSuggestions ? '[ Hide ]' : '[ Show ]'}
                 </div>
               </div>
-              <div 
-                className="grid grid-cols-2 gap-2 overflow-y-auto transition-all duration-300 ease-in-out scrollbar-thin"
-                style={{ 
-                  maxHeight: showSuggestions ? '160px' : '0px',
+
+              {/* Animated outer wrapper — controls height collapse */}
+              <div
+                style={{
+                  maxHeight: showSuggestions ? '180px' : '0px',
                   opacity: showSuggestions ? 1 : 0,
+                  overflow: 'hidden',
+                  transition: 'max-height 0.3s ease, opacity 0.25s ease',
                   pointerEvents: showSuggestions ? 'auto' : 'none',
                 }}
               >
-                {NORMAL_USER_CHIPS.map((chip, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleSend(chip)}
-                    disabled={isLoading || govPickerOpen}
-                    className="px-4 py-3 rounded-xl text-xs font-medium text-white hover:text-white transition-all border border-white/10 hover:border-purple-400/60 hover:bg-purple-500/20 disabled:opacity-40 disabled:cursor-not-allowed text-start flex items-center justify-start h-full"
-                    style={{ background: 'var(--glass-bg)', color: 'var(--text-primary)' }}
-                  >
-                    {chip}
-                  </button>
-                ))}
+                {/* Inner scroll container — shows 3 rows (~2.5 visible) then scrolls */}
+                <div
+                  className="chip-scroll-container"
+                  style={{
+                    maxHeight: '168px',
+                    overflowY: 'auto',
+                    paddingRight: '4px',
+                  }}
+                >
+                  <div className="grid grid-cols-2 gap-2">
+                    {NORMAL_USER_CHIPS.map((chip, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleSend(chip)}
+                        disabled={isLoading || govPickerOpen}
+                        className="px-4 py-3 rounded-xl text-xs font-medium hover:text-white transition-all border border-white/10 hover:border-purple-400/60 hover:bg-purple-500/20 disabled:opacity-40 disabled:cursor-not-allowed text-start flex items-center justify-start"
+                        style={{ background: 'var(--glass-bg)', color: 'var(--text-primary)', minHeight: '52px' }}
+                      >
+                        {chip}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
+
+              {/* Custom scrollbar styles */}
+              <style>{`
+                .chip-scroll-container::-webkit-scrollbar { width: 4px; }
+                .chip-scroll-container::-webkit-scrollbar-track { background: transparent; }
+                .chip-scroll-container::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.35); border-radius: 4px; }
+                .chip-scroll-container::-webkit-scrollbar-thumb:hover { background: rgba(99,102,241,0.6); }
+                .chip-scroll-container { scrollbar-width: thin; scrollbar-color: rgba(99,102,241,0.35) transparent; }
+              `}</style>
             </div>
           ) : (
             <ChatInput onSend={handleSend} disabled={isLoading || govPickerOpen} />
