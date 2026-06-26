@@ -222,8 +222,8 @@ export default function GlobalChatWidget() {
         ({ coords: { latitude: lat, longitude: lng } }) => {
           updateLastByType('geo-pending', {
             content: isArabic
-              ? `📍 تم تحديد الموقع (${lat.toFixed(3)}, ${lng.toFixed(3)}). جارٍ البحث...`
-              : `📍 Location detected (${lat.toFixed(3)}, ${lng.toFixed(3)}). Searching...`,
+              ? '📍 تم تحديد موقعك الحالي بنجاح. جاري البحث عن أقرب منشأة طبية...'
+              : '📍 Current location detected. Searching for the nearest medical facility...',
             type: undefined,
           });
           send(chip.message === '__NEAREST_HOSPITAL__' || chip.id === 'hospital' ? '__NEAREST_HOSPITAL__' : chip.message, { context: { location: { lat, lng }, requireBeds: chip.message === t('chat.quickQuestions.q4') } });

@@ -8,8 +8,7 @@ import { ENV } from './config/env.js';
 // Route imports
 import authRoutes from './routes/auth.routes.js';
 import hospitalRoutes from './routes/hospital.routes.js';
-import diseaseRoutes from './routes/disease.routes.js';
-import patientRoutes from './routes/patient.routes.js';
+
 import medicalRecordRoutes from './routes/medical-record.routes.js';
 import districtRoutes from './routes/district.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
@@ -77,8 +76,7 @@ app.use('/api/v1/public', publicRoutes);
 
 // ─── Protected Routes (require valid JWT) ───────────────────────────────────
 app.use('/api/v1/hospitals', authMiddleware, hospitalRoutes);
-app.use('/api/v1/diseases', authMiddleware, diseaseRoutes);
-app.use('/api/v1/patients', authMiddleware, patientRoutes);
+
 app.use('/api/v1/medical-records', authMiddleware, medicalRecordRoutes);
 app.use('/api/v1/districts', authMiddleware, districtRoutes);
 app.use('/api/v1/analytics', authMiddleware, analyticsRoutes);
