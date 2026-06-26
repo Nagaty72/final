@@ -88,7 +88,14 @@ function getPrevDateRangeFromTimeRange(timeRange, effectiveDateStr) {
 /** Extracts shared filter params from req.query and processes timeRange and diseases array */
 const extractFilters = async (query) => {
   const effectiveDate = await getEffectiveDate();
-  const { startDate, endDate } = getDateRangeFromTimeRange(query.timeRange, effectiveDate);
+  let startDate = query.startDate || null;
+  let endDate = query.endDate || null;
+
+  if (query.timeRange) {
+    const range = getDateRangeFromTimeRange(query.timeRange, effectiveDate);
+    startDate = range.startDate;
+    endDate = range.endDate;
+  }
 
   console.log('[CONTROLLER_DISEASE]', query.disease);
 

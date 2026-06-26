@@ -104,28 +104,30 @@ export default function TrendsChart() {
           <span style={{ fontSize: 14 }}>No trend data for this filter combination</span>
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={280}>
-          <BarChart data={data} margin={{ top: 10, right: 8, left: -20, bottom: 0 }} barCategoryGap="25%">
-            <defs>
-              <linearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#4F83F1" />
-                <stop offset="40%" stopColor="#6F9BF5" />
-                <stop offset="70%" stopColor="#A9C0FA" />
-                <stop offset="100%" stopColor="#DCE8FF" />
-              </linearGradient>
-            </defs>
-            <CartesianGrid vertical={false} stroke="var(--border)" strokeOpacity={0.2} strokeDasharray="3 3" />
-            <XAxis
-              dataKey="label"
-              tick={axisTick}
-              axisLine={false} tickLine={false}
-              interval={data.length > 14 ? Math.floor(data.length / 10) : 0}
-            />
-            <YAxis tick={axisTick} axisLine={false} tickLine={false} />
-            <Tooltip content={<CustomTooltip />} cursor={tooltipCursorBar} />
-            <Bar dataKey="count" fill="url(#blueGradient)" radius={[6, 6, 0, 0]} maxBarSize={48} isAnimationActive={false} />
-          </BarChart>
-        </ResponsiveContainer>
+        <div style={{ width: '100%', height: 280, minWidth: 0 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 10, right: 8, left: -20, bottom: 0 }} barCategoryGap="25%">
+              <defs>
+                <linearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#4F83F1" />
+                  <stop offset="40%" stopColor="#6F9BF5" />
+                  <stop offset="70%" stopColor="#A9C0FA" />
+                  <stop offset="100%" stopColor="#DCE8FF" />
+                </linearGradient>
+              </defs>
+              <CartesianGrid vertical={false} stroke="var(--border)" strokeOpacity={0.2} strokeDasharray="3 3" />
+              <XAxis
+                dataKey="label"
+                tick={axisTick}
+                axisLine={false} tickLine={false}
+                interval={data.length > 14 ? Math.floor(data.length / 10) : 0}
+              />
+              <YAxis tick={axisTick} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} cursor={tooltipCursorBar} />
+              <Bar dataKey="count" fill="url(#blueGradient)" radius={[6, 6, 0, 0]} maxBarSize={48} isAnimationActive={false} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       )}
     </div>
   );

@@ -143,22 +143,24 @@ export default function SeverityChart() {
         </div>
       ) : (
         <>
-          <ResponsiveContainer width="100%" height={220}>
-            <PieChart>
-              <Pie
-                data={data} cx="50%" cy="50%"
-                innerRadius={58} outerRadius={92}
-                paddingAngle={2} dataKey="value"
-                labelLine={false} label={renderCustomLabel}
-                isAnimationActive={false}
-              >
-                {data.map((entry, i) => (
-                  <Cell key={i} fill={entry.fill} stroke="var(--bg-secondary)" strokeWidth={2} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-            </PieChart>
-          </ResponsiveContainer>
+          <div style={{ width: '100%', height: 220, minWidth: 0 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data} cx="50%" cy="50%"
+                  innerRadius={58} outerRadius={92}
+                  paddingAngle={2} dataKey="value"
+                  labelLine={false} label={renderCustomLabel}
+                  isAnimationActive={false}
+                >
+                  {data.map((entry, i) => (
+                    <Cell key={i} fill={entry.fill} stroke="var(--bg-secondary)" strokeWidth={2} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12, justifyContent: 'center' }}>
             {data.map((d, i) => (
               <div key={`sev-${d.name}-${i}`} style={{

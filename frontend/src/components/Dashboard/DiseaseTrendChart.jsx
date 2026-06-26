@@ -289,49 +289,51 @@ export default function DiseaseTrendChart() {
         ) : (
           <>
             {/* Line chart */}
-            <ResponsiveContainer width="100%" height={280}>
-              <LineChart
-                data={chartRows}
-                margin={{ top: 8, right: 12, left: -8, bottom: 0 }}
-              >
-                <CartesianGrid
-                  {...gridStyle}
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="period"
-                  tick={axisTick}
-                  axisLine={false}
-                  tickLine={false}
-                  interval={chartRows.length > 20 ? Math.floor(chartRows.length / 12) : 0}
-                />
-                <YAxis
-                  tick={axisTick}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={yTickFmt}
-                  width={44}
-                />
-                <Tooltip
-                  content={<CustomTooltip colorMap={colorMap} />}
-                  cursor={tooltipCursorLine}
-                />
-                {diseases.map((d, i) => (
-                  <Line
-                    key={`line-${d.name}-${i}`}
-                    type="monotone"
-                    dataKey={d.name}
-                    stroke={d.color}
-                    strokeWidth={hiddenLines.has(d.name) ? 0 : 2.5}
-                    dot={showDots ? { r: 3.5, fill: d.color, strokeWidth: 0 } : false}
-                    activeDot={{ r: 6, fill: d.color, stroke: 'var(--bg-secondary)', strokeWidth: 2.5 }}
-                    isAnimationActive={false}
-                    hide={hiddenLines.has(d.name)}
-                    connectNulls
+            <div style={{ width: '100%', height: 280, minWidth: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={chartRows}
+                  margin={{ top: 8, right: 12, left: -8, bottom: 0 }}
+                >
+                  <CartesianGrid
+                    {...gridStyle}
+                    vertical={false}
                   />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
+                  <XAxis
+                    dataKey="period"
+                    tick={axisTick}
+                    axisLine={false}
+                    tickLine={false}
+                    interval={chartRows.length > 20 ? Math.floor(chartRows.length / 12) : 0}
+                  />
+                  <YAxis
+                    tick={axisTick}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={yTickFmt}
+                    width={44}
+                  />
+                  <Tooltip
+                    content={<CustomTooltip colorMap={colorMap} />}
+                    cursor={tooltipCursorLine}
+                  />
+                  {diseases.map((d, i) => (
+                    <Line
+                      key={`line-${d.name}-${i}`}
+                      type="monotone"
+                      dataKey={d.name}
+                      stroke={d.color}
+                      strokeWidth={hiddenLines.has(d.name) ? 0 : 2.5}
+                      dot={showDots ? { r: 3.5, fill: d.color, strokeWidth: 0 } : false}
+                      activeDot={{ r: 6, fill: d.color, stroke: 'var(--bg-secondary)', strokeWidth: 2.5 }}
+                      isAnimationActive={false}
+                      hide={hiddenLines.has(d.name)}
+                      connectNulls
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
 
             {/* Interactive legend */}
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', flexShrink: 0, paddingTop: 4 }}>

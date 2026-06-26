@@ -126,27 +126,29 @@ export default function DiseaseBreakdown() {
           <span style={{ fontSize: 14 }}>No disease data for this selection</span>
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={data} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }} barCategoryGap="20%">
-            <CartesianGrid {...gridStyle} horizontal={false} />
-            <XAxis
-              type="number" tick={axisTick}
-              axisLine={false} tickLine={false}
-              tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}
-            />
-            <YAxis
-              type="category" dataKey="name" width={110}
-              tick={{ fontSize: 11, fill: 'var(--text-secondary)', fontWeight: 500 }}
-              axisLine={false} tickLine={false}
-            />
-            <Tooltip content={<CustomTooltip />} cursor={tooltipCursorBar} />
-            <Bar dataKey="cases" radius={[0, 7, 7, 0]} maxBarSize={22} isAnimationActive={false}>
-              {data.map((entry, i) => (
-                <Cell key={i} fill={entry.color} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        <div style={{ width: '100%', height: 220, minWidth: 0 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} layout="vertical" margin={{ top: 0, right: 30, left: 0, bottom: 0 }} barCategoryGap="20%">
+              <CartesianGrid {...gridStyle} horizontal={false} />
+              <XAxis
+                type="number" tick={axisTick}
+                axisLine={false} tickLine={false}
+                tickFormatter={(v) => v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}
+              />
+              <YAxis
+                type="category" dataKey="name" width={110}
+                tick={{ fontSize: 11, fill: 'var(--text-secondary)', fontWeight: 500 }}
+                axisLine={false} tickLine={false}
+              />
+              <Tooltip content={<CustomTooltip />} cursor={tooltipCursorBar} />
+              <Bar dataKey="cases" radius={[0, 7, 7, 0]} maxBarSize={22} isAnimationActive={false}>
+                {data.map((entry, i) => (
+                  <Cell key={i} fill={entry.color} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       )}
     </div>
   );

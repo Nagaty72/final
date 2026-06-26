@@ -97,9 +97,19 @@ export default function OverviewPage() {
           getDashboardDiseaseBreakdown(filters)
         ]);
 
+        const rawTrends = trendRes.data || [];
+        const paddedTrends = [];
+        for (let i = months - 1; i >= 0; i--) {
+          const mDate = new Date();
+          mDate.setMonth(mDate.getMonth() - i);
+          const monthStr = mDate.toISOString().substring(0, 7); // YYYY-MM
+          const existing = rawTrends.find(t => t.month === monthStr);
+          paddedTrends.push(existing || { month: monthStr, total_cases: 0 });
+        }
+
         setData({
           kpis: kpiRes.data?.[0] || null,
-          trends: trendRes.data || [],
+          trends: paddedTrends,
           diseases: diseaseRes.data || [] // keep all for guidelines section
         });
       } catch (err) {
@@ -225,8 +235,9 @@ export default function OverviewPage() {
               </div>
               <div className="chart-body">
                 {data.trends.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={data.trends} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <div className="w-full" style={{ height: '350px' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={data.trends} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorCases" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
@@ -243,7 +254,8 @@ export default function OverviewPage() {
                       />
                       <Area type="monotone" dataKey="total_cases" name="Cases" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorCases)" />
                     </AreaChart>
-                  </ResponsiveContainer>
+                    </ResponsiveContainer>
+                  </div>
                 ) : (
                   <div className="empty-chart">No trend data available for this selection.</div>
                 )}
